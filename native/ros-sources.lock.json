@@ -1,0 +1,117 @@
+[
+  {
+    "directory": "ament_cmake",
+    "url": "https://github.com/ament/ament_cmake.git",
+    "revision": "246e4164ed9caf1596a706cc405820aacc81dc89"
+  },
+  {
+    "directory": "ament_index",
+    "url": "https://github.com/ament/ament_index.git",
+    "revision": "2ccdcb8fd19a364fc793273b5793459207a440b9"
+  },
+  {
+    "directory": "ament_package",
+    "url": "https://github.com/ament/ament_package.git",
+    "revision": "ee3c5eda4fbc4df2c7a135d0ac1385e4a53fa0ee"
+  },
+  {
+    "directory": "cyclonedds",
+    "url": "https://github.com/eclipse-cyclonedds/cyclonedds.git",
+    "revision": "5041f3560c088c99e5088b2b8520b69169621196"
+  },
+  {
+    "directory": "ament_cmake_ros",
+    "url": "https://github.com/ros2/ament_cmake_ros.git",
+    "revision": "5b77a227b940a25be5224d78d37591c8baccd756"
+  },
+  {
+    "directory": "common_interfaces",
+    "url": "https://github.com/ros2/common_interfaces.git",
+    "revision": "a941f14bb318d8d904505ed935ccbb97f24a70a4"
+  },
+  {
+    "directory": "libyaml_vendor",
+    "url": "https://github.com/ros2/libyaml_vendor.git",
+    "revision": "57b7deca1fa34ea95a6456c0cc08070c4ab389c2"
+  },
+  {
+    "directory": "rcl",
+    "url": "https://github.com/ros2/rcl.git",
+    "revision": "18d96c9c2b98e616324ae9a2c7701dd0b0886ff0"
+  },
+  {
+    "directory": "rcl_interfaces",
+    "url": "https://github.com/ros2/rcl_interfaces.git",
+    "revision": "7aa3caf43377ea6ad615bc1040832e2c7566bfbe"
+  },
+  {
+    "directory": "rcl_logging",
+    "url": "https://github.com/ros2/rcl_logging.git",
+    "revision": "727920c2592be6deb6983f0fe1b57cbc929cbb70"
+  },
+  {
+    "directory": "rcpputils",
+    "url": "https://github.com/ros2/rcpputils.git",
+    "revision": "67590324311ce4c60fef774205d55c93fe3cf1b6"
+  },
+  {
+    "directory": "rcutils",
+    "url": "https://github.com/ros2/rcutils.git",
+    "revision": "10ae877bb83c09555b6006b17794477376779a7b"
+  },
+  {
+    "directory": "rmw",
+    "url": "https://github.com/ros2/rmw.git",
+    "revision": "8cb94a87cf3f4049abe2d563af893517bf336930"
+  },
+  {
+    "directory": "rmw_cyclonedds",
+    "url": "https://github.com/ros2/rmw_cyclonedds.git",
+    "revision": "20b192ae744f2fe56767e68081a46ad0d7f7a0ec"
+  },
+  {
+    "directory": "rmw_dds_common",
+    "url": "https://github.com/ros2/rmw_dds_common.git",
+    "revision": "2e3ebf31850a8b05430fb44230ead2d566b8ff1d"
+  },
+  {
+    "directory": "rmw_implementation",
+    "url": "https://github.com/ros2/rmw_implementation.git",
+    "revision": "835ff87c676cd65634edd3ad7ba88c8d8a0452e7"
+  },
+  {
+    "directory": "ros2_tracing",
+    "url": "https://github.com/ros2/ros2_tracing.git",
+    "revision": "615d3dc1ea9ce39784f36ab8bce3b362cd530a07"
+  },
+  {
+    "directory": "rosidl",
+    "url": "https://github.com/ros2/rosidl.git",
+    "revision": "85fa592b698b0f665e3120f48fac0d35e2f7d8a4"
+  },
+  {
+    "directory": "rosidl_core",
+    "url": "https://github.com/ros2/rosidl_core.git",
+    "revision": "c6eb22b0e77cf57b19e9c6ffd114a00749404215"
+  },
+  {
+    "directory": "rosidl_defaults",
+    "url": "https://github.com/ros2/rosidl_defaults.git",
+    "revision": "9749b5919add7e5960cd931ec547d45f06bd0025"
+  },
+  {
+    "directory": "rosidl_typesupport",
+    "url": "https://github.com/ros2/rosidl_typesupport.git",
+    "revision": "9fcbb58b797b35a69dcc8ba111049a08eaa4aba1"
+  },
+  {
+    "directory": "unique_identifier_msgs",
+    "url": "https://github.com/ros2/unique_identifier_msgs.git",
+    "revision": "901599ee92c2ee949f42a5c5d821c92b3e515d69"
+  },
+  {
+    "directory": "rosidl_dynamic_typesupport",
+    "url": "https://github.com/ros2/rosidl_dynamic_typesupport.git",
+    "revision": "cb8c54d12c678daa70410bb0626ed8626f561e45"
+  }
+]

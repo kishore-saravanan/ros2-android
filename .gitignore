@@ -1,0 +1,16 @@
+.gradle/
+.kotlin/
+**/build/
+**/.cxx/
+local.properties
+.idea/
+*.iml
+*.jks
+*.keystore
+captures/
+device-logs/
+native-deps
+log/
+__pycache__/
+.DS_Store
+

@@ -1,0 +1,21 @@
+diff --git a/src/ddsrt/src/threads/posix/threads.c b/src/ddsrt/src/threads/posix/threads.c
+index 0191ec4..298e7c1 100644
+--- a/src/ddsrt/src/threads/posix/threads.c
++++ b/src/ddsrt/src/threads/posix/threads.c
+@@ -299,11 +299,16 @@ ddsrt_thread_create (
+       DDS_ERROR("ddsrt_thread_create(%s): pthread_attr_setschedparam(priority = %d) failed with error %d\n", name, tattr.schedPriority, result);
+       goto err;
+     }
++#if defined(__ANDROID__) && __ANDROID_API__ < 28
++    DDS_ERROR("Explicit thread scheduling requires Android API 28 or later\n");
++    goto err;
++#else
+     if ((result = pthread_attr_setinheritsched (&attr, PTHREAD_EXPLICIT_SCHED)) != 0)
+     {
+       DDS_ERROR("ddsrt_thread_create(%s): pthread_attr_setinheritsched(EXPLICIT) failed with error %d\n", name, result);
+       goto err;
+     }
++#endif
+   }
+ 
+   /* Construct context structure & start thread */

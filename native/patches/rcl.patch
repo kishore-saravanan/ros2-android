@@ -1,0 +1,13 @@
+diff --git a/rcl/package.xml b/rcl/package.xml
+index 0737de2..4e05d1e 100644
+--- a/rcl/package.xml
++++ b/rcl/package.xml
+@@ -23,7 +23,7 @@
+   <depend>libyaml_vendor</depend>
+   <depend>rcl_interfaces</depend>
+   <depend>rcl_logging_interface</depend>
+-  <depend>rcl_logging_spdlog</depend> <!-- the default logging impl -->
++  <depend>rcl_logging_noop</depend> <!-- the default logging impl -->
+   <depend>rcl_yaml_param_parser</depend>
+   <depend>rcutils</depend>
+   <depend>rmw_implementation</depend>
