@@ -3,12 +3,12 @@
 ## Physical Android device
 
 - The user prohibits accessing, modifying, or deleting sensitive personal files
-  or personal apps on the phone. Limit device work to Robot Brain
+  or personal apps on the phone. Limit device work to ROS2 Android
   (`dev.robotbrain.android`), its own debug/test artifacts, hardware diagnostics,
   and development settings needed for this project.
-- Before UI input or screen capture, verify that Robot Brain is foreground and
+- Before UI input or screen capture, verify that ROS2 Android is foreground and
   the lock screen is absent. If another app is visible, do not inspect it.
-- Keep Robot Brain awake during development using its activity's
+- Keep ROS2 Android awake during development using its activity's
   `FLAG_KEEP_SCREEN_ON`. Realme blocks ADB changes to the global stay-awake
   setting. Do not bypass that restriction or change security settings.
 - Do not inspect shared storage, personal app data, notifications, contacts,

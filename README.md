@@ -1,4 +1,4 @@
-# ROS 2 Android Robot Brain
+# ROS2 Android
 
 An Android app that uses a smartphone's computing power, sensors, display, and
 audio as the brain and sensory device of a robot.

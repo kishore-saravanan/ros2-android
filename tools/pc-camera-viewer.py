@@ -19,13 +19,13 @@ def receive(message):
     latest = cv2.imdecode(np.frombuffer(message.data, dtype=np.uint8), cv2.IMREAD_COLOR)
 
 subscription = node.create_subscription(CompressedImage, args.topic, receive, qos_profile_sensor_data)
-cv2.namedWindow('Robot Brain - live camera (Q to close)', cv2.WINDOW_NORMAL)
+cv2.namedWindow('ROS2 Android - live camera (Q to close)', cv2.WINDOW_NORMAL)
 received = False
 try:
     while rclpy.ok():
         rclpy.spin_once(node, timeout_sec=0.02)
         if latest is not None:
-            cv2.imshow('Robot Brain - live camera (Q to close)', latest)
+            cv2.imshow('ROS2 Android - live camera (Q to close)', latest)
             if not received:
                 print(f'Live preview: {latest.shape[1]}x{latest.shape[0]}', flush=True)
                 received = True

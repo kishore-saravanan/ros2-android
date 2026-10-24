@@ -93,7 +93,7 @@ class MainActivity : Activity() {
         }
         page = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(14), dp(18), dp(24)) }
         scroll.addView(page); setContentView(scroll)
-        page.addView(text("ROBOT BRAIN  /  v0.1", 12, accent))
+        page.addView(text("${getString(R.string.app_name)}  /  v0.1", 12, accent))
         page.addView(text("Phone ↔ ROS 2 PC", 27))
         page.addView(text("Wi-Fi or USB networking · screen stays awake while open", 12, muted))
         status = text(if (connected) "ROS session active" else "Stopped · choose an endpoint to connect", 14, accent)
