@@ -6,7 +6,10 @@ audio as the brain and sensory device of a robot.
 Status: v0.1 development. Native ROS 2 Jazzy is integrated on Android ARM64.
 Real phone IMU data and PC-to-phone text have been verified over Wi-Fi and USB
 networking. The app has configurable publishers, a display subscriber, editable
-topics, matching-type topic discovery, and capability detection.
+topics, matching-type topic discovery, and capability detection. The 0.1.1
+development build adds continuous camera capture (15 fps default, up to 30),
+stream metrics and foreground-service ownership of robot sessions. User-code
+hosting, launch files and the embedded micro-ROS Agent remain unimplemented.
 
 - **v0.1:** PC ↔ phone over Wi-Fi and USB networking.
 - **v0.2:** microcontroller ↔ phone over network and USB; embedded micro-ROS
@@ -14,8 +17,11 @@ topics, matching-type topic discovery, and capability detection.
 
 Start here: [v0.1 app and topic-monitoring guide](docs/V0.1.md).
 
-Development branch: `develop`. Git author setup and commits are deferred at the
-user's request. No Git remote is configured.
+Development branch: `develop`. Repository: [ros2-android](https://github.com/kishore-saravanan/ros2-android).
+
+Product direction: use the phone as the robot's main ROS 2 computer, with PC-side
+editing, builds and deployment. See the [platform plan](docs/PLATFORM-PLAN.md) for
+user nodes, launch files, camera performance, UI and reliability milestones.
 
 Build, install, and test instructions: [Development guide](docs/DEVELOPMENT.md).
 

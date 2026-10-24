@@ -12,8 +12,8 @@ android {
         applicationId = "dev.robotbrain.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.1.0-dev2"
+        versionCode = 3
+        versionName = "0.1.1-dev1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild {

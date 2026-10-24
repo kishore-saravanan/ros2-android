@@ -1,5 +1,11 @@
 # Architecture and implementation strategy
 
+The [ROS2 Android platform plan](docs/PLATFORM-PLAN.md) defines the expanded
+phone-as-robot-computer direction, PC development workflow, user-node execution,
+launch compatibility, camera performance and delivery milestones. It supersedes
+conflicting future-work proposals below; existing verification remains historical
+evidence.
+
 Planning baseline: 2026-10-24. This document records proposed decisions.
 The Kotlin app and native Jazzy `rcl` runtime are implemented. PC/phone ROS
 round trips have passed over Wi-Fi and USB networking. The phone-hosted Agent

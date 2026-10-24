@@ -28,6 +28,13 @@ class EndpointUiTest {
         var oldTopic = "/phone/imu"
         var oldRate = "50.0"
         try {
+            val boundDeadline = SystemClock.elapsedRealtime() + 5000
+            var ready = false
+            while (!ready && SystemClock.elapsedRealtime() < boundDeadline) {
+                activity.scenario.onActivity { app -> ready = (find(app.window.decorView, "toggle:imu") as Button).isEnabled }
+                if (!ready) SystemClock.sleep(50)
+            }
+            assertTrue("Service did not bind", ready)
             activity.scenario.onActivity { app ->
                 val root = app.window.decorView
                 val topic = find(root, "topic:imu") as EditText
@@ -55,7 +62,17 @@ class EndpointUiTest {
                 if (button.text.toString() == "Stop") button.performClick()
                 (find(root, "topic:imu") as EditText).setText(oldTopic)
                 (find(root, "rate:imu") as EditText).setText(oldRate)
+                (find(root, "stop_session") as Button).performClick()
             }
+            val stoppedDeadline = SystemClock.elapsedRealtime() + 5000
+            var stopped = false
+            while (!stopped && SystemClock.elapsedRealtime() < stoppedDeadline) {
+                activity.scenario.onActivity { app ->
+                    stopped = (find(app.window.decorView, "session_status") as android.widget.TextView).text.startsWith("Stopped")
+                }
+                if (!stopped) SystemClock.sleep(50)
+            }
+            assertTrue("Session did not finish cleanup", stopped)
         }
     }
 }

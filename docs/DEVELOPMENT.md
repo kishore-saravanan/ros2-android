@@ -87,8 +87,9 @@ capability diagnostics, and development settings. Do not inspect or modify
 personal files or other apps.
 
 Use **Publishers**, **Subscribers**, and **Connection** as described in
-`docs/V0.1.md`. Leaving the activity stops capture and ROS endpoints; returning
-requires an explicit restart. The sensor frame uses Android device axes and
+`docs/V0.1.md`. The foreground service owns active sessions independently of the
+Activity; navigation and Activity recreation do not request a runtime stop.
+Use Stop all or the notification Stop action to release the session. The sensor frame uses Android device axes and
 does not supply a calibrated robot mounting transform.
 
 Device tests:
@@ -141,17 +142,73 @@ topic exchange does not establish Agent portability or MCU USB support.
 
 ## Git
 
-The working branch is `develop`. Author configuration and commits are deferred
-at the user's request. No remote has been configured or content pushed.
-When ready, configure an author locally and review before committing:
+The working branch is `develop`. The repository is
+`https://github.com/kishore-saravanan/ros2-android` (private). Git author details
+are local user configuration. On a new checkout, configure an author and review
+before committing:
 
 ```bash
 git config user.name 'Your name'
 git config user.email 'your-email@example.com'
 git status
 git add .
-git commit -m 'Start Kotlin Android robot brain app'
+git commit -m 'Describe the change'
 ```
 
 Build output, device logs, SDKs, native dependency builds, and machine-local SDK
 paths are ignored. Never commit device serials, signing keys, or credentials.
+
+
+## Continuous camera verification
+
+The camera uses repeating YUV capture, a three-buffer NV21 pool, a one-frame
+encoder queue and a one-frame JPEG publish queue. Encoding and DDS calls run on
+separate threads from acquisition. Shutdown marks the stream stopped and closes
+capture resources; the ROS control worker waits for all retired camera workers
+before removing or reusing the publisher. Do not call `awaitStopped` on the UI
+thread. Camera pipeline metrics are not proof of remote delivery.
+
+JVM tests include padded/overlapping YUV planes, pixel strides, cropped rows and
+sensor-clock mapping. The physical performance test is explicitly opt-in:
+
+```bash
+./tools/build.sh :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=dev.robotbrain.android.CameraRosTest#continuousCameraSustainsRequestedRate \
+  -Pandroid.testInstrumentationRunnerArguments.testContinuousCamera=true \
+  -Pandroid.testInstrumentationRunnerArguments.cameraRate=30 \
+  -Pandroid.testInstrumentationRunnerArguments.cameraSeconds=30 \
+  -Pandroid.testInstrumentationRunnerArguments.pcPeer=PC_IP \
+  -Pandroid.testInstrumentationRunnerArguments.localAddress=PHONE_IP
+```
+
+Use `cameraFacing=Front` for the front camera. `minimumCameraFps` defaults to 15
+and applies to successful local ROS writes; a separate PC benchmark must verify
+received FPS. For a ten-minute PC run, start the benchmark first with
+`--duration 600 --warmup 5 --decode` and hold the device test for at least 610
+seconds. The phone must be unlocked and have user-granted camera permission.
+`ROS2CameraBenchmark` logs contain aggregate metrics only, with no image bytes.
+
+
+## VS Code tasks
+
+Use **Terminal → Run Task** for Build and check, Install and open, and front/back
+camera viewers. **Ctrl+Shift+B** runs the default build/check task. Viewer tasks
+source Jazzy through `tools/view-camera.sh`; they expect the matching publisher
+to be running on the phone. Topics may need editing for a different camera ID.
+No extension is required. Deployment still uses the authorized physical device.
+
+## Session lifecycle verification
+
+`RobotSessionService` is private to the app and starts a foreground session
+only after an explicit user action in the visible Activity. The runtime
+notification offers Stop. A partial wake lock keeps CPU work active during the
+session; it does not force the display on outside the app. Multicast and wake
+resources are released on Stop. The service does not automatically restart
+camera capture after process death or reboot.
+
+The opt-in `SessionLifecycleTest` starts camera + IMU, recreates the Activity,
+moves it to the background, returns and explicitly stops. Run it with
+`testCameraLifecycle=true`, optional `backgroundSeconds` (default 10), and
+`pcPeer`/`localAddress` for the selected network. A separate PC subscriber must
+verify received data. Newer Android releases and vendor power managers still
+require physical validation; passing Android 12 does not prove all versions.

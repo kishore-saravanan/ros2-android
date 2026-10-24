@@ -1,0 +1,36 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "ROS2 Android: Build and check",
+            "type": "process",
+            "command": "${workspaceFolder}/tools/build.sh",
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": []
+        },
+        {
+            "label": "ROS2 Android: Install and open",
+            "type": "process",
+            "command": "${workspaceFolder}/tools/run-device.sh",
+            "options": { "cwd": "${workspaceFolder}" },
+            "dependsOn": "ROS2 Android: Build and check",
+            "problemMatcher": []
+        },
+        {
+            "label": "ROS2 Android: View back camera",
+            "type": "process",
+            "command": "${workspaceFolder}/tools/view-camera.sh",
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": []
+        },
+        {
+            "label": "ROS2 Android: View front camera",
+            "type": "process",
+            "command": "${workspaceFolder}/tools/view-camera.sh",
+            "args": ["--topic", "/phone/camera_front_1/image/compressed"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": []
+        }
+    ]
+}

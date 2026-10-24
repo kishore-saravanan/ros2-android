@@ -4,43 +4,50 @@ import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.pm.PackageManager
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
-import android.hardware.SensorManager
-import android.net.wifi.WifiManager
 import android.os.*
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.widget.*
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 class MainActivity : Activity() {
     private val main = Handler(Looper.getMainLooper())
-    private val worker = Executors.newSingleThreadScheduledExecutor()
     private val prefs by lazy { getSharedPreferences("endpoints_v1", MODE_PRIVATE) }
-    private lateinit var sensors: SensorPublishers
-    private lateinit var camera: CameraPublisher
+    private var session: RobotSessionService? = null
+    private var bound = false
+    private val offlineErrors = mutableMapOf<String, String>()
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, binder: IBinder) {
+            session = (binder as RobotSessionService.LocalBinder).session
+            session?.errors?.putAll(offlineErrors); offlineErrors.clear()
+            session?.onChange = { if (resumed) refresh() }
+            refresh()
+        }
+        override fun onServiceDisconnected(name: ComponentName) { session = null; refresh() }
+    }
     private lateinit var catalog: List<PhoneCapability>
     private lateinit var page: LinearLayout
     private lateinit var status: TextView
     private var display: TextView? = null
-    private var multicast: WifiManager.MulticastLock? = null
-    private var generation = 0
     private var resumed = false
-    private var busy = false
-    @Volatile private var connected = false
-    private val active = mutableSetOf<String>()
-    private var subscribed = false
-    private var received = "Waiting for a message…"
-    private var receivedCount = 0L
+    private val busy: Boolean get() = session?.busy ?: true
+    private val connected: Boolean get() = session?.connected ?: false
+    private val active: Set<String> get() = session?.active ?: emptySet()
+    private val subscribed: Boolean get() = session?.subscribed ?: false
+    private val received: String get() = session?.received ?: "Waiting for a message…"
+    private val receivedCount: Long get() = session?.receivedCount ?: 0
     private var tab = "Publishers"
     private var group = "All"
     private var pendingCamera: Pair<PhoneCapability, EndpointConfig>? = null
     private data class Row(val topic: EditText, val rate: EditText?, val button: Button, val state: TextView)
     private val rows = mutableMapOf<String, Row>()
     private val profileFields = mutableMapOf<String, EditText>()
-    private val errors = mutableMapOf<String, String>()
+    private val errors: MutableMap<String, String> get() = session?.errors ?: offlineErrors
     private val accent = Color.rgb(100, 226, 188)
     private val muted = Color.rgb(165, 183, 196)
 
@@ -53,30 +60,25 @@ class MainActivity : Activity() {
                 .putString("domain", old.getInt("domain", 0).toString()).apply()
         }
         catalog = CapabilityCatalog.publishers(this)
-        sensors = SensorPublishers(getSystemService(SensorManager::class.java))
-        camera = CameraPublisher(this) { message -> main.post {
-            catalog.firstOrNull { it.kind == 8 && it.id in active }?.let {
-                stopPublisher(it.id); errors[it.id] = message; refresh()
+        if (!prefs.getBoolean("continuous_camera_v1", false)) {
+            val edit = prefs.edit().putBoolean("continuous_camera_v1", true)
+            catalog.filter { it.kind == 8 }.forEach { cap ->
+                if (prefs.getString("${cap.id}.rate", null)?.toDoubleOrNull() == 1.0)
+                    edit.putString("${cap.id}.rate", "15.0")
             }
-        } }
+            edit.apply()
+        }
         render()
-        worker.scheduleWithFixedDelay({
-            if (!connected || !NativeRuntime.available) return@scheduleWithFixedDelay
-            val state = runCatching { NativeRuntime.status() }.getOrDefault("ROS runtime error")
-            val message = runCatching { NativeRuntime.pollDisplay() }.getOrNull()
-            val counts = catalog.associate { it.id to NativeRuntime.publishedCount(it.id) }
-            main.post {
-                if (!resumed) return@post
-                status.text = state
-                if (message != null) { received = message; receivedCount++ }
-                display?.text = "$received\n\n$receivedCount received update(s)"
-                rows.forEach { (id, row) -> if (id in active) row.state.text = "Publishing · ${counts[id]} messages sent" }
-            }
-        }, 0, 500, TimeUnit.MILLISECONDS)
+        bound = bindService(Intent(this, RobotSessionService::class.java), connection, Context.BIND_AUTO_CREATE)
     }
-    override fun onResume() { super.onResume(); resumed = true }
-    override fun onPause() { resumed = false; save(); stopSession(); super.onPause() }
-    override fun onDestroy() { worker.shutdown(); super.onDestroy() }
+    override fun onResume() { super.onResume(); resumed = true; if (::status.isInitialized) refresh() }
+    override fun onPause() { save(); resumed = false; super.onPause() }
+    override fun onDestroy() {
+        session?.onChange = null
+        if (bound) unbindService(connection)
+        session = null
+        super.onDestroy()
+    }
 
     private fun render() {
         rows.clear(); profileFields.clear(); display = null
@@ -123,7 +125,7 @@ class MainActivity : Activity() {
             "Subscribers" -> subscriberCard()
             else -> connectionCard()
         }
-        page.addView(button("Stop all / disconnect") { stopSession() })
+        page.addView(button("Stop all / disconnect") { stopSession() }.apply { contentDescription = "stop_session" })
         refresh()
     }
     private fun publisherCard(cap: PhoneCapability) {
@@ -133,7 +135,7 @@ class MainActivity : Activity() {
             val topic = field(prefs.getString("${cap.id}.topic", cap.defaultTopic)!!, "topic:${cap.id}")
             box.addView(topic)
             box.addView(button("Choose discovered topic") { chooseTopic(topic, cap.messageType) })
-            box.addView(text(if (cap.kind == 8) "Maximum frame rate · 0.2–5 fps" else "Maximum publish rate · 0.2–100 Hz", 12, muted))
+            box.addView(text(if (cap.kind == 8) "Maximum frame rate · 0.2–30 fps" else "Maximum publish rate · 0.2–100 Hz", 12, muted))
             val rate = field(prefs.getString("${cap.id}.rate", cap.defaultRate.toString())!!, "rate:${cap.id}")
             rate.inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
             box.addView(rate)
@@ -177,40 +179,28 @@ class MainActivity : Activity() {
         }
         card("Runtime") { box ->
             box.addView(text(NativeRuntime.diagnostic(), 13, accent)); box.addView(text(DeviceDiagnostics.phone(), 13, muted))
-            box.addView(text("v0.1: PC ↔ phone\nv0.2: microcontroller ↔ phone\nEndpoints stop when you leave the app. Microphone and other sensor adapters follow later.", 13, muted))
+            box.addView(text("v0.1: PC ↔ phone\nv0.2: microcontroller ↔ phone\nActive sessions continue when you leave this screen. Use Stop all or the runtime notification to stop. Microphone and other adapters follow later.", 13, muted))
         }
     }
-    private data class Arguments(val profile: SessionConfig, val peer: String, val local: String)
-    private fun arguments(): Arguments {
+    private fun arguments(): RobotSessionService.Profile {
         fun value(key: String, fallback: String) = profileFields[key]?.text?.toString()?.trim() ?: prefs.getString(key, fallback)!!
         fun validIp(v: String) = v.isEmpty() || (v.split('.').size == 4 && v.split('.').all { it.toIntOrNull()?.let { n -> n in 0..255 } == true })
         val peer = value("peer", ""); val local = value("local", "")
         require(validIp(peer) && validIp(local)) { "Enter IPv4 addresses or leave the address fields blank." }
-        return Arguments(SessionConfig(value("namespace", "/phone"), value("domain", "0").toIntOrNull() ?: -1), peer, local)
-    }
-    private fun ensureRuntime(args: Arguments) {
-        if (connected) return
-        check(NativeRuntime.available) { NativeRuntime.diagnostic() }
-        NativeRuntime.start(args.profile.domainId, args.profile.namespace, args.peer, args.local, applicationInfo.nativeLibraryDir)
-        connected = true
+        return RobotSessionService.Profile(SessionConfig(value("namespace", "/phone"), value("domain", "0").toIntOrNull() ?: -1), peer, local)
     }
     private fun chooseTopic(field: EditText, type: String) {
         if (busy || !field.isEnabled) return
         runCatching {
-            val args = arguments(); val token = generation
-            busy = true; refresh(); acquireMulticast(); status.text = "Discovering ROS topics…"
-            worker.execute {
-                val result = runCatching { ensureRuntime(args); NativeRuntime.topics().filter { it.substringAfter('|') == type }.map { it.substringBefore('|') }.distinct().sorted() }
-                main.post {
-                    if (token != generation || !resumed) return@post
-                    busy = false; refresh()
-                    result.onSuccess { names ->
-                        if (names.isEmpty()) status.text = "No $type topics discovered yet. Enter a topic manually, or retry after discovery."
-                        else AlertDialog.Builder(this).setTitle("Choose $type topic")
-                            .setItems(names.toTypedArray()) { _, which -> field.setText(names[which]) }
-                            .setNegativeButton("Cancel", null).show()
-                    }.onFailure { status.text = it.message }
-                }
+            val args = arguments()
+            session?.discover(type, args) { result ->
+                if (isFinishing || isDestroyed || !resumed) return@discover
+                result.onSuccess { names ->
+                    if (names.isEmpty()) status.text = "No $type topics discovered. Enter a topic or retry."
+                    else AlertDialog.Builder(this).setTitle("Choose $type topic")
+                        .setItems(names.toTypedArray()) { _, which -> field.setText(names[which]) }
+                        .setNegativeButton("Cancel", null).show()
+                }.onFailure { status.text = it.message }
             }
         }.onFailure { status.text = it.message }
     }
@@ -222,7 +212,7 @@ class MainActivity : Activity() {
             val config = EndpointConfig(row.topic.text.toString().trim(), row.rate?.text?.toString()?.toDoubleOrNull() ?: 0.0)
             require(active.none { prefs.getString("$it.topic", "") == config.topic }) { "Another publisher already uses this topic." }
             require(!subscribed || prefs.getString("display.topic", "") != config.topic) { "The display subscriber uses this topic with another type." }
-            require(cap.kind != 8 || config.rateHz <= 5) { "Camera is limited to 5 fps in v0.1." }
+            require(cap.kind != 8 || config.rateHz <= 30) { "Choose a camera rate between 0.2 and 30 fps." }
             require(cap.kind != 8 || catalog.none { it.kind == 8 && it.id in active }) { "Stop the other camera first." }
             save()
             if (cap.kind == 8 && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -231,48 +221,17 @@ class MainActivity : Activity() {
         }.onFailure { errors[cap.id] = it.message ?: "Invalid endpoint"; refresh() }
     }
     private fun startPublisher(cap: PhoneCapability, config: EndpointConfig) {
-        val args = arguments(); val token = generation
-        busy = true; refresh(); acquireMulticast(); status.text = "Starting ROS publisher…"
-        worker.execute {
-            val result = runCatching { ensureRuntime(args); NativeRuntime.createPublisher(cap.id, config.topic, cap.kind) }
-            main.post {
-                if (token != generation || !resumed) return@post
-                busy = false
-                result.onSuccess {
-                    runCatching {
-                        if (cap.kind == 8) camera.start(cap, config.rateHz) else sensors.start(cap, config)
-                        active += cap.id; errors.remove(cap.id)
-                    }.onFailure {
-                        errors[cap.id] = it.message ?: "Sensor start failed"
-                        worker.execute { NativeRuntime.removePublisher(cap.id) }
-                    }
-                }.onFailure { errors[cap.id] = it.message ?: "ROS start failed"; status.text = errors[cap.id] }
-                refresh()
-            }
-        }
+        session?.startPublisher(cap, config, arguments())
     }
-    private fun stopPublisher(id: String) {
-        sensors.stop(id)
-        if (catalog.any { it.id == id && it.kind == 8 }) camera.stop()
-        active -= id; worker.execute { if (NativeRuntime.available) NativeRuntime.removePublisher(id) }; refresh()
-    }
+    private fun stopPublisher(id: String) { session?.stopPublisher(id) }
     private fun toggleDisplay() {
         if (busy) return
-        if (subscribed) { subscribed = false; worker.execute { NativeRuntime.unsubscribeDisplay() }; refresh(); return }
+        if (subscribed) { session?.unsubscribe(); return }
         runCatching {
             val config = EndpointConfig(rows.getValue("display").topic.text.toString().trim(), 1.0)
             require(active.none { prefs.getString("$it.topic", "") == config.topic }) { "A publisher already uses this topic." }
-            val args = arguments(); val token = generation
-            save(); busy = true; refresh(); acquireMulticast()
-            worker.execute {
-                val result = runCatching { ensureRuntime(args); NativeRuntime.subscribeDisplay(config.topic) }
-                main.post {
-                    if (token != generation || !resumed) return@post
-                    busy = false
-                    result.onSuccess { subscribed = true; errors.remove("display") }.onFailure { errors["display"] = it.message ?: "Subscribe failed" }
-                    refresh()
-                }
-            }
+            save()
+            session?.subscribe(config.topic, arguments())
         }.onFailure { errors["display"] = it.message ?: "Invalid endpoint"; refresh() }
     }
     override fun onRequestPermissionsResult(code: Int, permissions: Array<out String>, results: IntArray) {
@@ -283,32 +242,24 @@ class MainActivity : Activity() {
             main.post { runCatching { startPublisher(pending.first, pending.second) }.onFailure { status.text = it.message } }
         } else status.text = "Camera permission denied; other sensors remain available."
     }
-    private fun stopSession() {
-        generation++; busy = true
-        val token = generation
-        sensors.stopAll(); camera.stop(); active.clear(); subscribed = false
-        worker.execute {
-            if (NativeRuntime.available) NativeRuntime.stop()
-            connected = false
-            main.post { if (token == generation) { busy = false; refresh() } }
-        }
-        multicast?.let { if (it.isHeld) it.release() }; multicast = null
-        if (::status.isInitialized) { status.text = "Stopped · hardware and ROS endpoints released"; refresh() }
-    }
-    private fun acquireMulticast() {
-        if (multicast?.isHeld == true) return
-        multicast = applicationContext.getSystemService(WifiManager::class.java)
-            .createMulticastLock("RobotBrainDDS").apply { setReferenceCounted(false); acquire() }
-    }
+    private fun stopSession() { session?.stopSession() }
     private fun refresh() {
         rows.forEach { (id, row) ->
             val enabled = id in active || (id == "display" && subscribed)
             row.button.text = if (enabled) "Stop" else if (id == "display") "Subscribe" else "Publish"
             row.button.isEnabled = !busy && (id == "display" || catalog.first { it.id == id }.available)
             row.topic.isEnabled = !enabled && !busy; row.rate?.isEnabled = !enabled && !busy
-            row.state.text = errors[id] ?: if (enabled) (if (id == "display") "Subscribed" else "Publishing") else "Stopped"
+            row.state.text = errors[id] ?: if (enabled) {
+                when {
+                    id == "display" -> "Subscribed"
+                    catalog.any { it.id == id && it.kind == 8 } -> session?.cameraStats?.label() ?: "Starting camera…"
+                    else -> "Publishing · ${session?.counts?.get(id) ?: 0} messages sent"
+                }
+            } else "Stopped"
         }
         profileFields.values.forEach { it.isEnabled = !connected && !busy }
+        if (::status.isInitialized) status.text = session?.state ?: "Connecting to robot runtime…"
+        display?.text = "$received\n\n$receivedCount received update(s)"
     }
     private fun save() {
         val edit = prefs.edit()
