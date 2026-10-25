@@ -39,7 +39,7 @@ class MainActivity : Activity() {
             }
         }
         domain = field("domain", "ROS domain", "0")
-        namespace = field("namespace", "Namespace", "/demo")
+        namespace = field("namespace", "Namespace", BuildConfig.PROJECT_NAMESPACE)
         peer = field("peer", "PC IPv4 peer (optional)", "")
         local = field("local", "Phone interface IPv4 (optional)", "")
         rosArgs = field("ros_args", "ROS argument array (JSON, no shell)", "[]")

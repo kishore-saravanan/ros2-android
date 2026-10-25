@@ -11,9 +11,11 @@ implemented in the 0.1.1 development build. Physical tests passed, including
 qualification remain pending. A separate C++ project runner now supports rclcpp,
 custom messages, parameters, remapping and IMU computation on the phone.
 ABI-2 adds bounded JSON launch for several compiled nodes sharing one executor.
-General workspaces, independent node workers and full ROS launch remain pending. Physical
-PC-disconnection qualification remains pending. Launch/Python support,
-embedded micro-ROS Agent and the Compose redesign remain future milestones.
+The Python feasibility runner now embeds CPython/rclpy with verified typed
+topics, parameters, custom messages, IMU computation and C++ interoperability.
+General workspaces, independent node workers, full ROS launch, physical PC
+disconnection qualification, embedded micro-ROS Agent and the Compose redesign
+remain pending.
 
 ## Product outcome
 
@@ -33,7 +35,7 @@ Android's ABI and platform APIs, so matching the CPU architecture is insufficien
 - Implemented: Kotlin app, JNI, Jazzy rcl and Cyclone DDS, configurable hardware
   publishers, text subscriber, real PC interoperability over Wi-Fi and USB IP.
 - Implemented feasibility: single-node rclcpp project APK builds and deployment.
-- Missing: general workspace hosting, rclpy support, production package deployment,
+- Missing: general workspace hosting, production package deployment,
   launch execution, process supervision, services/actions UI, persistent robot
   sessions, and the phone-hosted micro-ROS Agent.
 - Original prototype camera: periodic Camera2 JPEG still requests, 1 FPS default,
@@ -55,7 +57,7 @@ flowchart TB
     Supervisor[Phone: session supervisor and foreground services]
     Hardware[Phone: camera, IMU, audio, display and USB adapters]
     Runner[Phone: installed project runner APK / worker processes]
-    Nodes[Phone: user C++ nodes and later Python nodes]
+    Nodes[Phone: user C++ and Python nodes]
     Launch[Phone: launch compatibility layer]
     DDS[Phone: native ROS 2 / DDS]
     Agent[Phone: embedded micro-ROS Agent]
@@ -134,10 +136,10 @@ checksums so every project does not rebuild the entire ROS dependency tree.
 
 ### Python and launch files
 
-C++ user-node hosting is the first runtime gate. In parallel, perform a bounded
-feasibility experiment for embedded CPython, rclpy and its native dependencies.
-Choose the Python version only after checking Jazzy and available Android build
-support; the host Python version is not automatically the phone Python version.
+C++ user-node hosting and the basic Python feasibility gate have passed on the
+tested phone. The Python runner embeds CPython 3.12.15 and cross-built Jazzy
+rclpy. See [Python projects](PYTHON-PROJECTS.md) for commands and boundaries.
+Python package compatibility and launch execution require separate qualification.
 
 Aim to reuse upstream launch/launch_ros descriptions with an Android execution
 adapter. Standard Node actions normally start executables; simply bundling the
@@ -150,7 +152,7 @@ node actions to registered runner workers/components. Maintain a published matri
 | Launch arguments, substitutions, includes, conditions, timers | Incremental launch milestone |
 | Node and ComposableNode actions | Android worker/component mapping, verified subset |
 | Startup ordering, exits, bounded restart and shutdown | Supervisor integration |
-| Python rclpy nodes | Only after the embedded-Python feasibility gate passes |
+| Python rclpy nodes | Single-node feasibility passed on Android 12 ARM64; broader package support pending |
 | Lifecycle nodes, service/action tools, rosbag2 | Separate package-level ports and tests |
 | ExecuteProcess, shell/systemd commands and Linux-specific drivers | Unsupported unless a specific Android mapping exists |
 

@@ -1,0 +1,26 @@
+#include <jni.h>
+#include <cstdlib>
+#include <string>
+
+namespace {
+std::string string(JNIEnv * env, jstring value) {
+  const char * chars = env->GetStringUTFChars(value, nullptr);
+  if (!chars) return {};
+  std::string result(chars); env->ReleaseStringUTFChars(value, chars); return result;
+}
+}
+extern "C" JNIEXPORT void JNICALL Java_dev_robotbrain_runner_PythonEnvironment_configure(
+    JNIEnv * env, jobject, jstring peer, jstring local, jstring libraries, jstring prefix) {
+  const auto p = string(env, peer), address = string(env, local);
+  std::string xml = "<CycloneDDS><Domain><General><Interfaces>";
+  if (!address.empty()) xml += "<NetworkInterface address=\"" + address + "\"/>";
+  else xml += "<NetworkInterface autodetermine=\"true\"/>";
+  xml += "</Interfaces></General><Discovery><ParticipantIndex>auto</ParticipantIndex><MaxAutoParticipantIndex>50</MaxAutoParticipantIndex>";
+  if (!p.empty()) xml += "<Peers><Peer Address=\"" + p + "\"/></Peers>";
+  xml += "</Discovery></Domain></CycloneDDS>";
+  setenv("CYCLONEDDS_URI", xml.c_str(), 1);
+  setenv("RMW_IMPLEMENTATION", "rmw_cyclonedds_cpp", 1);
+  setenv("ROS_DISTRO", "jazzy", 1);
+  setenv("LD_LIBRARY_PATH", string(env, libraries).c_str(), 1);
+  setenv("AMENT_PREFIX_PATH", string(env, prefix).c_str(), 1);
+}

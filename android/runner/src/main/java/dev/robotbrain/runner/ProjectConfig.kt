@@ -16,9 +16,9 @@ data class ProjectConfig(val domain: Int, val namespace: String, val peer: Strin
         }
         fun from(intent: Intent): ProjectConfig {
             val array = JSONArray(intent.getStringExtra("ros_args") ?: "[]")
-            val namespace = intent.getStringExtra("namespace") ?: "/demo"
+            val namespace = intent.getStringExtra("namespace") ?: BuildConfig.PROJECT_NAMESPACE
             val nodes = ProjectLaunch.parse(intent.getStringExtra("launch_json") ?: BuildConfig.PROJECT_LAUNCH_JSON, namespace)
-            return ProjectConfig(intent.getIntExtra("domain", 0), intent.getStringExtra("namespace") ?: "/demo",
+            return ProjectConfig(intent.getIntExtra("domain", 0), intent.getStringExtra("namespace") ?: BuildConfig.PROJECT_NAMESPACE,
                 intent.getStringExtra("peer") ?: "", intent.getStringExtra("local") ?: "", Array(array.length()) { array.getString(it) }, nodes)
         }
     }

@@ -1,0 +1,24 @@
+diff --git a/rosidl_generator_py/cmake/rosidl_generator_py_generate_interfaces.cmake b/rosidl_generator_py/cmake/rosidl_generator_py_generate_interfaces.cmake
+index cfc424a..ad50162 100644
+--- a/rosidl_generator_py/cmake/rosidl_generator_py_generate_interfaces.cmake
++++ b/rosidl_generator_py/cmake/rosidl_generator_py_generate_interfaces.cmake
+@@ -20,6 +20,9 @@ find_package(rosidl_typesupport_c REQUIRED)
+ find_package(rosidl_typesupport_interface REQUIRED)
+ 
+ find_package(Python3 REQUIRED COMPONENTS Interpreter Development NumPy)
++if(ANDROID)
++  set_target_properties(Python3::Python PROPERTIES IMPORTED_NO_SONAME TRUE)
++endif()
+ 
+ # Get a list of typesupport implementations from valid rmw implementations.
+ rosidl_generator_py_get_typesupports(_typesupport_impls)
+@@ -178,6 +181,9 @@ foreach(_typesupport_impl ${_typesupport_impls})
+   python3_add_library(${_target_name} MODULE
+     ${_generated_extension_${_typesupport_impl}_files}
+   )
++  if(ANDROID)
++    target_link_libraries(${_target_name} PRIVATE Python3::Python)
++  endif()
+   add_dependencies(
+     ${_target_name}
+     ${rosidl_generate_interfaces_TARGET}${_target_suffix}

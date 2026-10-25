@@ -123,5 +123,25 @@
     "directory": "libstatistics_collector",
     "url": "https://github.com/ros-tooling/libstatistics_collector.git",
     "revision": "150e1b0e1fbf920a97e4319f98eaf02be27fa892"
+  },
+  {
+    "directory": "rclpy",
+    "url": "https://github.com/ros2/rclpy.git",
+    "revision": "4e607c09d624debc39a4ae5405680c06d87fac35"
+  },
+  {
+    "directory": "rosidl_python",
+    "url": "https://github.com/ros2/rosidl_python.git",
+    "revision": "fe4e01f2007d3451bf73c0cb334b96a7de759ef2"
+  },
+  {
+    "directory": "rpyutils",
+    "url": "https://github.com/ros2/rpyutils.git",
+    "revision": "973dbcc0a0a18299d840d089e47372d569264c31"
+  },
+  {
+    "directory": "rosidl_runtime_py",
+    "url": "https://github.com/ros2/rosidl_runtime_py.git",
+    "revision": "d4ecf989475394104f00e01868320381f4e3ccc6"
   }
 ]

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PC-side development commands for a packaged Android C++ ROS project."""
+"""PC-side development commands for packaged Android C++ and Python ROS projects."""
 import argparse
 import hashlib
 import json
@@ -13,8 +13,6 @@ import time
 from robot_launch import validate_launch
 
 ROOT = Path(__file__).resolve().parents[1]
-APK = ROOT / 'android/runner/build/outputs/apk/debug/runner-debug.apk'
-BUILD_INFO = ROOT / 'android/runner/build/outputs/robot-project.json'
 PACKAGE_PATTERN = r'dev\.robotbrain\.android\.runner\.[a-z][a-z0-9_]*'
 
 
@@ -33,7 +31,7 @@ def main():
     parser.add_argument('--project', type=Path, default=ROOT / 'examples/cpp_talker')
     parser.add_argument('--serial', help='Optional ADB serial; otherwise use the single physical device')
     commands = parser.add_subparsers(dest='command', required=True)
-    commands.add_parser('sdk', help='Build pinned Android C++ ROS dependencies')
+    commands.add_parser('sdk', help='Build pinned Android ROS dependencies for the selected runtime')
     commands.add_parser('host-sdk', help='Prepare checksum-pinned PC Cyclone libraries in the user cache')
     commands.add_parser('host-interfaces', help='Build this project custom messages for the PC')
     ros = commands.add_parser('ros', help='Run ROS CLI with matching middleware and this project interface overlay')
@@ -44,7 +42,7 @@ def main():
     start = commands.add_parser('start', help='Open the project app and start it through shell-only debug control')
     start.add_argument('--launch', type=Path, help='Bounded JSON launch file; defaults to packaged project launch')
     start.add_argument('--domain', type=int, default=0)
-    start.add_argument('--namespace', default='/demo')
+    start.add_argument('--namespace', help='Default: /demo for C++, /python for Python')
     start.add_argument('--peer', default='')
     start.add_argument('--local', default='')
     start.add_argument('ros_args', nargs=argparse.REMAINDER, help='ROS flags after --, e.g. -- -p message:=Hello')
@@ -62,6 +60,8 @@ def main():
         parser.error('Refusing to control an app outside the generated project-runner namespace')
     if not re.fullmatch(r'[a-z][a-z0-9_]{0,63}', manifest['id']):
         parser.error('Invalid project ID')
+    if hasattr(args, 'namespace') and args.namespace is None:
+        args.namespace = '/python' if manifest.get('runtime') == 'python' else '/demo'
     launch = None
     if args.command in ('build', 'start'):
         launch_path = getattr(args, 'launch', None)
@@ -73,6 +73,12 @@ def main():
             launch = validate_launch(json.loads(launch_path.read_text()), getattr(args, 'namespace', '/demo'))
         elif manifest['runtimeAbi'] == 2:
             parser.error('ABI 2 requires a defaultLaunch or --launch file')
+    runtime = manifest.get('runtime', 'cpp')
+    if runtime not in ('cpp', 'python'):
+        parser.error('Unsupported project runtime')
+    module = 'pythonRunner' if runtime == 'python' else 'runner'
+    apk = ROOT / f'android/{module}/build/outputs/apk/debug/{module}-debug.apk'
+    build_info = ROOT / f'android/{module}/build/outputs/robot-project.json'
     sdk = Path(os.environ.get('ANDROID_HOME', os.environ.get('ANDROID_SDK_ROOT', str(Path.home() / 'Android/Sdk'))))
     adb = sdk / 'platform-tools/adb'
     selection = ['-s', args.serial] if args.serial else ['-d']
@@ -102,7 +108,8 @@ def main():
             return json.loads(json.loads('"' + data + '"'))
 
     if args.command == 'sdk':
-        subprocess.run([str(ROOT / 'tools/build-native-ros.sh'), '--with-cpp'], cwd=ROOT, check=True)
+        subprocess.run([str(ROOT / 'tools/build-python-ros.sh')] if runtime == 'python' else
+                       [str(ROOT / 'tools/build-native-ros.sh'), '--with-cpp'], cwd=ROOT, check=True)
     elif args.command == 'host-sdk':
         subprocess.run([sys.executable, str(ROOT / 'tools/setup-pc-cyclone.py')], check=True)
     elif args.command == 'host-interfaces':
@@ -120,14 +127,14 @@ def main():
         env = dict(os.environ, ROS2_ANDROID_PROJECT_OVERLAY=str(overlay))
         subprocess.run([*wrapper, '--', 'ros2', *command], env=env, check=True)
     elif args.command == 'build':
-        subprocess.run([str(ROOT / 'tools/build.sh'), ':runner:assembleDebug', ':runner:lintDebug',
+        subprocess.run([str(ROOT / 'tools/build.sh'), f':{module}:assembleDebug', f':{module}:lintDebug',
                         '-ProbotProjectDir=' + str(project)], cwd=ROOT, check=True)
-        print(json.dumps({'apk': str(APK), 'sourceId': source_id(project), 'sha256': hashlib.sha256(APK.read_bytes()).hexdigest()}))
+        print(json.dumps({'apk': str(apk), 'sourceId': source_id(project), 'sha256': hashlib.sha256(apk.read_bytes()).hexdigest()}))
     elif args.command == 'deploy':
-        info = json.loads(BUILD_INFO.read_text())
+        info = json.loads(build_info.read_text())
         if info['applicationId'] != package or info['sourceId'] != source_id(project):
             raise RuntimeError('Built APK does not match this project/source. Run build first.')
-        command = [str(ROOT / 'tools/run-device.sh'), '--runner', package, '--install-only']
+        command = [str(ROOT / 'tools/run-device.sh'), '--python-runner' if runtime == 'python' else '--runner', package, '--install-only']
         if args.serial:
             command += ['--serial', args.serial]
         subprocess.run(command, cwd=ROOT, check=True)
@@ -172,7 +179,7 @@ def main():
         deadline = time.monotonic() + 20
         while time.monotonic() < deadline:
             info = control('STATUS')
-            if info.get('state', '').startswith('Failed') or info.get('native', {}).get('error'):
+            if info.get('state', '').startswith(('Failed', 'Failing')):
                 raise RuntimeError(json.dumps(info, ensure_ascii=False))
             if info.get('state') == 'Running' and not info.get('busy') and info.get('native', {}).get('running'):
                 break

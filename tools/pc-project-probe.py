@@ -13,10 +13,12 @@ from sensor_msgs.msg import Imu
 from std_msgs.msg import Float64, String
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--echo-prefix', default='phone C++ processed: ')
 parser.add_argument('--namespace', default='/demo')
 parser.add_argument('--expected-text', default='Hello from ROS2 Android C++')
 parser.add_argument('--status-topic', help='Override remapped status topic')
 parser.add_argument('--require-imu', action='store_true')
+parser.add_argument('--require-cpp', action='store_true', help='Require Python→phone C++→Python reply')
 parser.add_argument('--custom-message', action='store_true', help='Requires the generated demo_interfaces PC overlay')
 parser.add_argument('--duration', type=float, default=25)
 args = parser.parse_args()
@@ -37,7 +39,7 @@ def status(message):
 
 
 def echo(message):
-    if message.data == 'phone C++ processed: ' + token:
+    if message.data == args.echo_prefix + token:
         results['echo'] = True
 
 
@@ -65,10 +67,16 @@ if args.custom_message:
         if message.message == args.expected_text and message.tick > 0 and (not args.require_imu or message.imu_samples > 0):
             results['custom_message'] = True
     subscriptions.append(node.create_subscription(RuntimeStatus, ns + '/runtime_status', telemetry, 10))
+if args.require_cpp:
+    results['cpp_reply'] = False
+    def cpp_reply(message):
+        if message.data == 'phone C++ processed: ' + token:
+            results['cpp_reply'] = True
+    subscriptions.append(node.create_subscription(String, ns + '/cpp_reply', cpp_reply, 10))
 publisher = node.create_publisher(String, ns + '/command', 10)
 timer = node.create_timer(.2, lambda: publisher.publish(String(data=token)))
 deadline = time.monotonic() + args.duration
-required = ['status', 'echo'] + (['imu', 'processed_magnitude'] if args.require_imu else []) + (['custom_message'] if args.custom_message else [])
+required = ['status', 'echo'] + (['imu', 'processed_magnitude'] if args.require_imu else []) + (['custom_message'] if args.custom_message else []) + (['cpp_reply'] if args.require_cpp else [])
 try:
     while rclpy.ok() and time.monotonic() < deadline and not all(results[key] for key in required):
         rclpy.spin_once(node, timeout_sec=.1)

@@ -1,0 +1,25 @@
+diff --git a/rclpy/CMakeLists.txt b/rclpy/CMakeLists.txt
+index 06c08de..cc46970 100644
+--- a/rclpy/CMakeLists.txt
++++ b/rclpy/CMakeLists.txt
+@@ -41,6 +41,9 @@ find_package(rosidl_runtime_c REQUIRED)
+ 
+ # Find python before pybind11
+ find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
++if(ANDROID)
++  set_target_properties(Python3::Python PROPERTIES IMPORTED_NO_SONAME TRUE)
++endif()
+ 
+ find_package(pybind11_vendor REQUIRED)
+ find_package(pybind11 REQUIRED)
+@@ -131,6 +134,10 @@ target_link_libraries(_rclpy_pybind11 PRIVATE
+   rcutils::rcutils
+   rosidl_runtime_c::rosidl_runtime_c
+ )
++if(ANDROID)
++  target_include_directories(_rclpy_pybind11 PRIVATE "${ROS2_ANDROID_PYBIND11_INCLUDE}")
++  target_link_libraries(_rclpy_pybind11 PRIVATE Python3::Python)
++endif()
+ configure_build_install_location(_rclpy_pybind11)
+ 
+ if(NOT WIN32)

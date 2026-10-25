@@ -1,0 +1,8 @@
+{
+  "chaquopyPlugin": "17.1.0",
+  "python": "3.12.15",
+  "targetUrl": "https://repo.maven.apache.org/maven2/com/chaquo/python/target/3.12.15-0/target-3.12.15-0-arm64-v8a.zip",
+  "targetSha256": "bcc3cb4edcff25c8c3103cf45ea35b66ef0a728bb2b3e7731d3c045093ff6d39",
+  "numpy": "1.26.2",
+  "pyyaml": "6.0.3"
+}

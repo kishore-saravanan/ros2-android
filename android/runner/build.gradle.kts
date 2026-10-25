@@ -6,7 +6,9 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
-val robotProject = rootProject.file(providers.gradleProperty("robotProjectDir").getOrElse("examples/cpp_talker")).canonicalFile
+val requestedProject = rootProject.file(providers.gradleProperty("robotProjectDir").getOrElse("examples/cpp_talker")).canonicalFile
+val requestedManifest = JsonSlurper().parse(requestedProject.resolve("robot-project.json")) as Map<*, *>
+val robotProject = if (requestedManifest["runtime"] == "python") rootProject.file("examples/cpp_talker").canonicalFile else requestedProject
 val projectManifest = JsonSlurper().parse(robotProject.resolve("robot-project.json")) as Map<*, *>
 val projectId = projectManifest["id"].toString()
 val runnerApplicationId = projectManifest["applicationId"].toString()
@@ -42,6 +44,7 @@ android {
         versionCode = 1
         versionName = "0.1.0-runner-dev1"
         ndk { abiFilters += "arm64-v8a" }
+        buildConfigField("String", "PROJECT_NAMESPACE", "\"/demo\"")
         buildConfigField("int", "PROJECT_RUNTIME_ABI", runtimeAbi.toString())
         buildConfigField("String", "PROJECT_LAUNCH_JSON", JsonOutput.toJson(launchJson))
         buildConfigField("String", "PROJECT_ID", JsonOutput.toJson(projectId))
@@ -61,6 +64,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    sourceSets["main"].java.srcDir("src/cpp/java")
     sourceSets["main"].jniLibs.srcDir("../../native-deps/apk-libs")
     packaging.jniLibs.useLegacyPackaging = true
 }

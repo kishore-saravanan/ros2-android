@@ -1,6 +1,7 @@
 package dev.robotbrain.runner
 
 object ProjectNative {
+    fun prepare(@Suppress("UNUSED_PARAMETER") context: android.content.Context) {}
     private val loaded = runCatching { System.loadLibrary("project_runner") }
     fun requireLoaded() { loaded.getOrThrow() }
     fun diagnostic(): String = if (loaded.isSuccess) status() else "Native runner unavailable: ${loaded.exceptionOrNull()?.message}"

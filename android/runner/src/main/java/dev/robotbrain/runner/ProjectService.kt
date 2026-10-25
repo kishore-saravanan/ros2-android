@@ -33,6 +33,7 @@ class ProjectService : Service() {
 
     override fun onCreate() {
         super.onCreate(); current = this
+        ProjectNative.prepare(applicationContext)
         getSystemService(NotificationManager::class.java).createNotificationChannel(
             NotificationChannel(CHANNEL, "ROS project runtime", NotificationManager.IMPORTANCE_LOW))
     }
