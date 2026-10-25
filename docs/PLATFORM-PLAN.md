@@ -16,7 +16,10 @@ topics, parameters, custom messages, IMU computation and C++ interoperability.
 A build-time ROS `.launch.py` adapter now resolves registered C++ nodes, launch
 arguments, basic substitutions/conditions, scoped namespaces and Python includes;
 see [ROS launch support](ROS-LAUNCH.md) and [knowledge base](PROJECT-KNOWLEDGE.md).
-General workspaces, independent node workers, full ROS launch, physical PC
+An ordinary three-package C++ colcon workspace now cross-builds and runs its
+unchanged main() executables as separate supervised Android processes; see
+[workspace workflow](COLCON-WORKSPACES.md). General/mixed workspaces, per-worker
+restart policies, full ROS launch, physical PC
 disconnection qualification, embedded micro-ROS Agent and the Compose redesign
 remain pending.
 

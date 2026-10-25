@@ -22,3 +22,6 @@ project(":runner").projectDir = file("android/runner")
 
 include(":pythonRunner")
 project(":pythonRunner").projectDir = file("android/pythonRunner")
+
+include(":workspaceRunner")
+project(":workspaceRunner").projectDir = file("android/workspaceRunner")

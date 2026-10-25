@@ -8,7 +8,7 @@ plugins {
 }
 val requestedProject = rootProject.file(providers.gradleProperty("robotProjectDir").getOrElse("examples/cpp_talker")).canonicalFile
 val requestedManifest = JsonSlurper().parse(requestedProject.resolve("robot-project.json")) as Map<*, *>
-val robotProject = if (requestedManifest["runtime"] == "python") rootProject.file("examples/cpp_talker").canonicalFile else requestedProject
+val robotProject = if (requestedManifest["runtime"] in listOf("python", "workspace")) rootProject.file("examples/cpp_talker").canonicalFile else requestedProject
 val projectManifest = JsonSlurper().parse(robotProject.resolve("robot-project.json")) as Map<*, *>
 val projectId = projectManifest["id"].toString()
 val runnerApplicationId = projectManifest["applicationId"].toString()

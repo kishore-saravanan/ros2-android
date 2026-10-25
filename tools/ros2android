@@ -104,9 +104,9 @@ def main():
         elif manifest['runtimeAbi'] == 2 or launch_arguments or args.command == 'launch-plan':
             parser.error('Project has no launch file; set defaultLaunch or pass --launch')
     runtime = manifest.get('runtime', 'cpp')
-    if runtime not in ('cpp', 'python'):
+    if runtime not in ('cpp', 'python', 'workspace'):
         parser.error('Unsupported project runtime')
-    module = 'pythonRunner' if runtime == 'python' else 'runner'
+    module = {'cpp': 'runner', 'python': 'pythonRunner', 'workspace': 'workspaceRunner'}[runtime]
     apk = ROOT / f'android/{module}/build/outputs/apk/debug/{module}-debug.apk'
     build_info = ROOT / f'android/{module}/build/outputs/robot-project.json'
     sdk = Path(os.environ.get('ANDROID_HOME', os.environ.get('ANDROID_SDK_ROOT', str(Path.home() / 'Android/Sdk'))))
@@ -172,7 +172,7 @@ def main():
         info = json.loads(build_info.read_text())
         if info['applicationId'] != package or info['sourceId'] != source_id(project):
             raise RuntimeError('Built APK does not match this project/source. Run build first.')
-        command = [str(ROOT / 'tools/run-device.sh'), '--python-runner' if runtime == 'python' else '--runner', package, '--install-only']
+        command = [str(ROOT / 'tools/run-device.sh'), {'cpp': '--runner', 'python': '--python-runner', 'workspace': '--workspace-runner'}[runtime], package, '--install-only']
         if args.serial:
             command += ['--serial', args.serial]
         subprocess.run(command, cwd=ROOT, check=True)

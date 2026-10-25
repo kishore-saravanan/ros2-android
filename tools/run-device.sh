@@ -10,12 +10,14 @@ install_only=false
 selection=(-d)
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --runner|--python-runner)
+        --runner|--python-runner|--workspace-runner)
             app_package="${2:?Missing generated runner application ID}"
             if [[ ! "$app_package" =~ ^dev\.robotbrain\.android\.runner\.[a-z][a-z0-9_]*$ ]]; then
                 printf 'Refusing application ID outside this project runner namespace.\n' >&2; exit 2
             fi
-            if [[ "$1" == --python-runner ]]; then
+            if [[ "$1" == --workspace-runner ]]; then
+                apk="$project_root/android/workspaceRunner/build/outputs/apk/debug/workspaceRunner-debug.apk"
+            elif [[ "$1" == --python-runner ]]; then
                 apk="$project_root/android/pythonRunner/build/outputs/apk/debug/pythonRunner-debug.apk"
             else
                 apk="$project_root/android/runner/build/outputs/apk/debug/runner-debug.apk"
@@ -24,7 +26,7 @@ while [[ $# -gt 0 ]]; do
             shift 2 ;;
         --install-only) install_only=true; shift ;;
         --serial) selection=(-s "${2:?Missing ADB serial}"); shift 2 ;;
-        *) printf 'Usage: %s [--runner APP_ID | --python-runner APP_ID] [--install-only] [--serial SERIAL]\n' "$0" >&2; exit 2 ;;
+        *) printf 'Usage: %s [--runner APP_ID | --python-runner APP_ID | --workspace-runner APP_ID] [--install-only] [--serial SERIAL]\n' "$0" >&2; exit 2 ;;
     esac
 done
 if [[ ! -x "$adb_bin" ]]; then

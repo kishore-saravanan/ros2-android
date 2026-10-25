@@ -9,8 +9,8 @@ networking. The app has configurable publishers, a display subscriber, editable
 topics, matching-type topic discovery, and capability detection. The 0.1.1
 development build adds continuous camera capture (15 fps default, up to 30),
 stream metrics and foreground-service ownership of robot sessions. A separate
-developer runner now hosts native C++ ROS nodes, including custom messages and on-phone IMU processing. ROS launch files and the embedded micro-ROS
-Agent remain unimplemented. ABI-2 projects can launch several compiled C++ nodes
+developer runner now hosts native C++ ROS nodes, including custom messages and on-phone IMU processing. Supported ROS Python launch descriptions are resolved on the PC; full on-phone
+LaunchService and the embedded micro-ROS Agent remain pending. ABI-2 projects can launch several compiled C++ nodes
 with per-node parameters and remaps using a bounded JSON configuration. A separate
 Python feasibility runner embeds CPython and native rclpy, verified with custom
 messages, parameters, IMU computation and phone-hosted C++ interoperability.
@@ -23,9 +23,11 @@ Start here: [v0.1 app and topic-monitoring guide](docs/V0.1.md).
 For custom nodes: [C++ project build and deployment guide](docs/CPP-PROJECTS.md).
 For multiple nodes: [workspace launch guide](docs/WORKSPACE-LAUNCH.md).
 For ROS descriptions: [supported launch-file adapter](docs/ROS-LAUNCH.md).
+For ordinary packages: [colcon workspace build/deploy guide](docs/COLCON-WORKSPACES.md).
 For Python: [Python project guide](docs/PYTHON-PROJECTS.md).
 
-Resuming development? Read the [project knowledge base](docs/PROJECT-KNOWLEDGE.md).
+Resuming development? Read the [project knowledge base](docs/PROJECT-KNOWLEDGE.md)
+and the [community release handoff](docs/HANDOFF.md).
 
 Development branch: `develop`. Repository: [ros2-android](https://github.com/kishore-saravanan/ros2-android).
 

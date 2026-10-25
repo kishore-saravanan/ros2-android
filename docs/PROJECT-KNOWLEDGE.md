@@ -45,8 +45,9 @@ on the phone. A development PC must eventually be removable from the robot.
 | C++ ABI 2 | 1–16 compiled components share an executor/process; per-node names/namespaces/scalar params/remaps, partial-start rollback, group failure and explicit restart; [guide](WORKSPACE-LAUNCH.md), [evidence](verification/2026-10-25-workspace-launch.md) |
 | Caught C++ exceptions | Failure monitoring, teardown, foreground-service removal, explicit recovery; [evidence](verification/2026-10-25-runner-supervision.md) |
 | Python feasibility | Embedded CPython 3.12.15, rclpy 7.1.12; typed topics, real IMU norm calculation, custom messages, parameter changes, Python→phone C++→Python round trip, caught exception cleanup/restart; [guide](PYTHON-PROJECTS.md), [evidence](verification/2026-10-25-python-runner.md) |
+| Ordinary colcon C++ workspace | Three standard packages and two standalone main() executables built on Linux/Android; custom-message/computation/parameter parity and child-exit recovery passed; [guide](COLCON-WORKSPACES.md), [evidence](verification/2026-10-25-colcon-workspace.md) |
 
-## Current milestone: ROS launch-file adapter
+## Completed milestone: ROS launch-file adapter
 
 The initial adapter passed 19 tests and physical two-node/conditional-start
 checks on the phone. Standard supported `.launch.py` descriptions
@@ -61,10 +62,41 @@ producer. Unsupported process actions, timers, parameter files and unregistered
 nodes fail explicitly. See [ROS launch guide](ROS-LAUNCH.md) and
 [physical evidence](verification/2026-10-25-ros-launch.md).
 
-Current next action: map Python/mixed projects into launch workers, then qualify
-independent process supervision and physical PC disconnection. The ROS launch
-adapter and this knowledge base form the checkpoint after Python commit 7e46364;
-use `git log -1` and `git status` to determine current commit/working state.
+## Current milestone: ordinary colcon workspaces
+
+The user clarified the intended workflow: take a normal Linux workspace, build
+all its compatible packages for Android, deploy it and preserve its ROS behavior.
+Earlier component factories/Python entry-module proofs did not establish this.
+
+The first end-to-end example now passes on Linux and Android:
+`examples/android_test_ws` contains ws_interfaces, ws_nodes and ws_bringup. All
+three ament_cmake packages cross-build with colcon. The same C++ main() functions
+run on the phone as separate native processes. The same probe verified custom
+messages, numerical results, graph names and parameter services on both targets.
+Child abort detection, controller survival, group cleanup and restart passed.
+See [workspace guide](COLCON-WORKSPACES.md) and
+[evidence](verification/2026-10-25-colcon-workspace.md).
+
+This first builder supports native ament_cmake workspaces, not arbitrary Linux
+or mixed Python workspaces. It automatically discovers installed executables and
+generates the Android registry; user packages need no Android factory/manifest.
+The new workspace supervisor heartbeat is elapsed supervisor time, not a user
+callback progress measure. Its child stdout/stderr is pumped into runner logs.
+
+Current next action: add ament_python workspace entry points/mixed launch and
+broader dependency/resource compatibility; then full launch runtime semantics,
+independent restart policies and physical PC removal. General Linux equivalence
+remains a package/API qualification goal, not an implemented blanket guarantee.
+ROS launch/knowledge-base checkpoint is bf4bc86. The ordinary-workspace milestone
+and community handoff are checkpointed in the following commit; use `git log`
+and `git status` to identify the current revision. See [handoff](HANDOFF.md).
+
+Community direction: make the project approachable for robotics contributors,
+with guided setup, a clean operator UI, reproducible examples and an explicit
+compatibility matrix. Prioritize a documented community alpha; assess a separate
+Play-distributed sensor/operator app without promising store approval for arbitrary
+code deployment. License selection and public repository/release publication
+remain owner decisions; neither has been performed by this checkpoint.
 
 ## Roadmap and remaining gates
 
@@ -83,9 +115,10 @@ feasibility spike does not complete every acceptance criterion in that milestone
    not this test. Also qualify one-hour background operation and another phone.
 4. **MCU v0.2:** phone-hosted micro-ROS Agent, UDP then USB/OTG, one reference MCU,
    watchdog/command expiry and unplug/reconnect tests without a PC Agent.
-5. **Workspaces:** general cross-colcon package builds, SDK distribution/ABI
-   checks, package resources, broader C++/Python dependency support. Current
-   examples are CMake components or one Python entry module in project APKs.
+5. **Workspaces:** ordinary C++ colcon example is verified. Add Python/mixed
+   packages, dependency ports, resource/ABI qualification and general workspace
+   compatibility. Component factories remain an alternative, not a requirement
+   for the new standalone C++ executable backend.
 6. **Product UI:** Compose operator screens, camera preview/configuration,
    projects/launch selection, parameters/logs/recovery, calibration, accessibility
    and a second-device support matrix.
@@ -98,6 +131,9 @@ feasibility spike does not complete every acceptance criterion in that milestone
 | `android/runner/src/main` | Shared runner Activity, foreground service, config/launch schema |
 | `android/runner/src/cpp` | C++ runner backend, JNI API wrapper |
 | `native/runner` | rclcpp host, ABI-1 factory / ABI-2 component registry contract |
+| `android/workspaceRunner` | Foreground controller for ordinary packaged native executables; process exit/stop supervision |
+| `tools/ros2android-workspace` | Workspace inspect, host/cross-colcon build, staging and delegated deployment/control |
+| `examples/android_test_ws` | Standard three-package Linux/Android compatibility target |
 | `android/pythonRunner` | Embedded CPython backend using shared runner UI/service |
 | `android/pythonRunner/src/main/python/phone_runtime.py` | rclpy context/executor lifecycle and exception diagnostics |
 | `native/python` | JNI environment setup for the Python ROS process |
@@ -180,6 +216,10 @@ No new runtime-wide soak or Wi-Fi Python result is implied by USB checks.
   checks ARM64, portable DT_NEEDED names, collisions and the packaged closure.
 - NumPy/pybind11 build headers must match the supported Python/Android ABI; do
   not add the entire host /usr/include directory to Android compilation.
+- Workspace native executables run from the APK native-library directory, not
+  writable app data. Package the NDK shared libc++ explicitly when the APK has
+  no externalNativeBuild task. Java owns only its launched Process objects and
+  reports child exits; source fingerprints guard deploy/start after workspace edits.
 - Project source fingerprints exclude build/.git/.cxx/.gradle/__pycache__. They
   identify project inputs, not the entire SDK; APK SHA-256 records the full build.
 - Do not claim ROS interoperability from JNI/sensor diagnostics, or fatal crash
@@ -193,6 +233,7 @@ No new runtime-wide soak or Wi-Fi Python result is implied by USB checks.
 - 76e72ab: About/author/Sponsors UI.
 - d972184: composed C++ launch groups.
 - 7e46364: embedded rclpy, Python/C++ interoperability and recovery.
+- bf4bc86: supported ROS launch adapter and this development knowledge base.
 
 Before ending a milestone, update this file and its evidence links with what
 changed, checks actually run, limitations, current next action and commit state.
