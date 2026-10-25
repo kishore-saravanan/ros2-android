@@ -7,11 +7,14 @@
 #include <cmath>
 #include <cstdint>
 #include <string>
+#include <stdexcept>
 
 class DemoNode : public rclcpp::Node {
  public:
   explicit DemoNode(const rclcpp::NodeOptions & options) : Node("cpp_demo", options) {
     declare_parameter("message", "Hello from ROS2 Android C++");
+    // Explicitly opt in to a recoverable callback failure for host verification.
+    declare_parameter("fail_after_ticks", int64_t{0});
     const auto imu_topic = declare_parameter("imu_topic", "/phone/imu");
     status_ = create_publisher<std_msgs::msg::String>("status", 10);
     telemetry_ = create_publisher<demo_interfaces::msg::RuntimeStatus>("runtime_status", 10);
@@ -38,6 +41,10 @@ class DemoNode : public rclcpp::Node {
       telemetry.message = get_parameter("message").as_string();
       telemetry.tick = tick_; telemetry.imu_samples = imu_count_;
       telemetry_->publish(telemetry);
+      const auto fail_after = get_parameter("fail_after_ticks").as_int();
+      if (fail_after > 0 && tick_ >= static_cast<uint64_t>(fail_after)) {
+        throw std::runtime_error("Requested demo callback failure");
+      }
     });
   }
  private:

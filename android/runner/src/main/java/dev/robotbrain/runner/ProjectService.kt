@@ -14,9 +14,22 @@ class ProjectService : Service() {
     private var multicast: WifiManager.MulticastLock? = null
     private var wake: PowerManager.WakeLock? = null
     private var generation = 0
-    @Volatile var state = "Stopped"; private set
+    @Volatile var state = "Stopped"
+        private set(value) { field = value; lastState = value }
     @Volatile var busy = false; private set
     private var destroyed = false
+    private val monitor = object : Runnable {
+        override fun run() {
+            if (destroyed || busy || state != "Running") return
+            val diagnostic = runCatching { JSONObject(ProjectNative.diagnostic()) }
+            val failure = diagnostic.fold({
+                if (it.optBoolean("transition") || it.optBoolean("running")) null
+                else it.optString("error").ifEmpty { "Native executor stopped" }
+            }, { it.message ?: "Cannot inspect native executor" })
+            if (failure != null) failProject(failure)
+            else main.postDelayed(this, 500)
+        }
+    }
 
     override fun onCreate() {
         super.onCreate(); current = this
@@ -45,7 +58,8 @@ class ProjectService : Service() {
                 if (destroyed || token != generation) return@post
                 busy = false
                 state = result.fold({ "Running" }, { "Failed: ${it.message}" })
-                if (result.isFailure) releaseLocks()
+                if (result.isFailure) failProject(result.exceptionOrNull()?.message ?: "Project start failed")
+                else main.post(monitor)
             }
         }
         return START_NOT_STICKY
@@ -64,6 +78,7 @@ class ProjectService : Service() {
             .createMulticastLock("ROS2AndroidProjectDDS").apply { setReferenceCounted(false); acquire() }
     }
     fun stopProject() {
+        main.removeCallbacks(monitor)
         val token = ++generation
         busy = true; state = "Stopping"
         worker.execute {
@@ -75,11 +90,26 @@ class ProjectService : Service() {
             }
         }
     }
+    private fun failProject(reason: String) {
+        main.removeCallbacks(monitor)
+        val token = ++generation
+        busy = true; state = "Failing: $reason"
+        worker.execute {
+            val cleanup = runCatching { ProjectNative.stop() }
+            main.post {
+                if (destroyed || token != generation) return@post
+                busy = false
+                state = "Failed: $reason" + (cleanup.exceptionOrNull()?.let { "; cleanup: ${it.message}" } ?: "")
+                releaseLocks(); stopForeground(STOP_FOREGROUND_REMOVE); stopSelf()
+            }
+        }
+    }
     private fun releaseLocks() {
         multicast?.let { if (it.isHeld) it.release() }; multicast = null
         wake?.let { if (it.isHeld) it.release() }; wake = null
     }
     override fun onDestroy() {
+        main.removeCallbacks(monitor)
         destroyed = true; generation++; current = null
         if (state != "Stopped" || busy) worker.execute { runCatching { ProjectNative.stop() } }
         releaseLocks(); super.onDestroy()
@@ -89,9 +119,10 @@ class ProjectService : Service() {
         const val STOP = "dev.robotbrain.runner.STOP"
         private const val CHANNEL = "project_runtime"
         private val control = Executors.newSingleThreadExecutor()
+        @Volatile private var lastState = "Stopped"
         @Volatile var current: ProjectService? = null; private set
         fun statusJson(): String = JSONObject().put("project", BuildConfig.PROJECT_ID)
-            .put("sourceId", BuildConfig.PROJECT_SOURCE_ID).put("state", current?.state ?: "Stopped").put("busy", current?.busy ?: false)
+            .put("sourceId", BuildConfig.PROJECT_SOURCE_ID).put("state", current?.state ?: lastState).put("busy", current?.busy ?: false)
             .put("native", runCatching { JSONObject(ProjectNative.diagnostic()) }.getOrElse { JSONObject().put("error", it.message) }).toString()
     }
 }

@@ -94,3 +94,23 @@ ADB; paired production control is not implemented. No personal phone storage is
 required. Python nodes, arbitrary launch files, multi-node launch supervision,
 dynamic plugins, embedded micro-ROS Agent and broad package compatibility remain
 pending. A force-stop recovery test is not a deliberate native crash test.
+
+## Callback failure and recovery
+
+The runner monitors its executor. If a C++ callback throws an exception caught
+by the host, it reports `Failed`, shuts down the ROS context, removes its
+foreground service, and releases its wake/multicast locks. Failure diagnostics
+remain available in the current application process. Restart is explicit, with
+no automatic retry loop. A fatal native signal or process kill still requires
+reopening the app; a callback that never returns can require `kill`.
+
+The demo provides an opt-in `fail_after_ticks` parameter (zero disables it).
+After building and deploying the current demo, run this physical regression:
+
+```bash
+python3 tools/test-runner-recovery.py --peer PC_IP --local PHONE_IP
+```
+
+It triggers a callback exception after three ticks, requires failed diagnostics,
+a stopped native node and a removed project service, then restarts normally and
+checks that the executor heartbeat advances. It leaves the demo running.

@@ -75,7 +75,7 @@ def main():
         return device('shell', shlex.join(str(v) for v in arguments))
 
     def control(action, extras=()):
-        output = remote('am', 'broadcast', '-n', package + '/dev.robotbrain.runner.DebugControlReceiver',
+        output = remote('am', 'broadcast', '--include-stopped-packages', '-n', package + '/dev.robotbrain.runner.DebugControlReceiver',
                         '-a', 'dev.robotbrain.runner.' + action, *extras)
         match = re.search(r'Broadcast completed: result=(-?\d+)(?:, data="(.*)")?', output)
         if not match or match[1] != '0':
