@@ -7,7 +7,9 @@ import android.content.pm.PackageManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.ActivityNotFoundException
 import android.content.ServiceConnection
+import android.net.Uri
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.*
@@ -101,7 +103,7 @@ class MainActivity : Activity() {
         status = text(if (connected) "ROS session active" else "Stopped · choose an endpoint to connect", 14, accent)
         status.contentDescription = "session_status"; page.addView(status)
         val tabs = LinearLayout(this)
-        listOf("Publishers", "Subscribers", "Connection").forEach { name ->
+        listOf("Publishers", "Subscribers", "Connection", "About").forEach { name ->
             tabs.addView(button(if (name == tab) "● $name" else name) { save(); tab = name; render() }, LinearLayout.LayoutParams(0, -2, 1f))
         }
         page.addView(tabs)
@@ -123,10 +125,28 @@ class MainActivity : Activity() {
                 } }.forEach(::publisherCard)
             }
             "Subscribers" -> subscriberCard()
+            "About" -> aboutCard()
             else -> connectionCard()
         }
         page.addView(button("Stop all / disconnect") { stopSession() }.apply { contentDescription = "stop_session" })
         refresh()
+    }
+    private fun aboutCard() {
+        card(getString(R.string.about_title)) { box ->
+            box.addView(text(getString(R.string.app_name), 24, accent))
+            box.addView(text(getString(R.string.about_description), 15, muted))
+            box.addView(text(getString(R.string.about_credit), 18))
+            box.addView(text(getString(R.string.about_support_description), 14, muted))
+            box.addView(button(getString(R.string.about_support_button)) {
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.sponsor_url)))
+                        .addCategory(Intent.CATEGORY_BROWSABLE))
+                } catch (_: ActivityNotFoundException) {
+                    Toast.makeText(this, R.string.about_no_browser, Toast.LENGTH_LONG).show()
+                }
+            }.apply { contentDescription = getString(R.string.about_support_accessibility) })
+            box.addView(text(getString(R.string.about_support_destination), 12, muted))
+        }
     }
     private fun publisherCard(cap: PhoneCapability) {
         card(cap.label) { box ->

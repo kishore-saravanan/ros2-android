@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">ROS2 Android</string>
+    <string name="about_title">About</string>
+    <string name="about_description">Turn your Android phone into a ROS 2 computer and sensor hub for your robot.</string>
+    <string name="about_credit">Built by Kishore Saravanan</string>
+    <string name="about_support_description">Enjoying ROS2 Android? Buy me a coffee and help support its development.</string>
+    <string name="about_support_button">Support development</string>
+    <string name="about_support_accessibility">Support development on GitHub Sponsors — opens in your browser</string>
+    <string name="about_support_destination">Opens GitHub Sponsors in your browser.</string>
+    <string name="about_no_browser">No browser is available to open GitHub Sponsors.</string>
+    <string name="sponsor_url" translatable="false">https://github.com/sponsors/kishore-saravanan</string>
 </resources>
