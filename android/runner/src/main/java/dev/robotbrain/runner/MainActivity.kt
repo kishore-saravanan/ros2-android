@@ -31,7 +31,7 @@ class MainActivity : Activity() {
         setContentView(scroll)
         fun label(value: String, size: Float = 15f) = TextView(this).apply { text = value; textSize = size; setTextColor(Color.WHITE); setPadding(0, 12, 0, 12) }
         box.addView(label("ROS2 Android · ${BuildConfig.PROJECT_NAME}", 24f))
-        box.addView(label("Development project runner · ${BuildConfig.PROJECT_ID}\nCode runs on this phone. The PC is needed only to develop and deploy."))
+        box.addView(label("Development project runner · ${BuildConfig.PROJECT_ID} · ABI ${BuildConfig.PROJECT_RUNTIME_ABI}\nCode runs on this phone. The PC is needed only to develop and deploy."))
         fun field(key: String, title: String, fallback: String): EditText {
             box.addView(label(title))
             return EditText(this).apply {
@@ -43,6 +43,7 @@ class MainActivity : Activity() {
         peer = field("peer", "PC IPv4 peer (optional)", "")
         local = field("local", "Phone interface IPv4 (optional)", "")
         rosArgs = field("ros_args", "ROS argument array (JSON, no shell)", "[]")
+        if (BuildConfig.PROJECT_RUNTIME_ABI == 2) box.addView(label("Start uses the packaged multi-node launch configuration. Inspect launched node names in status below."))
         status = label("Stopped").apply { contentDescription = "project_status" }; box.addView(status)
         box.addView(Button(this).apply {
             text = "Start project"; isAllCaps = false

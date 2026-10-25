@@ -9,7 +9,9 @@ implemented in the 0.1.1 development build. Physical tests passed, including
 30-second Wi-Fi run, Activity recreation and notification Stop. See
 [verification](verification/2026-10-25-camera-service.md). One-hour and cross-device
 qualification remain pending. A separate C++ project runner now supports rclcpp,
-custom messages, parameters, remapping and IMU computation on the phone. Physical
+custom messages, parameters, remapping and IMU computation on the phone.
+ABI-2 adds bounded JSON launch for several compiled nodes sharing one executor.
+General workspaces, independent node workers and full ROS launch remain pending. Physical
 PC-disconnection qualification remains pending. Launch/Python support,
 embedded micro-ROS Agent and the Compose redesign remain future milestones.
 

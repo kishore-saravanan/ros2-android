@@ -10,10 +10,17 @@ val robotProject = rootProject.file(providers.gradleProperty("robotProjectDir").
 val projectManifest = JsonSlurper().parse(robotProject.resolve("robot-project.json")) as Map<*, *>
 val projectId = projectManifest["id"].toString()
 val runnerApplicationId = projectManifest["applicationId"].toString()
-require(projectManifest["schemaVersion"] == 1 && projectManifest["runtimeAbi"] == 1) { "Unsupported project schema or runtime ABI" }
+require(projectManifest["schemaVersion"] == 1 && projectManifest["runtimeAbi"] in listOf(1, 2)) { "Unsupported project schema or runtime ABI" }
 require(projectId.matches(Regex("[a-z][a-z0-9_]{0,63}"))) { "Invalid project ID" }
 require(runnerApplicationId.matches(Regex("dev\\.robotbrain\\.android\\.runner\\.[a-z][a-z0-9_]*"))) { "Use a unique dev.robotbrain.android.runner.<id> applicationId" }
 require(robotProject.resolve("CMakeLists.txt").isFile) { "Project CMakeLists.txt missing" }
+
+val runtimeAbi = projectManifest["runtimeAbi"] as Int
+val launchPath = projectManifest["defaultLaunch"]?.toString()
+val launchFile = launchPath?.let { robotProject.resolve(it).canonicalFile }
+require(launchFile == null || launchFile.toPath().startsWith(robotProject.toPath())) { "Launch file must be inside project" }
+val launchJson = launchFile?.readText() ?: ""
+require(runtimeAbi != 2 || launchJson.isNotEmpty()) { "ABI 2 requires defaultLaunch" }
 
 val sourceDigest = MessageDigest.getInstance("SHA-256")
 robotProject.walkTopDown().onEnter { it.name !in setOf("build", ".git", ".cxx", ".gradle", "__pycache__") }
@@ -35,6 +42,8 @@ android {
         versionCode = 1
         versionName = "0.1.0-runner-dev1"
         ndk { abiFilters += "arm64-v8a" }
+        buildConfigField("int", "PROJECT_RUNTIME_ABI", runtimeAbi.toString())
+        buildConfigField("String", "PROJECT_LAUNCH_JSON", JsonOutput.toJson(launchJson))
         buildConfigField("String", "PROJECT_ID", JsonOutput.toJson(projectId))
         buildConfigField("String", "PROJECT_SOURCE_ID", JsonOutput.toJson(sourceId))
         buildConfigField("String", "PROJECT_NAME", JsonOutput.toJson(projectManifest["name"].toString()))
@@ -62,7 +71,7 @@ tasks.matching { it.name == "assembleDebug" }.configureEach {
         val output = layout.buildDirectory.file("outputs/robot-project.json").get().asFile
         output.parentFile.mkdirs()
         output.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(mapOf(
-            "project" to projectId, "applicationId" to runnerApplicationId, "sourceId" to sourceId, "runtimeAbi" to 1
+            "project" to projectId, "applicationId" to runnerApplicationId, "sourceId" to sourceId, "runtimeAbi" to runtimeAbi
         ))) + "\n")
     }
 }

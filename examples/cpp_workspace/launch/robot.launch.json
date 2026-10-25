@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "nodes": [
+    {
+      "component": "producer",
+      "name": "producer",
+      "namespace": "/robot",
+      "parameters": {"message": "Computed on Android", "period_ms": 200},
+      "remappings": {"output": "pipeline/input"}
+    },
+    {
+      "component": "processor",
+      "name": "processor",
+      "namespace": "/robot",
+      "parameters": {"prefix": "Phone processed: "},
+      "remappings": {"input": "pipeline/input", "output": "pipeline/result"}
+    }
+  ]
+}

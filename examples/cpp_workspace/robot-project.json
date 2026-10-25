@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "cpp_workspace",
+  "applicationId": "dev.robotbrain.android.runner.workspace",
+  "name": "C++ workspace",
+  "runtimeAbi": 2,
+  "defaultLaunch": "launch/robot.launch.json"
+}

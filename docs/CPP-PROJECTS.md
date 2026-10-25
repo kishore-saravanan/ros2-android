@@ -81,7 +81,8 @@ For another project, copy the example outside it, assign unique IDs, and pass
 `--project /absolute/project/path` before each CLI command. Generated application
 IDs must start with `dev.robotbrain.android.runner.`.
 
-The native factory returns one node to the host executor. The SDK includes
+The ABI-1 native factory returns one node to the host executor.
+For several compiled nodes, see [workspace launch](WORKSPACE-LAUNCH.md). The SDK includes
 pinned ROS libraries and shared libc++; user projects must match that ABI.
 Custom interface subdirectories are generated for both Android and the PC;
 this is not yet a general cross-colcon workspace builder.
@@ -91,7 +92,7 @@ this is not yet a general cross-colcon workspace builder.
 This is a debug developer runner. Its debug control receiver requires Android's
 privileged DUMP permission and is absent from release builds. APK deployment uses
 ADB; paired production control is not implemented. No personal phone storage is
-required. Python nodes, arbitrary launch files, multi-node launch supervision,
+required. Python nodes, arbitrary ROS launch files, independent node worker supervision,
 dynamic plugins, embedded micro-ROS Agent and broad package compatibility remain
 pending. A force-stop recovery test is not a deliberate native crash test.
 

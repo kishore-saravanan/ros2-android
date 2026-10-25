@@ -10,6 +10,7 @@ import shlex
 import subprocess
 import sys
 import time
+from robot_launch import validate_launch
 
 ROOT = Path(__file__).resolve().parents[1]
 APK = ROOT / 'android/runner/build/outputs/apk/debug/runner-debug.apk'
@@ -41,6 +42,7 @@ def main():
     commands.add_parser('build', help='Cross-build project into a debug runner APK')
     commands.add_parser('deploy', help='Install the built project APK without touching the sensor app')
     start = commands.add_parser('start', help='Open the project app and start it through shell-only debug control')
+    start.add_argument('--launch', type=Path, help='Bounded JSON launch file; defaults to packaged project launch')
     start.add_argument('--domain', type=int, default=0)
     start.add_argument('--namespace', default='/demo')
     start.add_argument('--peer', default='')
@@ -54,12 +56,23 @@ def main():
     project = args.project.expanduser().resolve()
     manifest = json.loads((project / 'robot-project.json').read_text())
     package = manifest['applicationId']
-    if manifest.get('schemaVersion') != 1 or manifest.get('runtimeAbi') != 1:
+    if manifest.get('schemaVersion') != 1 or manifest.get('runtimeAbi') not in (1, 2):
         parser.error('Unsupported project schema/runtime ABI')
     if not re.fullmatch(PACKAGE_PATTERN, package):
         parser.error('Refusing to control an app outside the generated project-runner namespace')
     if not re.fullmatch(r'[a-z][a-z0-9_]{0,63}', manifest['id']):
         parser.error('Invalid project ID')
+    launch = None
+    if args.command in ('build', 'start'):
+        launch_path = getattr(args, 'launch', None)
+        if launch_path is None and manifest.get('defaultLaunch'):
+            launch_path = project / manifest['defaultLaunch']
+        if launch_path:
+            if manifest['runtimeAbi'] != 2:
+                parser.error('Launch components require runtime ABI 2')
+            launch = validate_launch(json.loads(launch_path.read_text()), getattr(args, 'namespace', '/demo'))
+        elif manifest['runtimeAbi'] == 2:
+            parser.error('ABI 2 requires a defaultLaunch or --launch file')
     sdk = Path(os.environ.get('ANDROID_HOME', os.environ.get('ANDROID_SDK_ROOT', str(Path.home() / 'Android/Sdk'))))
     adb = sdk / 'platform-tools/adb'
     selection = ['-s', args.serial] if args.serial else ['-d']
@@ -130,11 +143,18 @@ def main():
             ros_args = ros_args[1:]
         print(remote('am', 'start', '-W', '-n', package + '/dev.robotbrain.runner.MainActivity').strip())
         deadline = time.monotonic() + 10
+        retry_at = time.monotonic() + 2
         while time.monotonic() < deadline:
             activity = remote('dumpsys', 'activity', 'activities')
             if any(package + '/dev.robotbrain.runner.MainActivity' in line
                    for line in activity.splitlines() if 'mResumedActivity:' in line):
                 break
+            if time.monotonic() >= retry_at:
+                if 'showing=true' in remote('dumpsys', 'window', 'policy'):
+                    raise RuntimeError('Unlock the phone before starting a project.')
+                # Some devices discard the first post-install activity launch.
+                remote('am', 'start', '-W', '-n', package + '/dev.robotbrain.runner.MainActivity')
+                retry_at = float('inf')
             time.sleep(.2)
         else:
             raise RuntimeError('Runner did not become foreground. Unlock the phone and retry start.')
@@ -146,13 +166,15 @@ def main():
         extras = ['--ei', 'domain', str(args.domain), '--es', 'namespace', args.namespace,
                   '--es', 'peer', args.peer, '--es', 'local', args.local,
                   '--es', 'ros_args', json.dumps(ros_args, ensure_ascii=False)]
+        if launch is not None:
+            extras += ['--es', 'launch_json', json.dumps(launch, ensure_ascii=False)]
         info = control('START', extras)
         deadline = time.monotonic() + 20
         while time.monotonic() < deadline:
             info = control('STATUS')
             if info.get('state', '').startswith('Failed') or info.get('native', {}).get('error'):
                 raise RuntimeError(json.dumps(info, ensure_ascii=False))
-            if info.get('native', {}).get('running'):
+            if info.get('state') == 'Running' and not info.get('busy') and info.get('native', {}).get('running'):
                 break
             time.sleep(.2)
         else:

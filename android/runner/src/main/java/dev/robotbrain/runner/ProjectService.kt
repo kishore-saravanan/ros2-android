@@ -52,7 +52,7 @@ class ProjectService : Service() {
             val result = runCatching {
                 ProjectNative.requireLoaded()
                 val value = config.getOrThrow()
-                ProjectNative.start(value.domain, value.namespace, value.peer, value.local, applicationInfo.nativeLibraryDir, value.arguments)
+                ProjectNative.start(value.domain, value.namespace, value.peer, value.local, applicationInfo.nativeLibraryDir, value.arguments, value.nodes.map { it.component }.toTypedArray(), value.nodes.map { it.arguments }.toTypedArray())
             }
             main.post {
                 if (destroyed || token != generation) return@post
