@@ -16,3 +16,6 @@ rootProject.name = "RobotBrain"
 include(":app")
 project(":app").projectDir = file("android/app")
 
+
+include(":runner")
+project(":runner").projectDir = file("android/runner")

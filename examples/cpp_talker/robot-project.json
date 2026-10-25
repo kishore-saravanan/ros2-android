@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "id": "cpp_talker",
+  "applicationId": "dev.robotbrain.android.runner.demo",
+  "name": "C++ demo",
+  "runtimeAbi": 1
+}

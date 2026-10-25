@@ -4,6 +4,12 @@ project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 sdk_root="${ANDROID_HOME:-$HOME/Android/Sdk}"
 colcon_bin="${COLCON_BIN:-$HOME/.local/share/ros2-android-tools/build-venv/bin/colcon}"
 export PATH="$(dirname -- "$colcon_bin"):$PATH"
+packages=(rcl sensor_msgs rmw_cyclonedds_cpp)
+case "${1:-}" in
+    --with-cpp) packages+=(rclcpp) ;;
+    "") ;;
+    *) printf 'Usage: %s [--with-cpp]\n' "$0" >&2; exit 2 ;;
+esac
 set +u
 source /opt/ros/jazzy/setup.bash
 set -u
@@ -14,7 +20,7 @@ export STATIC_ROSIDL_TYPESUPPORT_CPP=rosidl_typesupport_introspection_cpp
 cd "$project_root/native-deps"
 export PKG_CONFIG_LIBDIR="$PWD/install/lib/pkgconfig"
 "$colcon_bin" build --merge-install --base-paths src \
-    --packages-up-to rcl sensor_msgs rmw_cyclonedds_cpp \
+    --packages-up-to "${packages[@]}" \
     --packages-skip rcl_logging_spdlog test_msgs \
     --executor sequential --event-handlers console_direct+ --cmake-clean-cache \
     --cmake-args -G Ninja \

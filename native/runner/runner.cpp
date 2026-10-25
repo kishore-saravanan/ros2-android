@@ -1,0 +1,139 @@
+#include "ros2_android_project.hpp"
+#include <jni.h>
+#include <android/log.h>
+#include <atomic>
+#include <chrono>
+#include <cstdlib>
+#include <mutex>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <thread>
+#include <vector>
+
+namespace {
+std::mutex lifecycle, errors;
+std::shared_ptr<rclcpp::Context> context;
+std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> executor;
+rclcpp::Node::SharedPtr project_node, host_node;
+rclcpp::TimerBase::SharedPtr heartbeat;
+std::thread spin_thread;
+std::atomic<bool> running{false};
+std::atomic<uint64_t> pulses{0};
+std::string last_error;
+
+std::string utf8(JNIEnv * env, jstring input) {
+  if (!input) return {};
+  const auto length = env->GetStringLength(input);
+  const auto * units = env->GetStringChars(input, nullptr);
+  if (!units) throw std::runtime_error("Cannot read Java string");
+  std::string out;
+  for (jsize i = 0; i < length; ++i) {
+    uint32_t code = units[i];
+    if (code >= 0xd800 && code <= 0xdbff && i + 1 < length && units[i + 1] >= 0xdc00 && units[i + 1] <= 0xdfff) {
+      code = 0x10000 + ((code - 0xd800) << 10) + (units[++i] - 0xdc00);
+    } else if (code >= 0xd800 && code <= 0xdfff) code = 0xfffd;
+    if (code < 0x80) out += static_cast<char>(code);
+    else if (code < 0x800) {
+      out += static_cast<char>(0xc0 | (code >> 6)); out += static_cast<char>(0x80 | (code & 0x3f));
+    } else if (code < 0x10000) {
+      out += static_cast<char>(0xe0 | (code >> 12)); out += static_cast<char>(0x80 | ((code >> 6) & 0x3f)); out += static_cast<char>(0x80 | (code & 0x3f));
+    } else {
+      out += static_cast<char>(0xf0 | (code >> 18)); out += static_cast<char>(0x80 | ((code >> 12) & 0x3f)); out += static_cast<char>(0x80 | ((code >> 6) & 0x3f)); out += static_cast<char>(0x80 | (code & 0x3f));
+    }
+  }
+  env->ReleaseStringChars(input, units);
+  return out;
+}
+std::string json_string(const std::string & input) {
+  std::ostringstream out; out << '"';
+  // ASCII-escape non-ASCII bytes in diagnostics; ROS user payloads stay UTF-8.
+  for (const unsigned char c : input) {
+    if (c == '"' || c == '\\') out << '\\' << c;
+    else if (c >= 32 && c < 127) out << c;
+    else out << '?';
+  }
+  out << '"'; return out.str();
+}
+void stop_locked() {
+  running.store(false);
+  if (executor) executor->cancel();
+  if (spin_thread.joinable()) spin_thread.join();
+  heartbeat.reset(); project_node.reset(); host_node.reset(); executor.reset();
+  if (context && context->is_valid()) context->shutdown("Project stopped");
+  context.reset();
+}
+void report(const std::string & error) {
+  std::lock_guard<std::mutex> lock(errors); last_error = error;
+  __android_log_print(ANDROID_LOG_ERROR, "ROS2AndroidProject", "%s", error.c_str());
+}
+}
+
+extern "C" JNIEXPORT void JNICALL Java_dev_robotbrain_runner_ProjectNative_start(
+  JNIEnv * env, jobject, jint domain, jstring name_space, jstring peer, jstring local,
+  jstring library_dir, jobjectArray arguments) {
+  std::lock_guard<std::mutex> lock(lifecycle);
+  try {
+    if (context) throw std::runtime_error("Stop the current project before starting another");
+    if (domain < 0 || domain > 101) throw std::runtime_error("Invalid ROS domain");
+    const auto lib = utf8(env, library_dir), p = utf8(env, peer), address = utf8(env, local);
+    auto valid_address = [](const std::string & value) { return value.find_first_not_of("0123456789.") == std::string::npos; };
+    if (!valid_address(p) || !valid_address(address)) throw std::runtime_error("Invalid IP characters");
+    setenv("LD_LIBRARY_PATH", lib.c_str(), 1);
+    setenv("RMW_IMPLEMENTATION", "rmw_cyclonedds_cpp", 1);
+    std::string xml = "<CycloneDDS><Domain><General><AllowMulticast>true</AllowMulticast>";
+    if (!address.empty()) xml += "<NetworkInterfaceAddress>" + address + "</NetworkInterfaceAddress>";
+    xml += "</General><Discovery><ParticipantIndex>auto</ParticipantIndex><MaxAutoParticipantIndex>50</MaxAutoParticipantIndex>";
+    if (!p.empty()) xml += "<Peers><Peer Address=\"" + p + "\"/></Peers>";
+    xml += "</Discovery></Domain></CycloneDDS>";
+    setenv("CYCLONEDDS_URI", xml.c_str(), 1);
+    rclcpp::InitOptions init;
+    init.set_domain_id(static_cast<size_t>(domain)); init.shutdown_on_signal = false;
+    context = std::make_shared<rclcpp::Context>();
+    context->init(0, nullptr, init); // Do not take over Android process signal handlers.
+    std::vector<std::string> args{"--ros-args", "-r", "__ns:=" + utf8(env, name_space)};
+    const auto length = env->GetArrayLength(arguments);
+    for (jsize i = 0; i < length; ++i) {
+      auto item = static_cast<jstring>(env->GetObjectArrayElement(arguments, i));
+      args.push_back(utf8(env, item)); env->DeleteLocalRef(item);
+    }
+    rclcpp::NodeOptions options;
+    options.context(context).arguments(args).enable_rosout(false);
+    project_node.reset(ros2_android_create_node(&options));
+    if (!project_node) throw std::runtime_error("Project factory returned no node");
+    rclcpp::NodeOptions host_options;
+    host_options.context(context).use_global_arguments(false).enable_rosout(false).start_parameter_services(false);
+    host_node = std::make_shared<rclcpp::Node>("android_project_host", "/ros2_android", host_options);
+    pulses.store(0);
+    heartbeat = host_node->create_wall_timer(std::chrono::seconds(1), [] { ++pulses; });
+    rclcpp::ExecutorOptions executor_options; executor_options.context = context;
+    executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>(executor_options);
+    executor->add_node(project_node); executor->add_node(host_node);
+    { std::lock_guard<std::mutex> error_lock(errors); last_error.clear(); }
+    running.store(true);
+    spin_thread = std::thread([] {
+      try { executor->spin(); }
+      catch (const std::exception & error) { report(error.what()); }
+      catch (...) { report("Unhandled project exception"); }
+      running.store(false);
+    });
+    __android_log_print(ANDROID_LOG_INFO, "ROS2AndroidProject", "Project started: %s", project_node->get_fully_qualified_name());
+  } catch (const std::exception & error) {
+    stop_locked(); report(error.what());
+    env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), error.what());
+  }
+}
+extern "C" JNIEXPORT void JNICALL Java_dev_robotbrain_runner_ProjectNative_stop(JNIEnv *, jobject) {
+  std::lock_guard<std::mutex> lock(lifecycle); stop_locked();
+}
+extern "C" JNIEXPORT jstring JNICALL Java_dev_robotbrain_runner_ProjectNative_status(JNIEnv * env, jobject) {
+  std::unique_lock<std::mutex> lock(lifecycle, std::try_to_lock);
+  if (!lock.owns_lock()) return env->NewStringUTF("{\"transition\":true}");
+  std::lock_guard<std::mutex> error_lock(errors);
+  std::ostringstream out;
+  out << "{\"running\":" << (running.load() ? "true" : "false")
+      << ",\"heartbeat\":" << pulses.load()
+      << ",\"node\":" << json_string(project_node ? project_node->get_fully_qualified_name() : "")
+      << ",\"error\":" << json_string(last_error) << '}';
+  return env->NewStringUTF(out.str().c_str());
+}

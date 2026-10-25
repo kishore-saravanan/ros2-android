@@ -5,15 +5,22 @@
             "label": "ROS2 Android: Build and check",
             "type": "process",
             "command": "${workspaceFolder}/tools/build.sh",
-            "options": { "cwd": "${workspaceFolder}" },
-            "group": { "kind": "build", "isDefault": true },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
             "problemMatcher": []
         },
         {
             "label": "ROS2 Android: Install and open",
             "type": "process",
             "command": "${workspaceFolder}/tools/run-device.sh",
-            "options": { "cwd": "${workspaceFolder}" },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "dependsOn": "ROS2 Android: Build and check",
             "problemMatcher": []
         },
@@ -21,15 +28,70 @@
             "label": "ROS2 Android: View back camera",
             "type": "process",
             "command": "${workspaceFolder}/tools/view-camera.sh",
-            "options": { "cwd": "${workspaceFolder}" },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "problemMatcher": []
         },
         {
             "label": "ROS2 Android: View front camera",
             "type": "process",
             "command": "${workspaceFolder}/tools/view-camera.sh",
-            "args": ["--topic", "/phone/camera_front_1/image/compressed"],
-            "options": { "cwd": "${workspaceFolder}" },
+            "args": [
+                "--topic",
+                "/phone/camera_front_1/image/compressed"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ROS2 Android: Build C++ project",
+            "type": "process",
+            "command": "${workspaceFolder}/tools/ros2android",
+            "args": [
+                "build"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ROS2 Android: Deploy C++ project",
+            "type": "process",
+            "command": "${workspaceFolder}/tools/ros2android",
+            "args": [
+                "deploy"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ROS2 Android: C++ project status",
+            "type": "process",
+            "command": "${workspaceFolder}/tools/ros2android",
+            "args": [
+                "status"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ROS2 Android: Stop C++ project",
+            "type": "process",
+            "command": "${workspaceFolder}/tools/ros2android",
+            "args": [
+                "stop"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "problemMatcher": []
         }
     ]

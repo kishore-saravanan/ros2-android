@@ -1,0 +1,9 @@
+<resources>
+    <style name="RunnerTheme" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">#64E2BC</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">#10171D</item>
+        <item name="android:navigationBarColor">#10171D</item>
+    </style>
+</resources>

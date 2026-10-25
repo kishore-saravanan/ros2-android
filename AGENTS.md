@@ -4,9 +4,10 @@
 
 - The user prohibits accessing, modifying, or deleting sensitive personal files
   or personal apps on the phone. Limit device work to ROS2 Android
-  (`dev.robotbrain.android`), its own debug/test artifacts, hardware diagnostics,
+  (`dev.robotbrain.android`) and its generated project runners
+  (`dev.robotbrain.android.runner.*`), their own debug/test artifacts, hardware diagnostics,
   and development settings needed for this project.
-- Before UI input or screen capture, verify that ROS2 Android is foreground and
+- Before UI input or screen capture, verify that ROS2 Android or its project runner is foreground and
   the lock screen is absent. If another app is visible, do not inspect it.
 - Keep ROS2 Android awake during development using its activity's
   `FLAG_KEEP_SCREEN_ON`. Realme blocks ADB changes to the global stay-awake

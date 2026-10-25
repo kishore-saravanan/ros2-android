@@ -8,7 +8,9 @@ implemented in the 0.1.1 development build. Physical tests passed, including
 29.677 received FPS over a ten-minute USB background run, 29.733 FPS in a
 30-second Wi-Fi run, Activity recreation and notification Stop. See
 [verification](verification/2026-10-25-camera-service.md). One-hour and cross-device
-qualification remain pending. User-code hosting, launch/Python support,
+qualification remain pending. A separate C++ project runner now supports rclcpp,
+custom messages, parameters, remapping and IMU computation on the phone. Physical
+PC-disconnection qualification remains pending. Launch/Python support,
 embedded micro-ROS Agent and the Compose redesign remain future milestones.
 
 ## Product outcome
@@ -28,7 +30,8 @@ Android's ABI and platform APIs, so matching the CPU architecture is insufficien
 
 - Implemented: Kotlin app, JNI, Jazzy rcl and Cyclone DDS, configurable hardware
   publishers, text subscriber, real PC interoperability over Wi-Fi and USB IP.
-- Missing: general user-node host, rclcpp/rclpy support, package deployment,
+- Implemented feasibility: single-node rclcpp project APK builds and deployment.
+- Missing: general workspace hosting, rclpy support, production package deployment,
   launch execution, process supervision, services/actions UI, persistent robot
   sessions, and the phone-hosted micro-ROS Agent.
 - Original prototype camera: periodic Camera2 JPEG still requests, 1 FPS default,

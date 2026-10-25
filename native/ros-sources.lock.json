@@ -113,5 +113,15 @@
     "directory": "rosidl_dynamic_typesupport",
     "url": "https://github.com/ros2/rosidl_dynamic_typesupport.git",
     "revision": "cb8c54d12c678daa70410bb0626ed8626f561e45"
+  },
+  {
+    "directory": "rclcpp",
+    "url": "https://github.com/ros2/rclcpp.git",
+    "revision": "c6153e07e93849a2555aafd7b3dc944813800082"
+  },
+  {
+    "directory": "libstatistics_collector",
+    "url": "https://github.com/ros-tooling/libstatistics_collector.git",
+    "revision": "150e1b0e1fbf920a97e4319f98eaf02be27fa892"
   }
 ]
