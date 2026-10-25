@@ -13,6 +13,9 @@ custom messages, parameters, remapping and IMU computation on the phone.
 ABI-2 adds bounded JSON launch for several compiled nodes sharing one executor.
 The Python feasibility runner now embeds CPython/rclpy with verified typed
 topics, parameters, custom messages, IMU computation and C++ interoperability.
+A build-time ROS `.launch.py` adapter now resolves registered C++ nodes, launch
+arguments, basic substitutions/conditions, scoped namespaces and Python includes;
+see [ROS launch support](ROS-LAUNCH.md) and [knowledge base](PROJECT-KNOWLEDGE.md).
 General workspaces, independent node workers, full ROS launch, physical PC
 disconnection qualification, embedded micro-ROS Agent and the Compose redesign
 remain pending.

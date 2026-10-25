@@ -35,9 +35,15 @@ Monitor the result and change a node's parameter:
 
 ## Launch format
 
-`robot-project.json` declares `runtimeAbi: 2` and the project-relative
-`defaultLaunch: "launch/robot.launch.json"`. That launch file is embedded in the
-APK so the phone's Start button can run it without a PC.
+The example now defaults to a supported ROS `.launch.py` description compiled
+into this same JSON runtime schema; see [ROS launch files](ROS-LAUNCH.md).
+Explicit JSON launch overrides remain supported.
+
+`robot-project.json` declares `runtimeAbi: 2`. The example now points
+`defaultLaunch` at `launch/robot.launch.py`; the CLI resolves it into the JSON
+plan below before building. A JSON project may instead point directly at
+`launch/robot.launch.json`. The resolved plan is embedded in the APK so the
+phone's Start button can run it without a PC.
 
 ```json
 {

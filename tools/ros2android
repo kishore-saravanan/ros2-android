@@ -10,6 +10,7 @@ import shlex
 import subprocess
 import sys
 import time
+import tempfile
 from robot_launch import validate_launch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,10 +38,16 @@ def main():
     ros = commands.add_parser('ros', help='Run ROS CLI with matching middleware and this project interface overlay')
     ros.add_argument('--interface', default='')
     ros.add_argument('ros_command', nargs=argparse.REMAINDER)
-    commands.add_parser('build', help='Cross-build project into a debug runner APK')
+    build = commands.add_parser('build', help='Cross-build project into a debug runner APK')
+    build.add_argument('--launch-arg', action='append', default=[], metavar='NAME:=VALUE')
+    plan = commands.add_parser('launch-plan', help='Resolve and print a launch configuration without starting nodes')
+    plan.add_argument('--launch', type=Path)
+    plan.add_argument('--launch-arg', action='append', default=[], metavar='NAME:=VALUE')
+    plan.add_argument('--namespace', default='/demo')
     commands.add_parser('deploy', help='Install the built project APK without touching the sensor app')
     start = commands.add_parser('start', help='Open the project app and start it through shell-only debug control')
-    start.add_argument('--launch', type=Path, help='Bounded JSON launch file; defaults to packaged project launch')
+    start.add_argument('--launch', type=Path, help='JSON or supported .launch.py override; otherwise use packaged plan')
+    start.add_argument('--launch-arg', action='append', default=[], metavar='NAME:=VALUE')
     start.add_argument('--domain', type=int, default=0)
     start.add_argument('--namespace', help='Default: /demo for C++, /python for Python')
     start.add_argument('--peer', default='')
@@ -63,16 +70,39 @@ def main():
     if hasattr(args, 'namespace') and args.namespace is None:
         args.namespace = '/python' if manifest.get('runtime') == 'python' else '/demo'
     launch = None
-    if args.command in ('build', 'start'):
+    launch_arguments = {}
+    for argument in getattr(args, 'launch_arg', []):
+        name, separator, value = argument.partition(':=')
+        if not separator or not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', name) or name in launch_arguments:
+            parser.error('Use unique launch arguments NAME:=VALUE')
+        launch_arguments[name] = value
+    # Start with no override uses the exact plan baked into the installed APK.
+    resolve = args.command in ('build', 'launch-plan') or (args.command == 'start' and
+                (args.launch is not None or bool(launch_arguments)))
+    if resolve:
         launch_path = getattr(args, 'launch', None)
         if launch_path is None and manifest.get('defaultLaunch'):
             launch_path = project / manifest['defaultLaunch']
         if launch_path:
             if manifest['runtimeAbi'] != 2:
                 parser.error('Launch components require runtime ABI 2')
-            launch = validate_launch(json.loads(launch_path.read_text()), getattr(args, 'namespace', '/demo'))
-        elif manifest['runtimeAbi'] == 2:
-            parser.error('ABI 2 requires a defaultLaunch or --launch file')
+            launch_path = launch_path.expanduser().resolve()
+            if launch_path.name.endswith('.launch.py'):
+                with tempfile.TemporaryDirectory(prefix='ros2-android-launch-') as folder:
+                    output = Path(folder) / 'plan.json'
+                    subprocess.run([str(ROOT / 'tools/compile-ros-launch.sh'), '--project', str(project),
+                                    '--launch', str(launch_path), '--namespace', getattr(args, 'namespace', '/demo'),
+                                    '--arguments-json', json.dumps(launch_arguments), '--output', str(output)],
+                                   check=True, timeout=30)
+                    launch = validate_launch(json.loads(output.read_text()), getattr(args, 'namespace', '/demo'))
+            elif launch_path.suffix == '.json':
+                if launch_arguments:
+                    parser.error('Launch arguments require a .launch.py file')
+                launch = validate_launch(json.loads(launch_path.read_text()), getattr(args, 'namespace', '/demo'))
+            else:
+                parser.error('Use a .launch.py or .json launch file')
+        elif manifest['runtimeAbi'] == 2 or launch_arguments or args.command == 'launch-plan':
+            parser.error('Project has no launch file; set defaultLaunch or pass --launch')
     runtime = manifest.get('runtime', 'cpp')
     if runtime not in ('cpp', 'python'):
         parser.error('Unsupported project runtime')
@@ -126,9 +156,17 @@ def main():
         overlay = Path.home() / '.cache/ros2-android-projects' / manifest['id'] / 'host/install/local_setup.bash'
         env = dict(os.environ, ROS2_ANDROID_PROJECT_OVERLAY=str(overlay))
         subprocess.run([*wrapper, '--', 'ros2', *command], env=env, check=True)
+    elif args.command == 'launch-plan':
+        print(json.dumps(launch, indent=2, ensure_ascii=False))
     elif args.command == 'build':
+        build_options = []
+        if launch is not None:
+            plan_path = ROOT / 'device-logs/launch-plans' / (manifest['id'] + '.json')
+            plan_path.parent.mkdir(parents=True, exist_ok=True)
+            plan_path.write_text(json.dumps(launch, ensure_ascii=False, indent=2) + '\n')
+            build_options = ['-ProbotLaunchPlan=' + str(plan_path)]
         subprocess.run([str(ROOT / 'tools/build.sh'), f':{module}:assembleDebug', f':{module}:lintDebug',
-                        '-ProbotProjectDir=' + str(project)], cwd=ROOT, check=True)
+                        '-ProbotProjectDir=' + str(project), *build_options], cwd=ROOT, check=True)
         print(json.dumps({'apk': str(apk), 'sourceId': source_id(project), 'sha256': hashlib.sha256(apk.read_bytes()).hexdigest()}))
     elif args.command == 'deploy':
         info = json.loads(build_info.read_text())
@@ -213,6 +251,6 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         sys.exit(130)
-    except (OSError, ValueError, KeyError, RuntimeError, subprocess.CalledProcessError) as error:
+    except (OSError, ValueError, KeyError, RuntimeError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
         print('ros2android: ' + str(error), file=sys.stderr)
         sys.exit(1)

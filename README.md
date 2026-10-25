@@ -22,7 +22,10 @@ messages, parameters, IMU computation and phone-hosted C++ interoperability.
 Start here: [v0.1 app and topic-monitoring guide](docs/V0.1.md).
 For custom nodes: [C++ project build and deployment guide](docs/CPP-PROJECTS.md).
 For multiple nodes: [workspace launch guide](docs/WORKSPACE-LAUNCH.md).
+For ROS descriptions: [supported launch-file adapter](docs/ROS-LAUNCH.md).
 For Python: [Python project guide](docs/PYTHON-PROJECTS.md).
+
+Resuming development? Read the [project knowledge base](docs/PROJECT-KNOWLEDGE.md).
 
 Development branch: `develop`. Repository: [ros2-android](https://github.com/kishore-saravanan/ros2-android).
 

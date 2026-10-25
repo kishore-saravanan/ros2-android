@@ -21,7 +21,11 @@ val runtimeAbi = projectManifest["runtimeAbi"] as Int
 val launchPath = projectManifest["defaultLaunch"]?.toString()
 val launchFile = launchPath?.let { robotProject.resolve(it).canonicalFile }
 require(launchFile == null || launchFile.toPath().startsWith(robotProject.toPath())) { "Launch file must be inside project" }
-val launchJson = launchFile?.readText() ?: ""
+val resolvedLaunch = providers.gradleProperty("robotLaunchPlan").orNull?.let { rootProject.file(it) }
+require(launchFile == null || launchFile.extension == "json" || resolvedLaunch != null) {
+    "Resolve ROS launch files with tools/ros2android build first"
+}
+val launchJson = resolvedLaunch?.readText() ?: launchFile?.readText() ?: ""
 require(runtimeAbi != 2 || launchJson.isNotEmpty()) { "ABI 2 requires defaultLaunch" }
 
 val sourceDigest = MessageDigest.getInstance("SHA-256")
@@ -75,7 +79,8 @@ tasks.matching { it.name == "assembleDebug" }.configureEach {
         val output = layout.buildDirectory.file("outputs/robot-project.json").get().asFile
         output.parentFile.mkdirs()
         output.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(mapOf(
-            "project" to projectId, "applicationId" to runnerApplicationId, "sourceId" to sourceId, "runtimeAbi" to runtimeAbi
+            "project" to projectId, "applicationId" to runnerApplicationId, "sourceId" to sourceId, "runtimeAbi" to runtimeAbi,
+            "launchId" to MessageDigest.getInstance("SHA-256").digest(launchJson.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }.take(12)
         ))) + "\n")
     }
 }

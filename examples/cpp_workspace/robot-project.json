@@ -4,5 +4,9 @@
   "applicationId": "dev.robotbrain.android.runner.workspace",
   "name": "C++ workspace",
   "runtimeAbi": 2,
-  "defaultLaunch": "launch/robot.launch.json"
+  "defaultLaunch": "launch/robot.launch.py",
+  "launchComponents": {
+    "cpp_workspace/producer": "producer",
+    "cpp_workspace/processor": "processor"
+  }
 }

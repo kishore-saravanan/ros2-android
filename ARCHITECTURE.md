@@ -1,5 +1,9 @@
 # Architecture and implementation strategy
 
+For current implemented behavior, evidence and resume steps, read the
+[project knowledge base](docs/PROJECT-KNOWLEDGE.md). This document retains the
+original architectural baseline.
+
 The [ROS2 Android platform plan](docs/PLATFORM-PLAN.md) defines the expanded
 phone-as-robot-computer direction, PC development workflow, user-node execution,
 launch compatibility, camera performance and delivery milestones. It supersedes

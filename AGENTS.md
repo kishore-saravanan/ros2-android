@@ -19,8 +19,12 @@
 
 ## Development
 
-- Work on `develop`. The user will configure their Git author later; do not
-  invent an author or commit/push before that is resolved.
+- Read `docs/PROJECT-KNOWLEDGE.md` before resuming development. Update it after
+  each milestone with implemented work, actual verification, findings and
+  remaining roadmap items; keep device identifiers and transient addresses out.
+
+- Work on `develop`. Git identity is configured; preserve it and never invent
+  an author. Commit when requested; push only when requested.
 - Use `tools/build.sh` for the build, unit tests, and lint. Install through
   `tools/run-device.sh`. Physical tests use `:app:connectedDebugAndroidTest`.
 - Report native ROS 2 and micro-ROS Agent integration as pending until real
