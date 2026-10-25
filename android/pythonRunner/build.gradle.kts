@@ -15,7 +15,7 @@ val projectId = manifest["id"].toString()
 val runnerApplicationId = manifest["applicationId"].toString()
 require(manifest["runtime"] == "python" && manifest["runtimeAbi"] == 1 && manifest["schemaVersion"] == 1)
 require(projectId.matches(Regex("[a-z][a-z0-9_]{0,63}")))
-require(runnerApplicationId.matches(Regex("dev\\.robotbrain\\.android\\.runner\\.[a-z][a-z0-9_]*")))
+require(runnerApplicationId.matches(Regex("dev\\.ros2android\\.android\\.runner\\.[a-z][a-z0-9_]*")))
 val digest = MessageDigest.getInstance("SHA-256")
 robotProject.walkTopDown().onEnter { it.name !in setOf("build", ".git", ".cxx", ".gradle", "__pycache__") }
     .filter { it.isFile }.sortedBy { it.relativeTo(robotProject).invariantSeparatorsPath }.forEach {
@@ -24,11 +24,12 @@ robotProject.walkTopDown().onEnter { it.name !in setOf("build", ".git", ".cxx", 
     }
 val sourceId = digest.digest().joinToString("") { "%02x".format(it) }.take(12)
 android {
-    namespace = "dev.robotbrain.runner"
+    namespace = "dev.ros2android.runner"
     compileSdk = 35
     buildToolsVersion = "35.0.0"
     ndkVersion = "27.2.12479018"
     defaultConfig {
+        manifestPlaceholders += mapOf("runnerProjectId" to projectId, "runnerRuntime" to "python", "runnerSourceId" to sourceId)
         applicationId = runnerApplicationId
         minSdk = 26; targetSdk = 35
         versionCode = 1; versionName = "0.1.0-python-dev1"
@@ -41,6 +42,7 @@ android {
         buildConfigField("String", "PROJECT_LAUNCH_JSON", "\"\"")
         externalNativeBuild.cmake.arguments += listOf("-DANDROID_STL=c++_shared", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON")
     }
+    sourceSets["main"].res.srcDir("../branding/res")
     buildFeatures.buildConfig = true
     sourceSets["main"].apply {
         manifest.srcFile("../runner/src/main/AndroidManifest.xml")

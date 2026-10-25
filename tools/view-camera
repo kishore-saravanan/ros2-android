@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# View a compressed phone camera in RViz without changing saved RViz settings.
+set -eo pipefail
+project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then
+    exec python3 "$project_root/tools/pc-camera-rviz.py" "$@"
+fi
+source "${ROBOT_ROS_SETUP:-/opt/ros/jazzy/setup.bash}"
+exec python3 "$project_root/tools/pc-camera-rviz.py" "$@"

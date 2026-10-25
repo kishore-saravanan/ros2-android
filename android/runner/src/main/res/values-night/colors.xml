@@ -1,0 +1,11 @@
+<resources>
+    <color name="ros_bg">#101722</color>
+    <color name="ros_surface">#1B2638</color>
+    <color name="ros_text">#EDF2FA</color>
+    <color name="ros_muted">#B1BED1</color>
+    <color name="ros_accent">#A8C8FF</color>
+    <color name="ros_on_accent">#102643</color>
+    <color name="ros_selected">#2B405F</color>
+    <color name="ros_outline">#394960</color>
+    <color name="ros_error">#FFB4AB</color>
+</resources>

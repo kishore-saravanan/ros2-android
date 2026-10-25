@@ -47,6 +47,13 @@ run ordinary `colcon build` from the example workspace with Jazzy sourced.
 
 ## Cross-build, package and deploy
 
+**Replace `PC_IP` and `PHONE_IP` before running the commands.** They are
+placeholders, not literal arguments. PC_IP is the PC's IPv4 from
+`ip -4 -brief address`; PHONE_IP is the phone IPv4 shown in ROS2 Android →
+Settings → Network addresses. Choose both from the same Wi-Fi or USB-tethering
+link. Unlock the phone first. Run each command separately and stop on errors.
+
+
 ```bash
 ./tools/ros2android-workspace --workspace examples/android_test_ws build
 ./tools/ros2android-workspace --workspace examples/android_test_ws deploy
@@ -55,9 +62,13 @@ run ordinary `colcon build` from the example workspace with Jazzy sourced.
 ./tools/ros2android-workspace --workspace examples/android_test_ws status
 ```
 
+Successful `start` prints `state: Running`, `native.running: true`, and the
+talker/processor node names. `Stopped` with empty nodes only confirms that no
+workspace processes are active; it does not prove start succeeded. Check the
+preceding start command's output before proceeding to status or topic monitoring.
 Use current USB-tethering/Wi-Fi IPv4 addresses. Unlock the phone before startup.
-The verified physical path is USB tethering; Wi-Fi qualification of this workspace
-backend remains pending. Domain 42 keeps this example separate from domain-0 demos.
+The initial verified physical path is USB tethering; a later functional Wi-Fi
+probe is recorded below. Broader transport qualification remains pending. Domain 42 keeps this example separate from domain-0 demos.
 Use the same domain in the PC monitoring shell.
 
 The build performs these steps:
@@ -70,8 +81,8 @@ The build performs these steps:
    launch adapter. No hand-written Android factory/registry is required.
 4. Package the executable PIE binaries and libraries in the APK's read-only
    native-library area and package ament/package resources as assets.
-5. Build the Android workspace runner through tools/build.sh, then install through
-   tools/run-device.sh. Source fingerprints reject stale deployment/start inputs.
+5. Build the Android workspace runner through setup/build.sh, then install through
+   setup/run-device.sh. Source fingerprints reject stale deployment/start inputs.
 
 Android's foreground service starts each selected native executable with
 ProcessBuilder. The child receives ROS arguments, domain, Cyclone configuration,
@@ -89,6 +100,28 @@ Stop terminates this workspace's launched child processes. If a child exits, the
 controller reports the component/exit code, stops the remaining group and permits
 an explicit restart. No automatic respawn policy is enabled. The main sensor app
 and other project runner apps are separate.
+
+## Native ros2 run in a connected phone shell
+
+Build (includes the core ROS CLI by default), deploy and connect using
+`./tools/connect-shell`. Use `--without-shell` for a C++-only build.
+Then use upstream `ros2 run` inside the phone shell to run one deployed executable
+at a time. See [Android shell guide](ANDROID-SHELL.md) for the full workflow,
+independent terminals, domains, current plugin/lifecycle limits and APK sizes.
+The upstream on-phone LaunchService now runs the example; the builder still
+uses its supported static adapter for the separate app group plan.
+
+## On-phone project controls
+
+Current builds advertise the project discovery interface. After deployment, open
+ROS2 Android → Projects → Refresh, then Open project controls. Opening does not
+start nodes. Use the runner's Start/Stop controls and its own connection settings;
+UI defaults to domain 0, unlike the domain-42 CLI examples above. The main sensor
+app's Stop all does not stop workspace nodes. See [project guide](PROJECTS.md).
+
+A subsequent functional PC Wi-Fi-interface probe also passed from UI-started
+nodes on domain 0; see [evidence](verification/2026-10-25-project-browser.md).
+Long-duration workspace Wi-Fi/device qualification remains pending.
 
 ## Verify the same behavior
 
@@ -134,7 +167,8 @@ Multiple installed launch files require an explicit `build --launch PATH`.
 Build supports `--launch-arg NAME:=VALUE`; runtime start supports the same launch
 overrides and connection controls as tools/ros2android.
 
-Outputs live in ~/.cache/ros2-android-workspaces/<id>/{host,android,bundle,runner-project}.
+Outputs live in ~/.cache/ros2-android-workspaces/<id>/ under host/,
+android-shell/ (standard), android/ (minimal), bundle/ and runner-project/.
 Source edits require rebuild/deploy before another start. SDK/app-runtime changes
 also require rebuilding the APK, even when workspace sources are unchanged.
 
@@ -152,8 +186,9 @@ be installed into Android; they need Android builds or replacements. Parameter
 files, dynamic launch events, arbitrary plugins, package-dependent data-path
 assumptions and Linux-only drivers/services need package-specific qualification.
 
-Python workspace entry points, mixed-language launch, full on-phone LaunchService,
-additional ROS packages, grandchild-process supervision, automatic restart,
+Native LaunchService now runs in the standard shell bundle; Python workspace
+entry points, arbitrary mixed-language launch packaging, additional ROS packages,
+grandchild-process supervision, automatic restart,
 physical PC removal and long-duration/device qualification remain pending.
 The workspace supervisor heartbeat is its own elapsed-time indicator, not proof
 that user callbacks are making progress; use actual ROS traffic probes.

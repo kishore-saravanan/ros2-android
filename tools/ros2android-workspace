@@ -52,8 +52,8 @@ def elf_check(path):
     return needed
 
 
-def stage(workspace, cache, project_id, launch, launch_arguments):
-    prefix, sdk = cache / 'android/install', (ROOT / 'native-deps/install').resolve()
+def stage(workspace, cache, project_id, launch, launch_arguments, with_shell=False):
+    prefix, sdk = cache / ('android-shell' if with_shell else 'android') / 'install', (ROOT / 'native-deps/install').resolve()
     bundle, project = cache / 'bundle', cache / 'runner-project'
     if bundle.exists():
         shutil.rmtree(bundle)
@@ -96,17 +96,34 @@ def stage(workspace, cache, project_id, launch, launch_arguments):
         shutil.copy2(path, native / name)
     if not components:
         raise ValueError('Workspace installed no native executables under lib/<package>')
+    (bundle / 'assets/ros2-workspace/executables.json').write_text(json.dumps(components, indent=2) + '\n')
+    if with_shell:
+        subprocess.run([sys.executable, str(ROOT / 'setup/prepare-ros-shell.py'), str(bundle)], check=True)
+        # Include this workspace's target-generated Python message bindings too.
+        for site in (prefix / 'lib').glob('python*/site-packages'):
+            for package in site.iterdir():
+                if package.is_dir() and not package.name.endswith(('.egg-info', '.dist-info', '__pycache__')):
+                    destination = bundle / 'assets/ros2-shell/site-packages' / package.name
+                    shutil.copytree(package, destination, dirs_exist_ok=True, ignore=shutil.ignore_patterns('__pycache__'))
+                    for extension in destination.rglob('*.so'):
+                        dependencies = elf_check(extension)
+                        name = re.sub(r'\.cpython-[^.]+', '', extension.name)
+                        if name != extension.name: extension.rename(extension.with_name(name))
+                        if not dependencies <= (set(p.name for p in native.glob('*.so')) | {'libc.so','libm.so','libdl.so','liblog.so','libz.so','libandroid.so'}):
+                            raise ValueError('Missing target Python extension dependency: ' + str(extension))
+        for library in native.glob('*.so'):
+            needed[library.name] = elf_check(library)
     provided = set(needed) | {'libc.so', 'libm.so', 'libdl.so', 'liblog.so', 'libandroid.so', 'libz.so', 'libc++_shared.so'}
     for name, dependencies in needed.items():
         if dependencies - provided:
             raise ValueError('Missing Android dependencies for ' + name + ': ' + str(sorted(dependencies - provided)))
     project.mkdir(parents=True, exist_ok=True)
     manifest = {'schemaVersion': 1, 'id': project_id, 'name': workspace.name,
-                'applicationId': 'dev.robotbrain.android.runner.ws_' + project_id,
+                'applicationId': 'dev.ros2android.android.runner.ws_' + project_id,
                 'runtime': 'workspace', 'runtimeAbi': 2, 'defaultLaunch': 'launch.json',
                 'launchComponents': components, 'bundleRoot': str(bundle),
                 'workspace': str(workspace), 'workspaceSourceHash': digest_tree(workspace / 'src'),
-                'workspaceLaunch': str(launch), 'bundleHash': digest_tree(bundle)}
+                'workspaceLaunch': str(launch), 'withShell': with_shell, 'bundleHash': digest_tree(bundle)}
     (project / 'robot-project.json').write_text(json.dumps(manifest, indent=2) + '\n')
     arguments = {}
     for value in launch_arguments:
@@ -129,6 +146,11 @@ def main():
     commands.add_parser('inspect')
     commands.add_parser('host-build')
     build = commands.add_parser('build')
+    shell = build.add_mutually_exclusive_group()
+    shell.add_argument('--with-shell', dest='with_shell', action='store_true', default=True,
+                       help='Bundle the standard native ROS CLI (default)')
+    shell.add_argument('--without-shell', dest='with_shell', action='store_false',
+                       help='Build a smaller C++-only APK without the ROS CLI')
     build.add_argument('--launch', type=Path)
     build.add_argument('--launch-arg', action='append', default=[])
     for command in ('deploy', 'start', 'status', 'stop', 'kill', 'logs', 'launch-plan'):
@@ -151,14 +173,16 @@ def main():
                           'sourceHash': digest_tree(workspace / 'src')}, indent=2)); return
     if args.command == 'host-build':
         if forward: parser.error('Unknown arguments: ' + str(forward))
-        subprocess.run([str(ROOT / 'tools/build-colcon-workspace.sh'), str(workspace), str(cache / 'host'), 'host'], check=True); return
+        subprocess.run([str(ROOT / 'setup/build-colcon-workspace.sh'), str(workspace), str(cache / 'host'), 'host'], check=True); return
     if args.command == 'build':
+        if args.with_shell and not (ROOT / 'native-deps/python-packages/composition_interfaces').is_dir():
+            parser.error('The standard CLI needs the Python SDK: run ./setup/build-python-ros.sh, or use build --without-shell for C++ only')
         if forward: parser.error('Unknown arguments: ' + str(forward))
-        subprocess.run([str(ROOT / 'tools/build-colcon-workspace.sh'), str(workspace), str(cache / 'android'), 'android'], check=True)
-        files = sorted((cache / 'android/install/share').rglob('*.launch.py'))
+        subprocess.run([str(ROOT / 'setup/build-colcon-workspace.sh'), str(workspace), str(cache / ('android-shell' if args.with_shell else 'android')), 'android', str(args.with_shell).lower()], check=True)
+        files = sorted((cache / ('android-shell' if args.with_shell else 'android') / 'install/share').rglob('*.launch.py'))
         launch = args.launch.expanduser().resolve() if args.launch else (files[0] if len(files) == 1 else None)
         if launch is None: parser.error('Select --launch when the workspace has zero or several launch files')
-        project = stage(workspace, cache, project_id, launch, args.launch_arg)
+        project = stage(workspace, cache, project_id, launch, args.launch_arg, args.with_shell)
         forwarded = 'build'
     else:
         manifest = json.loads((project / 'robot-project.json').read_text())

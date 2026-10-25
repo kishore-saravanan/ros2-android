@@ -70,7 +70,7 @@ void report(const std::string & error) {
 }
 }
 
-extern "C" JNIEXPORT void JNICALL Java_dev_robotbrain_runner_ProjectNative_start(
+extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_runner_ProjectNative_start(
   JNIEnv * env, jobject, jint domain, jstring name_space, jstring peer, jstring local,
   jstring library_dir, jobjectArray arguments, jobjectArray components, jobjectArray node_arguments) {
   std::lock_guard<std::mutex> lock(lifecycle);
@@ -151,10 +151,10 @@ extern "C" JNIEXPORT void JNICALL Java_dev_robotbrain_runner_ProjectNative_start
     env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), error.what());
   }
 }
-extern "C" JNIEXPORT void JNICALL Java_dev_robotbrain_runner_ProjectNative_stop(JNIEnv *, jobject) {
+extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_runner_ProjectNative_stop(JNIEnv *, jobject) {
   std::lock_guard<std::mutex> lock(lifecycle); stop_locked();
 }
-extern "C" JNIEXPORT jstring JNICALL Java_dev_robotbrain_runner_ProjectNative_status(JNIEnv * env, jobject) {
+extern "C" JNIEXPORT jstring JNICALL Java_dev_ros2android_runner_ProjectNative_status(JNIEnv * env, jobject) {
   std::unique_lock<std::mutex> lock(lifecycle, std::try_to_lock);
   if (!lock.owns_lock()) return env->NewStringUTF("{\"transition\":true}");
   std::lock_guard<std::mutex> error_lock(errors);

@@ -14,7 +14,7 @@ val projectId = projectManifest["id"].toString()
 val runnerApplicationId = projectManifest["applicationId"].toString()
 require(projectManifest["schemaVersion"] == 1 && projectManifest["runtimeAbi"] in listOf(1, 2)) { "Unsupported project schema or runtime ABI" }
 require(projectId.matches(Regex("[a-z][a-z0-9_]{0,63}"))) { "Invalid project ID" }
-require(runnerApplicationId.matches(Regex("dev\\.robotbrain\\.android\\.runner\\.[a-z][a-z0-9_]*"))) { "Use a unique dev.robotbrain.android.runner.<id> applicationId" }
+require(runnerApplicationId.matches(Regex("dev\\.ros2android\\.android\\.runner\\.[a-z][a-z0-9_]*"))) { "Use a unique dev.ros2android.android.runner.<id> applicationId" }
 require(robotProject.resolve("CMakeLists.txt").isFile) { "Project CMakeLists.txt missing" }
 
 val runtimeAbi = projectManifest["runtimeAbi"] as Int
@@ -37,11 +37,12 @@ robotProject.walkTopDown().onEnter { it.name !in setOf("build", ".git", ".cxx", 
 val sourceId = sourceDigest.digest().joinToString("") { "%02x".format(it) }.take(12)
 
 android {
-    namespace = "dev.robotbrain.runner"
+    namespace = "dev.ros2android.runner"
     compileSdk = 35
     buildToolsVersion = "35.0.0"
     ndkVersion = "27.2.12479018"
     defaultConfig {
+        manifestPlaceholders += mapOf("runnerProjectId" to projectId, "runnerRuntime" to "cpp", "runnerSourceId" to sourceId)
         applicationId = runnerApplicationId
         minSdk = 26
         targetSdk = 35
@@ -59,6 +60,7 @@ android {
             cppFlags += "-std=c++17"
         }
     }
+    sourceSets["main"].res.srcDir("../branding/res")
     buildFeatures.buildConfig = true
     externalNativeBuild.cmake {
         path = file("../../native/runner/CMakeLists.txt")

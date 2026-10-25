@@ -82,7 +82,7 @@ const rosidl_message_type_support_t* support(int kind) {
         case 1: case 2: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, geometry_msgs, msg, Vector3Stamped)();
         case 3: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, sensor_msgs, msg, MagneticField)();
         case 4: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, sensor_msgs, msg, Illuminance)();
-        case 5: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, std_msgs, msg, Float64)();
+        case 5: case 9: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, std_msgs, msg, Float64)();
         case 6: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, sensor_msgs, msg, FluidPressure)();
         case 8: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, sensor_msgs, msg, CompressedImage)();
         default: throw std::runtime_error("Unsupported publisher type");
@@ -140,7 +140,7 @@ bool sample(Publisher& pub, int64_t time, const std::vector<float>& values) {
             header(m->header, time); m->illuminance = values[0];
             result = send(pub, m); sensor_msgs__msg__Illuminance__destroy(m); break;
         }
-        case 5: {
+        case 5: case 9: {
             std_msgs__msg__Float64 m{}; m.data = values[0]; result = send(pub, &m); break;
         }
         case 6: {
@@ -154,13 +154,13 @@ bool sample(Publisher& pub, int64_t time, const std::vector<float>& values) {
 }
 }
 
-extern "C" JNIEXPORT jstring JNICALL Java_dev_robotbrain_android_NativeRuntime_describe(JNIEnv* env, jobject) {
+extern "C" JNIEXPORT jstring JNICALL Java_dev_ros2android_android_NativeRuntime_describe(JNIEnv* env, jobject) {
     return env->NewStringUTF("ROS 2 Jazzy / rcl / Cyclone DDS / ARM64\nNative publisher and subscriber runtime");
 }
-extern "C" JNIEXPORT jlong JNICALL Java_dev_robotbrain_android_NativeRuntime_monotonicTimeNanos(JNIEnv*, jobject) {
+extern "C" JNIEXPORT jlong JNICALL Java_dev_ros2android_android_NativeRuntime_monotonicTimeNanos(JNIEnv*, jobject) {
     return static_cast<jlong>(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count());
 }
-extern "C" JNIEXPORT void JNICALL Java_dev_robotbrain_android_NativeRuntime_start(
+extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_android_NativeRuntime_start(
     JNIEnv* env, jobject, jint domain, jstring ns, jstring peer, jstring local, jstring directory) {
     std::lock_guard<std::mutex> lock(gate);
     try {
@@ -192,10 +192,10 @@ extern "C" JNIEXPORT void JNICALL Java_dev_robotbrain_android_NativeRuntime_star
         running = true; last_error.clear();
     } catch (const std::exception& error) { raise(env, error); }
 }
-extern "C" JNIEXPORT void JNICALL Java_dev_robotbrain_android_NativeRuntime_stop(JNIEnv*, jobject) {
+extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_android_NativeRuntime_stop(JNIEnv*, jobject) {
     std::lock_guard<std::mutex> lock(gate); stop_locked();
 }
-extern "C" JNIEXPORT void JNICALL Java_dev_robotbrain_android_NativeRuntime_createPublisher(JNIEnv* env, jobject, jstring id, jstring topic, jint kind) {
+extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_android_NativeRuntime_createPublisher(JNIEnv* env, jobject, jstring id, jstring topic, jint kind) {
     std::lock_guard<std::mutex> lock(gate);
     try {
         require_running(); const auto key = str(env, id);
@@ -206,12 +206,12 @@ extern "C" JNIEXPORT void JNICALL Java_dev_robotbrain_android_NativeRuntime_crea
         publishers[key] = std::move(pub);
     } catch (const std::exception& error) { raise(env, error); }
 }
-extern "C" JNIEXPORT void JNICALL Java_dev_robotbrain_android_NativeRuntime_removePublisher(JNIEnv* env, jobject, jstring id) {
+extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_android_NativeRuntime_removePublisher(JNIEnv* env, jobject, jstring id) {
     std::lock_guard<std::mutex> lock(gate);
     const auto it = publishers.find(str(env, id));
     if (it != publishers.end()) { finish(rcl_publisher_fini(&it->second->handle, &node)); publishers.erase(it); }
 }
-extern "C" JNIEXPORT jboolean JNICALL Java_dev_robotbrain_android_NativeRuntime_publishSample(JNIEnv* env, jobject, jstring id, jlong time, jfloatArray data) {
+extern "C" JNIEXPORT jboolean JNICALL Java_dev_ros2android_android_NativeRuntime_publishSample(JNIEnv* env, jobject, jstring id, jlong time, jfloatArray data) {
     std::lock_guard<std::mutex> lock(gate);
     try {
         const auto it = publishers.find(str(env, id)); if (it == publishers.end()) return JNI_FALSE;
@@ -220,7 +220,7 @@ extern "C" JNIEXPORT jboolean JNICALL Java_dev_robotbrain_android_NativeRuntime_
         return sample(*it->second, time, values) ? JNI_TRUE : JNI_FALSE;
     } catch (const std::exception& error) { last_error = error.what(); return JNI_FALSE; }
 }
-extern "C" JNIEXPORT jboolean JNICALL Java_dev_robotbrain_android_NativeRuntime_publishImage(JNIEnv* env, jobject, jstring id, jlong time, jbyteArray data) {
+extern "C" JNIEXPORT jboolean JNICALL Java_dev_ros2android_android_NativeRuntime_publishImage(JNIEnv* env, jobject, jstring id, jlong time, jbyteArray data) {
     std::lock_guard<std::mutex> lock(gate);
     const auto it = publishers.find(str(env, id)); if (it == publishers.end() || it->second->kind != 8) return JNI_FALSE;
     auto* message = sensor_msgs__msg__CompressedImage__create(); if (!message) return JNI_FALSE;
@@ -237,7 +237,7 @@ extern "C" JNIEXPORT jboolean JNICALL Java_dev_robotbrain_android_NativeRuntime_
     sensor_msgs__msg__CompressedImage__destroy(message);
     return result ? JNI_TRUE : JNI_FALSE;
 }
-extern "C" JNIEXPORT void JNICALL Java_dev_robotbrain_android_NativeRuntime_subscribeDisplay(JNIEnv* env, jobject, jstring topic) {
+extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_android_NativeRuntime_subscribeDisplay(JNIEnv* env, jobject, jstring topic) {
     std::lock_guard<std::mutex> lock(gate);
     try {
         require_running();
@@ -249,11 +249,11 @@ extern "C" JNIEXPORT void JNICALL Java_dev_robotbrain_android_NativeRuntime_subs
         subscribed = true;
     } catch (const std::exception& error) { raise(env, error); }
 }
-extern "C" JNIEXPORT void JNICALL Java_dev_robotbrain_android_NativeRuntime_unsubscribeDisplay(JNIEnv*, jobject) {
+extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_android_NativeRuntime_unsubscribeDisplay(JNIEnv*, jobject) {
     std::lock_guard<std::mutex> lock(gate);
     if (subscribed) { finish(rcl_subscription_fini(&display, &node)); subscribed = false; }
 }
-extern "C" JNIEXPORT jstring JNICALL Java_dev_robotbrain_android_NativeRuntime_pollDisplay(JNIEnv* env, jobject) {
+extern "C" JNIEXPORT jstring JNICALL Java_dev_ros2android_android_NativeRuntime_pollDisplay(JNIEnv* env, jobject) {
     std::lock_guard<std::mutex> lock(gate);
     if (!subscribed) return nullptr;
     auto* message = std_msgs__msg__String__create(); if (!message) return nullptr;
@@ -277,17 +277,17 @@ extern "C" JNIEXPORT jstring JNICALL Java_dev_robotbrain_android_NativeRuntime_p
     jstring charset = env->NewStringUTF("UTF-8");
     return static_cast<jstring>(env->NewObject(string_class, constructor, bytes, charset));
 }
-extern "C" JNIEXPORT jlong JNICALL Java_dev_robotbrain_android_NativeRuntime_publishedCount(JNIEnv* env, jobject, jstring id) {
+extern "C" JNIEXPORT jlong JNICALL Java_dev_ros2android_android_NativeRuntime_publishedCount(JNIEnv* env, jobject, jstring id) {
     std::lock_guard<std::mutex> lock(gate); const auto it = publishers.find(str(env, id)); return it == publishers.end() ? 0 : it->second->sent;
 }
-extern "C" JNIEXPORT jstring JNICALL Java_dev_robotbrain_android_NativeRuntime_status(JNIEnv* env, jobject) {
+extern "C" JNIEXPORT jstring JNICALL Java_dev_ros2android_android_NativeRuntime_status(JNIEnv* env, jobject) {
     std::lock_guard<std::mutex> lock(gate);
     const auto result = running ? "ROS node " + node_namespace + "/robot_brain · " + std::to_string(publishers.size()) + " publisher(s)" + (subscribed ? " · display subscriber active" : "")
                                 : "ROS session stopped";
     return env->NewStringUTF((result + (last_error.empty() ? "" : "\nLast error: " + last_error)).c_str());
 }
 
-extern "C" JNIEXPORT jobjectArray JNICALL Java_dev_robotbrain_android_NativeRuntime_topics(JNIEnv* env, jobject) {
+extern "C" JNIEXPORT jobjectArray JNICALL Java_dev_ros2android_android_NativeRuntime_topics(JNIEnv* env, jobject) {
     std::lock_guard<std::mutex> lock(gate);
     try {
         require_running();

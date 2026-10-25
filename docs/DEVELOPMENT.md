@@ -39,8 +39,8 @@ machine with the ROS Python build dependencies installed, prepare one with:
 python3 -m venv --system-site-packages "$HOME/.local/share/ros2-android-tools/build-venv"
 "$HOME/.local/share/ros2-android-tools/build-venv/bin/python" -m pip install \
   colcon-common-extensions==0.3.0 vcstool==0.3.0
-python3 tools/fetch-native-ros.py
-./tools/build-native-ros.sh
+python3 setup/fetch-native-ros.py
+./setup/build-native-ros.sh
 ```
 
 If the OS lacks `python3-venv`, install that prerequisite locally or bootstrap
@@ -58,7 +58,7 @@ upstream generators do not consistently handle spaces in their workspace path.
 with checksums. The app and ROS dependencies use the same shared NDK C++ runtime.
 
 ```bash
-./tools/build.sh
+./setup/build.sh
 ```
 
 This builds the debug APK, runs configuration unit tests, and runs Android lint.
@@ -70,32 +70,33 @@ Enable USB debugging, connect and unlock the phone, then allow this computer's
 debugging key on the phone. Install and launch:
 
 ```bash
-./tools/run-device.sh
+./setup/run-device.sh
 ```
 
-This installs the development package `dev.robotbrain.android`. It uses ADB's
+This installs the development package `dev.ros2android.android`. It uses ADB's
 single-physical-device selector; it does not guess when multiple phones exist.
 
 The app sets `FLAG_KEEP_SCREEN_ON` while its activity is visible, so the phone
 stays awake during development. Switching away restores normal system sleep
 behavior. Realme denied ADB modification of the global stay-awake setting;
-its original value of `0` was preserved. To keep it awake outside this app too,
-enable **Settings → Developer options → Stay awake** on the phone if available.
+its original value of `0` was preserved. Do not bypass that restriction or change
+global screen-awake/security settings. Active sessions use service-owned CPU wake
+resources; this does not force the screen on outside a project Activity.
 
 Device access is limited to this project app, its debug artifacts, hardware
 capability diagnostics, and development settings. Do not inspect or modify
 personal files or other apps.
 
-Use **Publishers**, **Subscribers**, and **Connection** as described in
+Use **Overview**, **Sensors** (including **Display**), **Projects**, **Connect**, and **Help** as described in
 `docs/V0.1.md`. The foreground service owns active sessions independently of the
 Activity; navigation and Activity recreation do not request a runtime stop.
-Use Stop all or the notification Stop action to release the session. The sensor frame uses Android device axes and
+Use Stop session or the notification Stop action to release the session. The sensor frame uses Android device axes and
 does not supply a calibrated robot mounting transform.
 
 Device tests:
 
 ```bash
-./tools/build.sh :app:connectedDebugAndroidTest
+./setup/build.sh :app:connectedDebugAndroidTest
 ```
 
 Tests cover native loading, actual sensor delivery, listener cleanup, ROS node
@@ -122,8 +123,8 @@ python3 tools/pc-probe.py --duration 60 --text 'Round trip verified'
 In another terminal, replace `PC_IP` and `PHONE_IP` with actual IPv4 addresses:
 
 ```bash
-./tools/build.sh :app:connectedDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.class=dev.robotbrain.android.RosRuntimeTest#actualImuReachesPcAndDisplayMessageReturns \
+./setup/build.sh :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=dev.ros2android.android.RosRuntimeTest#actualImuReachesPcAndDisplayMessageReturns \
   -Pandroid.testInstrumentationRunnerArguments.pcPeer=PC_IP \
   -Pandroid.testInstrumentationRunnerArguments.localAddress=PHONE_IP \
   '-Pandroid.testInstrumentationRunnerArguments.expectedText=Round trip verified'
@@ -172,8 +173,8 @@ JVM tests include padded/overlapping YUV planes, pixel strides, cropped rows and
 sensor-clock mapping. The physical performance test is explicitly opt-in:
 
 ```bash
-./tools/build.sh :app:connectedDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.class=dev.robotbrain.android.CameraRosTest#continuousCameraSustainsRequestedRate \
+./setup/build.sh :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=dev.ros2android.android.CameraRosTest#continuousCameraSustainsRequestedRate \
   -Pandroid.testInstrumentationRunnerArguments.testContinuousCamera=true \
   -Pandroid.testInstrumentationRunnerArguments.cameraRate=30 \
   -Pandroid.testInstrumentationRunnerArguments.cameraSeconds=30 \

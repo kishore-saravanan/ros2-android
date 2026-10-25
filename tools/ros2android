@@ -14,7 +14,7 @@ import tempfile
 from robot_launch import validate_launch
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE_PATTERN = r'dev\.robotbrain\.android\.runner\.[a-z][a-z0-9_]*'
+PACKAGE_PATTERN = r'dev\.ros2android\.android\.runner\.[a-z][a-z0-9_]*'
 
 
 def source_id(project):
@@ -124,8 +124,8 @@ def main():
         return device('shell', shlex.join(str(v) for v in arguments))
 
     def control(action, extras=()):
-        output = remote('am', 'broadcast', '--include-stopped-packages', '-n', package + '/dev.robotbrain.runner.DebugControlReceiver',
-                        '-a', 'dev.robotbrain.runner.' + action, *extras)
+        output = remote('am', 'broadcast', '--include-stopped-packages', '-n', package + '/dev.ros2android.runner.DebugControlReceiver',
+                        '-a', 'dev.ros2android.runner.' + action, *extras)
         match = re.search(r'Broadcast completed: result=(-?\d+)(?:, data="(.*)")?', output)
         if not match or match[1] != '0':
             raise RuntimeError(output.strip())
@@ -138,12 +138,12 @@ def main():
             return json.loads(json.loads('"' + data + '"'))
 
     if args.command == 'sdk':
-        subprocess.run([str(ROOT / 'tools/build-python-ros.sh')] if runtime == 'python' else
-                       [str(ROOT / 'tools/build-native-ros.sh'), '--with-cpp'], cwd=ROOT, check=True)
+        subprocess.run([str(ROOT / 'setup/build-python-ros.sh')] if runtime == 'python' else
+                       [str(ROOT / 'setup/build-native-ros.sh'), '--with-cpp'], cwd=ROOT, check=True)
     elif args.command == 'host-sdk':
-        subprocess.run([sys.executable, str(ROOT / 'tools/setup-pc-cyclone.py')], check=True)
+        subprocess.run([sys.executable, str(ROOT / 'setup/setup-pc-cyclone.py')], check=True)
     elif args.command == 'host-interfaces':
-        subprocess.run([str(ROOT / 'tools/build-project-interfaces.sh'), str(project), manifest['id']], check=True)
+        subprocess.run([str(ROOT / 'setup/build-project-interfaces.sh'), str(project), manifest['id']], check=True)
     elif args.command == 'ros':
         command = args.ros_command
         if command and command[0] == '--':
@@ -165,14 +165,14 @@ def main():
             plan_path.parent.mkdir(parents=True, exist_ok=True)
             plan_path.write_text(json.dumps(launch, ensure_ascii=False, indent=2) + '\n')
             build_options = ['-ProbotLaunchPlan=' + str(plan_path)]
-        subprocess.run([str(ROOT / 'tools/build.sh'), f':{module}:assembleDebug', f':{module}:lintDebug',
+        subprocess.run([str(ROOT / 'setup/build.sh'), f':{module}:assembleDebug', f':{module}:lintDebug',
                         '-ProbotProjectDir=' + str(project), *build_options], cwd=ROOT, check=True)
         print(json.dumps({'apk': str(apk), 'sourceId': source_id(project), 'sha256': hashlib.sha256(apk.read_bytes()).hexdigest()}))
     elif args.command == 'deploy':
         info = json.loads(build_info.read_text())
         if info['applicationId'] != package or info['sourceId'] != source_id(project):
             raise RuntimeError('Built APK does not match this project/source. Run build first.')
-        command = [str(ROOT / 'tools/run-device.sh'), {'cpp': '--runner', 'python': '--python-runner', 'workspace': '--workspace-runner'}[runtime], package, '--install-only']
+        command = [str(ROOT / 'setup/run-device.sh'), {'cpp': '--runner', 'python': '--python-runner', 'workspace': '--workspace-runner'}[runtime], package, '--install-only']
         if args.serial:
             command += ['--serial', args.serial]
         subprocess.run(command, cwd=ROOT, check=True)
@@ -186,19 +186,19 @@ def main():
             ros_args = ros_args[1:]
         if ros_args and ros_args[0] == '--ros-args':
             ros_args = ros_args[1:]
-        print(remote('am', 'start', '-W', '-n', package + '/dev.robotbrain.runner.MainActivity').strip())
+        print(remote('am', 'start', '-W', '-n', package + '/dev.ros2android.runner.MainActivity').strip())
         deadline = time.monotonic() + 10
         retry_at = time.monotonic() + 2
         while time.monotonic() < deadline:
             activity = remote('dumpsys', 'activity', 'activities')
-            if any(package + '/dev.robotbrain.runner.MainActivity' in line
+            if any(package + '/dev.ros2android.runner.MainActivity' in line
                    for line in activity.splitlines() if 'mResumedActivity:' in line):
                 break
             if time.monotonic() >= retry_at:
                 if 'showing=true' in remote('dumpsys', 'window', 'policy'):
                     raise RuntimeError('Unlock the phone before starting a project.')
                 # Some devices discard the first post-install activity launch.
-                remote('am', 'start', '-W', '-n', package + '/dev.robotbrain.runner.MainActivity')
+                remote('am', 'start', '-W', '-n', package + '/dev.ros2android.runner.MainActivity')
                 retry_at = float('inf')
             time.sleep(.2)
         else:

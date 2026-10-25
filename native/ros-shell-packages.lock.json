@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "rosPackages": {
+    "ros2cli": "0.32.13",
+    "ros2run": "0.32.13",
+    "ros2pkg": "0.32.13",
+    "ros2node": "0.32.13",
+    "ros2topic": "0.32.13",
+    "ros2param": "0.32.13",
+    "ros2service": "0.32.13",
+    "ros2action": "0.32.13",
+    "ros2interface": "0.32.13",
+    "ros2lifecycle": "0.32.13",
+    "ros2component": "0.32.13",
+    "ros2multicast": "0.32.13",
+    "ros2launch": "0.26.13",
+    "launch": "3.4.12",
+    "launch_ros": "0.26.13",
+    "launch_xml": "3.4.12",
+    "launch_yaml": "3.4.12",
+    "osrf_pycommon": "2.1.7",
+    "ros2plugin": "5.4.6",
+    "ament_copyright": "0.17.5"
+  },
+  "unsupported": {
+    "bag": "Needs Android rosbag2/storage bindings",
+    "doctor": "Needs Android psutil/network and distribution diagnostics",
+    "security": "Needs an Android DDS security build",
+    "daemon": "Direct discovery is enabled; the Android daemon/psutil backend is not bundled"
+  },
+  "purePythonDependencies": [
+    "packaging",
+    "yaml",
+    "lark",
+    "importlib_metadata",
+    "zipp",
+    "jinja2",
+    "markupsafe",
+    "catkin_pkg",
+    "dateutil",
+    "six",
+    "docutils",
+    "em",
+    "argcomplete",
+    "pyparsing"
+  ]
+}

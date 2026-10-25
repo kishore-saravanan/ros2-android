@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <permission android:name="dev.ros2android.android.MANAGE_PROJECTS" android:protectionLevel="signature" />
+    <uses-permission android:name="dev.ros2android.android.MANAGE_PROJECTS" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
@@ -13,9 +15,16 @@
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
     <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false" />
     <uses-feature android:name="android.hardware.sensor.gyroscope" android:required="false" />
+    <queries>
+        <intent>
+            <action android:name="dev.ros2android.android.OPEN_PROJECT" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+    </queries>
     <application
         android:allowBackup="false"
-        android:icon="@drawable/ic_robot"
+        android:icon="@mipmap/ic_launcher_ros2"
+        android:roundIcon="@mipmap/ic_launcher_ros2"
         android:extractNativeLibs="true"
         android:label="@string/app_name"
         android:supportsRtl="true"

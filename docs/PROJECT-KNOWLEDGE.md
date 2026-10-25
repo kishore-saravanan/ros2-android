@@ -5,7 +5,264 @@ Last updated: 2026-10-25. Read this before resuming development, then read
 resume index; detailed architecture, usage and measurements remain in linked
 files. Update it whenever a milestone, finding or verification boundary changes.
 
+## Original project robot logo (2026-10-25)
+
+The owner requested an original center figure. Shared launcher/Home/About vectors
+now use an eight-dot navy grid around a teal robot with rectangular visor, square
+eyes, side ports and a single diamond antenna. It replaces the Android robot
+head described in the previous milestone. Removed that artwork and its Artwork
+credits disclosure; Kishore Saravanan credit and sponsor link remain unchanged.
+See BRANDING.md for the current asset contract. Main build/unit/lint and current
+workspace runner build/lint passed. The installed-icon device test passed for
+both main app and current workspace runner; 24 host tooling tests passed. The
+instrumentation APK was removed after testing. Earlier verification records
+remain historical.
+
+## Unified workspace controls and custom icon (2026-10-25)
+
+Main Projects now binds compatible runner control services: live state/nodes,
+Start/Stop, saved connection settings, collapsed Logs and fallback Open runner.
+The runtime remains in its own APK/process; navigation/recreation never owns
+worker lifetime. Messenger IPC requires a signature permission plus mutual signing
+checks and main-package sender-UID validation. It exports only status, start,
+stop and validated-profile save. See PROJECTS.md for signing, scope and limits.
+Workspace stdout/stderr and lifecycle events feed a bounded process-local log;
+prototype C++/Python backends currently expose lifecycle events only. Independent
+ADB-shell nodes are outside group status/control. Shared runtime packaging,
+per-node supervision and arbitrary launch editing remain pending.
+
+Branding now uses eight navy dots with a green Android robot head in the center,
+superseding the official unmodified mark below. Main/runners share native vectors;
+Home visibly includes it. Main assembly/unit/lint, all runner assembly/lint and
+four device tests passed: installed icons, profile validation, output Logs and
+main-app controls/recreation. An unprivileged control-service request was denied.
+A PC probe passed real custom-message input, computation, nodes and parameter
+service after a main-UI start and again with the final rebuilt workspace. Battery
+publishing was restored. Instrumentation APK was removed after testing.
+See BRANDING.md and
+[verification](verification/2026-10-25-unified-project-controls.md).
+
+## ROS icon and obsolete test-app cleanup (2026-10-25)
+
+Main app and all runner variants now share adaptive launcher resources in
+android/branding/res, using the official ROS nine-dot vector paths. About and
+notification marks use the same artwork. See BRANDING.md for source/provenance.
+Local circle/rounded-square previews were inspected; no personal launcher screen
+was captured. Main app and current workspace runner were rebuilt and installed.
+Main build/unit/lint and all runner assembly/lint checks passed. Workspace PC
+probe passed custom input, computation, both nodes and parameter service; native
+shell topic listing still worked. Main battery publishing was restored and a PC
+subscriber received a sample after reinstall.
+
+With owner authorization, removed only the three obsolete legacy demo/workspace/
+Python runners and the legacy/current main-app instrumentation test APKs. Only
+the current main app and android_test_ws runner remain in the project namespaces.
+No personal apps or shared storage were inspected or changed.
+
+Current deployment uses one main sensor APK plus one runner APK per workspace.
+All workspace packages/nodes share that runner; subsequent builds replace its
+existing install. A universal multi-workspace runtime is a future packaging
+option, not an Android requirement. See PROJECTS.md.
+
+## Standard core CLI bundle and native launch (2026-10-25)
+
+Workspace builds now include the core ROS CLI by default; --with-shell remains
+an explicit alias and --without-shell opts into the small C++-only runner.
+Python SDK prerequisite now includes composition_interfaces. Shell and minimal
+workspace cross-builds use separate android-shell/ and android/ caches, avoiding
+Python-generated library leakage when switching modes. Tools/connect-shell still
+only establishes the Android session; commands execute upstream ROS code there.
+
+The single version manifest native/ros-shell-packages.lock.json stages topic,
+param, service, action, interface, lifecycle, component, multicast, plugin, node,
+pkg, run and launch, along with launch_ros/Python/XML/YAML frontends, all pure
+Python dependencies and package resources. This workspace's Android-generated
+Python message bindings are included, not just C++ typesupport. Never copy host
+ELF modules. Target NumPy/BLAS stays pinned from Android wheel resolution.
+check-shell-cli checks every bundled command/verb help for missing imports.
+
+Native topic list and custom-message echo, topic pub received on PC, parameter
+get/set/restore, service call and custom interface show passed. Native upstream
+LaunchService started the example talker/processor; PC pipeline and parameter
+probe passed. Ctrl+C cleanly ended both launched children. Python subprocess
+launch plus XML/YAML frontend trials passed. CLI sys.executable now points to
+python3, so Python child launches don't accidentally re-enter ros2 argument
+parsing. Source-package creation also generated a valid private CMake package.
+
+This remains a core command bundle: bag/rosbag2 storage, doctor platform/network
+checks, DDS security and daemon monitoring need separate Android backends.
+Components/actions/lifecycle operations require compatible deployed runtimes;
+empty list calls alone don't qualify goal execution or transitions. Full Linux
+ROS parity, arbitrary launch packaging and mixed Python workspaces aren't proven.
+The PC static adapter still generates the separate app group plan during build.
+
+Standard full APK measured 34.09 MiB. Minimal mode also built/linted successfully.
+Main sensor app was not reinstalled in this pass. See ANDROID-SHELL.md and the
+[full CLI verification](verification/2026-10-25-core-cli-bundle.md) for final
+checks and remaining boundaries. The final dependency/import sweep passed all
+63 command/verb checks; 24 host tooling tests passed.
+
+## Namespace migration and native node CLI (2026-10-25)
+
+Current IDs supersede earlier records: main app dev.ros2android.android; project
+runners dev.ros2android.android.runner.<id>; runner Kotlin/JNI classes use
+`dev.ros2android.runner`. Code, package source paths,
+Gradle namespaces, manifests, metadata/actions, examples, JNI bindings, installer
+allowlists, CLI targets and maintained guides all use the new namespace.
+Legacy identifiers remain only in migration rules and historical verification.
+
+Main app and example workspace installed under new IDs. Preserved old project
+preferences, restored them into the new apps, backed up old project APKs and
+preferences under ignored device-logs/, then removed only the superseded main
+and example-workspace installs. Other legacy project APKs were left untouched;
+rebuild/redeploy them to adopt new IDs. Old shell sessions must exit/reconnect.
+
+ros2node 0.32.13 now joins the upstream CLI plugin bundle. Native `ros2 node list`
+and info work via direct discovery (ROS2CLI_NO_DAEMON=1). Checked compatibility
+patches defer daemon-only psutil imports in two upstream modules and let the
+strategy honor the opt-out; ros2node command implementations stay upstream.
+Android NumPy 1.26.2/BLAS comes from the Python runner's pinned wheel resolution,
+never host NumPy ELF. AAPT's default underscore-directory filter dropped _utils;
+workspace assets now retain these directories, and assembly asserts required
+Python/native CLI entries are present. Shell APK is now 32.23 MiB (initial
+run/pkg-only shell was 21.65 MiB).
+
+Verified actual native node list discovers both example nodes plus the new
+sensor app; node info reports talker/processor interfaces. PC functional probe
+passed custom input, correct computation, both nodes and parameter service.
+New main app battery returned data:100.0 to the PC. Seven physical tests passed
+(theme, accessibility, edited IMU endpoint, battery lifecycle, project browser);
+main assembly/unit/lint and all runner assembly/lint passed; 24 tooling tests
+passed. Camera permission/camera publishing were not rerun after new-UID install.
+The normal workspace and battery publisher remain active on domain 0.
+See [current shell guide](ANDROID-SHELL.md) and
+[verification](verification/2026-10-25-namespace-node-cli.md).
+
+## Native ROS development shell (2026-10-25)
+
+Optional `ros2android-workspace build --with-shell` packages standalone Android
+CPython and upstream Jazzy ros2cli/ros2run/ros2pkg. `tools/connect-shell` connects
+to the installed debug runner via authorized ADB run-as; inside, use ordinary
+`ros2 pkg executables` and `ros2 run` syntax. The connector only establishes the
+session, not a PC ROS proxy. Python/executables run on Android. Shell setup is
+in setup/prepare-ros-shell.py; native entrypoint in native/shell/python_main.c;
+private extraction/prefix links in workspaceRunner ShellEnvironment.kt. Sources
+and stdlib are version/checksum checked; provenance is in bundle assets.
+
+Verified native package discovery, typed PC message receipt, independent talker
+and processor in separate PTYs, selective Ctrl+C stopping/restart and functional
+pipeline/parameters. Fixed an early Android Python-extension teardown crash by
+not finalizing the disposable CLI interpreter after its upstream command returns;
+four subsequent Ctrl+C cycles passed. After final deployment, restored normal
+workspace group on domain 0 and its functional probe passed. Initial run/pkg-only APK was 21.65 MiB
+vs ~8.2 MiB without shell; sensor app stays 4.26 MiB. Main app not reinstalled.
+
+This is a debug development shell: shell nodes aren't managed/listed by group
+controls, and connected foreground terminal trials are qualified. Wireless ADB,
+disconnect/background recovery, long-duration execution, other phones and full
+on-phone ros2 launch remain pending. CLI bundle enables run/package inspection;
+other topic/parameter plugins and daemon are not enabled; node inspection was added in the milestone above. No terminal UI,
+SSH server, arbitrary pip or complete Linux workspace compatibility is claimed.
+Build without --with-shell omits this optional feature. Read
+[Android shell](ANDROID-SHELL.md) and
+[physical evidence](verification/2026-10-25-native-ros-shell.md).
+
+## Runner connection settings synchronization (2026-10-25)
+
+Fixed PC-started runner settings differing from the phone's saved form. Shared
+ProjectService now records each validated, accepted start profile (domain,
+namespace, peer/local IPv4, ROS arguments) with a revision, persists it in the
+runner's own preferences, and exposes it as status.config. MainActivity applies
+new revisions once and before saving onPause, preserving edits between starts.
+Fields remain locked while busy/running; values remain editable after stopping.
+The main sensor app retains its independent profile. Launch override persistence
+is not added; the existing packaged launch behavior remains.
+
+Workspace runner rebuilt/linted, deployed and PC-started with domain 42 then 0.
+Status matched both starts. Own foreground/unlocked UI inspection verified
+running domain 0 locked, stopped domain 0 retained/editable. Phone Start project
+then used domain 0; real Wi-Fi probe verified custom input, correct computation,
+both nodes and parameter service (3 matching samples). Left this workspace
+running on domain 0. Shared C++/Python APK assembly/lint passed; they were not
+physically redeployed. All UI input used the allowed foreground runner with
+keyguard absent. No device data or logs are added to Git.
+
+## Workspace guide clarification (2026-10-25)
+
+PC_IP/PHONE_IP in commands must be replaced, using addresses on the same link.
+A stopped status with empty nodes confirms no processes; check start output,
+not just deploy/status. After the reported stopped state, retrying with actual
+Wi-Fi addresses started both example nodes on domain 42. No root cause of the
+prior stop was established from status alone. The guide now states replacement
+steps, expected running output, and stopping on command errors explicitly.
+
+## Script folder layout (2026-10-25)
+
+Build/install/dependency scripts moved from tools/ to top-level setup/. Use
+`./setup/build.sh` and `./setup/run-device.sh`. Native/Python SDK preparation,
+source fetching, workspace/interface build helpers, staging and udev setup are
+also in setup/. Tools retains viewers, probes, middleware helpers, launch
+adapters and ros2android project command entry points; these delegate build and
+installation to setup/. Maintained docs, CMake diagnostics and CLI references
+were updated. Historical verification records retain original command paths.
+See setup/README.md and tools/README.md for the split. No compatibility wrappers
+are left in tools/, so new users see one location for each setup script.
+
+Verification: relocated setup/build.sh passed assembly/unit/lint; all 24 tooling
+tests passed; relocated shell scripts passed Bash syntax checks; project and
+workspace CLI help and camera-viewer help passed. Installer mocked checks verify
+valid APK identity reaches install/start and invalid identity never reaches ADB.
+No physical reinstall was performed for this folder-only change.
+
+## Current UI decision (supersedes earlier screen descriptions)
+
+0.1.1-dev3 replaces the text-heavy prototype with familiar Home/Sensors/Projects/
+Settings navigation and icons. Home is a small battery/session panel. Sensors
+are compact list rows opening topic/rate/detail controls; Publish/Stop is fixed
+below the form. Advanced data, ROS types, counters, help and diagnostics are
+collapsed. About is a normal visible footer at the bottom of Settings; the user
+explicitly rejected a dropdown and a separate About page. Help stays separate.
+
+Use values/values-night ROS-inspired palettes (navy #22314E in light mode), following
+device appearance. No forced app mode or global appearance setting changes. All
+runner backends share the palette and concise collapsed-control pattern. The
+app icon uses navy/white. See [current design](UI-UX.md); older milestone screen
+names/layout descriptions below are historical, not the current UI contract.
+
+Latest verification: all 10 physical UI tests passed; main build/unit/lint and
+all runner build/lint checks passed. Light/dark About footer snapshots reviewed.
+New workspace runner passed the real PC interoperability probe. See
+[verification](verification/2026-10-25-minimal-ui.md) for boundaries and commands.
+
+## One-command RViz camera viewer (2026-10-25)
+
+`./tools/view-camera` sources the PC ROS setup and runs pc-camera-rviz.py.
+Optional --topic selects a CompressedImage topic; --domain matches the app.
+It starts the parameter-based Jazzy decoder with explicit compressed-topic
+remapping and Best Effort input, plus RViz with a temporary JSON/YAML config.
+A private per-process raw topic prevents cross-session collisions. Closing RViz,
+Ctrl+C or termination cleans up only its child process groups. No saved RViz
+config, phone settings or image files are modified. Runtime graph confirmed
+RViz subscribed to its private raw Image topic with Best Effort and real frames
+arrived. This is PC convenience tooling, not raw image publication on the phone.
+
+## RViz compressed camera finding (2026-10-25)
+
+The installed RViz Image display has no Transport Hint selector and subscribes
+to raw Image. Topic OK can appear with zero publishers. Use the PC Jazzy
+image_transport republisher with in_transport/out_transport parameters as shown
+in V0.1.md, and Best Effort in RViz. Directing raw Image to a CompressedImage
+topic cannot work. Phone compressed reception was measured at about 30 FPS;
+raw republisher reception is checked separately. No phone changes required.
+
 ## Product and decisions
+
+Installer portability fix (2026-10-25): `setup/run-device.sh` uses standard
+`grep -F` for APK package verification; ripgrep is not required to follow the
+install guide. Failed identity checks now report a clear error before ADB.
+Verified Bash syntax and mocked valid/invalid APK paths with a PATH containing
+no `rg`: valid identity reaches install/start; mismatched identity never calls
+ADB. No physical reinstall was needed for this shell-only change.
 
 Replace a Raspberry Pi-class robot computer with a smartphone's processor and
 sensors. Keep native Android; no Ubuntu installation, root or required Termux.
@@ -62,7 +319,7 @@ producer. Unsupported process actions, timers, parameter files and unregistered
 nodes fail explicitly. See [ROS launch guide](ROS-LAUNCH.md) and
 [physical evidence](verification/2026-10-25-ros-launch.md).
 
-## Current milestone: ordinary colcon workspaces
+## Completed milestone: ordinary colcon workspaces
 
 The user clarified the intended workflow: take a normal Linux workspace, build
 all its compatible packages for Android, deploy it and preserve its ROS behavior.
@@ -83,9 +340,10 @@ generates the Android registry; user packages need no Android factory/manifest.
 The new workspace supervisor heartbeat is elapsed supervisor time, not a user
 callback progress measure. Its child stdout/stderr is pumped into runner logs.
 
-Current next action: add ament_python workspace entry points/mixed launch and
-broader dependency/resource compatibility; then full launch runtime semantics,
-independent restart policies and physical PC removal. General Linux equivalence
+Current next action: prioritize clean UI/UX, guided setup and community-alpha
+usability as described in [handoff](HANDOFF.md). Then add ament_python workspace
+entry points/mixed launch and broader dependency/resource compatibility; follow
+with full launch runtime semantics, restart policies and physical PC removal. General Linux equivalence
 remains a package/API qualification goal, not an implemented blanket guarantee.
 ROS launch/knowledge-base checkpoint is bf4bc86. The ordinary-workspace milestone
 and community handoff are checkpointed in the following commit; use `git log`
@@ -93,10 +351,99 @@ and `git status` to identify the current revision. See [handoff](HANDOFF.md).
 
 Community direction: make the project approachable for robotics contributors,
 with guided setup, a clean operator UI, reproducible examples and an explicit
-compatibility matrix. Prioritize a documented community alpha; assess a separate
-Play-distributed sensor/operator app without promising store approval for arbitrary
-code deployment. License selection and public repository/release publication
+compatibility matrix. Prioritize a documented community alpha with clean UI/UX as a release gate.
+The owner explicitly deferred Google Play: no current store preparation or
+submission work. Use APKs and PC deployment for the community-alpha path. License selection and public repository/release publication
 remain owner decisions; neither has been performed by this checkpoint.
+
+## Current milestone: community operator UI
+
+The initial 0.1.1-dev2 pass adds Overview/Sensors/Connect/Help navigation,
+expandable sensor settings, visible topic/rate summaries, a persistent Stop action,
+setup/troubleshooting guidance and a local camera thumbnail. The preview reuses
+JPEG data, decodes at most two thumbnails per second off the UI thread, and turns
+off when its screen is not resumed. The service still owns ROS and hardware.
+Drafts and screen/filter/expanded settings survive navigation/recreation.
+Battery percentage is now first in the sensor catalog and the default first-message
+example: /phone/battery_percent, std_msgs/msg/Float64, 0–100 percent, 1 Hz default
+(0.2–1 Hz supported). BatteryManager supplies the charge level without a runtime
+permission; a main-thread timer publishes until stopped, including across Activity
+navigation. Unknown readings fail explicitly. IMU topics are unchanged. Battery
+uses native publisher kind 9, sharing Float64 serialization with proximity kind 5.
+An additional physical BatteryUiTest passed publication/navigation/recreation/stop;
+the PC received data: 100.0, matching the hardware capacity reading of 100 percent.
+
+Seven physical UI/lifecycle checks passed; the preview-visible local publish sample
+was 28.2–28.8 fps over five seconds, and a separate concurrent PC probe received valid
+JPEG traffic. See [UI design](UI-UX.md) and [evidence](verification/2026-10-25-operator-ui.md).
+The first pass retains Android Views; Compose migration did not happen. Installed
+project discovery/navigation and shared runner UI are now implemented (see below);
+preview rotation, cross-app live-state integration, broad accessibility/layout checks
+and external first-user onboarding remain next UI gates. This is not a finished
+community alpha. UI and documentation changes remain uncommitted until requested.
+
+## Installed projects milestone
+
+Main-app Projects queries only the explicit version-1 runner discovery action,
+validates project-prefixed package/Activity/metadata and opens selected controls.
+No broad installed-app listing, cross-app command extras or automatic startup.
+New C++, Python and workspace builds advertise the interface; legacy APKs need
+rebuilding/redeployment. The browser shows installed state, not remote live state.
+
+All runners share readable status, persistent Start/Stop, runtime-reported node
+names, expandable connection/JSON arguments, packaged component list, raw
+diagnostics and Return to ROS2 Android. Profiles are independent from the main
+sensor profile; UI defaults to domain 0, while the CLI example uses 42. Main Stop
+session and runner Stop project have independent scopes. See [guide](PROJECTS.md).
+Main build/unit/lint and all three backend assembly/lint checks passed. Physical
+browser discovery/refresh/recreation, battery continuation, sensor drafts and
+Display controls passed (four checks, one camera opt-in check skipped in this run).
+The actual main Projects button opened the stopped workspace runner. UI Start
+launched two native nodes; the PC Wi-Fi probe passed custom messages, computation,
+node names and parameter read on domain 0. UI Stop cleared the node list; UI
+restart and Return to the main app preserved the restarted workspace. This is a
+functional Wi-Fi probe, not a transport soak or performance qualification.
+No full Python/C++-factory device rerun is implied by compiling their shared UI.
+See [evidence](verification/2026-10-25-project-browser.md). UIAutomator dump could
+not reach idle on the periodically refreshed UI; use Activity instrumentation
+and guarded visual checks, and qualify redundant text updates/TalkBack next.
+Next: accessibility/layout qualification and external onboarding, then authenticated
+cross-app status/control if needed. Launch/parameter editing and a log viewer remain
+pending. Changes are uncommitted until requested.
+
+## Accessibility and onboarding refinement
+
+Main/runner status text is assigned only when values change. Hidden runner raw
+diagnostics no longer update; meaningful live counters continue updating. This
+reduces redundant text/accessibility events without changing runtime polling.
+Main navigation scrolls at effective widths below 320 dp (screen width/font scale),
+selecting the current tab into view. Narrow/large-text headers stack status/actions.
+Headings and expanded settings expose API-appropriate accessibility semantics;
+debug display labels no longer read machine-only test identifiers.
+
+Overview/Help Go to battery publisher selects/scrolls to the battery card without
+automatic publication. Help validates saved domain/topic and offers explicit-type
+PC commands and an optional Copy action; it never reads the user's clipboard.
+[Getting started](GETTING-STARTED.md) records prerequisites, transport, Publish,
+expected output, recovery and the independent runner Stop scope. Corrected an
+old development-guide suggestion about changing global stay-awake settings.
+
+Seven physical checks passed, including a 200% portrait app-local layout/target
+check, unchanged-text watcher, battery, sensor drafts, camera preview, Display and
+project discovery. Two accessibility checks passed again after header refinement. A stopped Overview
+UIAutomator dump now reaches idle; live counters can still prevent idle snapshots.
+The debug-only non-exported LargeTextPreviewActivity uses a private configuration
+context and does not alter system fonts/security. Its screenshot is an ignored
+app-cache artifact captured only with foreground focus and no lock screen.
+
+This is a prepared-machine maintainer walkthrough, not a completed clean-machine
+or new-contributor trial. Full TalkBack/focus/keyboard/display-size/contrast and
+cross-device qualification remain pending. The guarded battery shortcut/Publish
+walkthrough produced data: 100.0 using plain PC ROS CLI; the workspace probe also
+passed while battery publishing ran. See
+[verification](verification/2026-10-25-accessibility-onboarding.md).
+Keep Play deferred and changes
+uncommitted until requested. See UI-UX.md and the getting-started trial checklist.
 
 ## Roadmap and remaining gates
 
@@ -119,15 +466,17 @@ feasibility spike does not complete every acceptance criterion in that milestone
    packages, dependency ports, resource/ABI qualification and general workspace
    compatibility. Component factories remain an alternative, not a requirement
    for the new standalone C++ executable backend.
-6. **Product UI:** Compose operator screens, camera preview/configuration,
-   projects/launch selection, parameters/logs/recovery, calibration, accessibility
-   and a second-device support matrix.
+6. **Product UI:** initial View-based operator navigation and thumbnail preview
+   implemented. Continue with projects/launch selection, runner parity, preview
+   orientation/configuration, accessibility/layout qualification, onboarding trials
+   and a second-device support matrix. Compose remains an option, not a completed
+   or prerequisite migration.
 
 ## Architecture and source map
 
 | Path | Role |
 | --- | --- |
-| `android/app` | Main Kotlin sensor/operator app, package dev.robotbrain.android |
+| `android/app` | Main Kotlin sensor/operator app, package dev.ros2android.android |
 | `android/runner/src/main` | Shared runner Activity, foreground service, config/launch schema |
 | `android/runner/src/cpp` | C++ runner backend, JNI API wrapper |
 | `native/runner` | rclcpp host, ABI-1 factory / ABI-2 component registry contract |
@@ -164,20 +513,20 @@ From the repository root:
 ```bash
 git status --short
 git branch --show-current
-./tools/build.sh
+./setup/build.sh
 python3 -m unittest discover -s tools/tests -v
 ```
 
-Use tools/build.sh for Gradle assembly/unit/lint. Install with tools/run-device.sh
+Use setup/build.sh for Gradle assembly/unit/lint. Install with setup/run-device.sh
 or the CLI deploy command which calls it. Instrumented main-app tests use
 `:app:connectedDebugAndroidTest`; separate ROS probes verify actual traffic.
 
 Build prerequisites: Ubuntu 24.04 PC with Jazzy, Android SDK 35, NDK
-27.2.12479018, CMake 3.22.1, JDK 17, Python 3.12; Python SDK builds also need
+27.2.12479018, CMake 3.22.1, Java 21 for Gradle (Java/Kotlin 17 bytecode), Python 3.12; Python SDK builds also need
 NumPy and pybind11 headers. See [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ```bash
-python3 tools/fetch-native-ros.py
+python3 setup/fetch-native-ros.py
 ./tools/ros2android --project examples/cpp_workspace build
 ./tools/ros2android --project examples/cpp_workspace deploy
 ./tools/ros2android --project examples/cpp_workspace start --peer PC_IP --local PHONE_IP

@@ -1,5 +1,8 @@
 # ROS launch files for Android components
 
+For native on-phone LaunchService and ROS commands, see [Android shell](ANDROID-SHELL.md).
+This document describes the separate PC-side adapter used to generate app group plans.
+
 This milestone accepts a supported subset of ordinary Jazzy `.launch.py` files.
 The PC evaluates arguments, substitutions, conditions and includes, then compiles
 the description into an Android component plan. That resolved default is packaged

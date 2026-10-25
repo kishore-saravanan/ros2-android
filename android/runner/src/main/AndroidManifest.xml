@@ -6,9 +6,18 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <application android:allowBackup="false" android:label="ROS2 Android · Project" android:theme="@style/RunnerTheme">
+    <application android:icon="@mipmap/ic_launcher_ros2" android:roundIcon="@mipmap/ic_launcher_ros2" android:allowBackup="false" android:label="ROS2 Android · ${runnerProjectId}" android:theme="@style/RunnerTheme">
+        <service android:name=".ProjectControlService" android:exported="true" android:permission="dev.ros2android.android.MANAGE_PROJECTS" />
         <service android:name=".ProjectService" android:exported="false" android:foregroundServiceType="connectedDevice" />
         <activity android:name=".MainActivity" android:exported="true">
+            <meta-data android:name="dev.ros2android.PROJECT_PROTOCOL" android:value="1" />
+            <meta-data android:name="dev.ros2android.PROJECT_ID" android:value="${runnerProjectId}" />
+            <meta-data android:name="dev.ros2android.PROJECT_RUNTIME" android:value="${runnerRuntime}" />
+            <meta-data android:name="dev.ros2android.PROJECT_SOURCE" android:value="sha256:${runnerSourceId}" />
+            <intent-filter>
+                <action android:name="dev.ros2android.android.OPEN_PROJECT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

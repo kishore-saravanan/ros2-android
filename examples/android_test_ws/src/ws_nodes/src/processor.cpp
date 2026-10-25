@@ -16,6 +16,7 @@ class Processor : public rclcpp::Node {
       const auto fail_after = get_parameter("fail_after_samples").as_int();
       if (fail_after > 0 && ++received_ >= fail_after) throw std::runtime_error("Requested workspace process failure");
     });
+    RCLCPP_INFO(get_logger(), "processor ready");
   }
  private:
   int64_t received_ = 0;

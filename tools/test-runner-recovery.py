@@ -52,7 +52,7 @@ deadline = time.monotonic() + 5
 while time.monotonic() < deadline:
     services = subprocess.check_output([*adb, 'shell', 'dumpsys', 'activity', 'services',
                                         manifest['applicationId']], text=True)
-    if '/dev.robotbrain.runner.ProjectService}' not in services:
+    if '/dev.ros2android.runner.ProjectService}' not in services:
         break
     time.sleep(.2)
 else:

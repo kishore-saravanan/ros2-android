@@ -9,7 +9,7 @@ std::string string(JNIEnv * env, jstring value) {
   std::string result(chars); env->ReleaseStringUTFChars(value, chars); return result;
 }
 }
-extern "C" JNIEXPORT void JNICALL Java_dev_robotbrain_runner_PythonEnvironment_configure(
+extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_runner_PythonEnvironment_configure(
     JNIEnv * env, jobject, jstring peer, jstring local, jstring libraries, jstring prefix) {
   const auto p = string(env, peer), address = string(env, local);
   std::string xml = "<CycloneDDS><Domain><General><Interfaces>";

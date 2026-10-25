@@ -1,9 +1,13 @@
 <resources>
-    <style name="RunnerTheme" parent="android:style/Theme.Material.NoActionBar">
+    <style name="RunnerTheme" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:fontFamily">sans</item>
-        <item name="android:colorAccent">#64E2BC</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:statusBarColor">#10171D</item>
-        <item name="android:navigationBarColor">#10171D</item>
+        <item name="android:colorAccent">@color/ros_accent</item>
+        <item name="android:colorBackground">@color/ros_bg</item>
+        <item name="android:windowBackground">@color/ros_bg</item>
+        <item name="android:textColorPrimary">@color/ros_text</item>
+        <item name="android:textColorSecondary">@color/ros_muted</item>
+        <item name="android:statusBarColor">@color/ros_bg</item>
+        <item name="android:navigationBarColor">@color/ros_surface</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 </resources>

@@ -4,16 +4,16 @@ plugins {
 }
 
 android {
-    namespace = "dev.robotbrain.android"
+    namespace = "dev.ros2android.android"
     compileSdk = 35
     buildToolsVersion = "35.0.0"
     ndkVersion = "27.2.12479018"
     defaultConfig {
-        applicationId = "dev.robotbrain.android"
+        applicationId = "dev.ros2android.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.1.1-dev1"
+        versionCode = 6
+        versionName = "0.1.1-dev4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild {
@@ -36,6 +36,7 @@ android {
     buildTypes {
         release { isMinifyEnabled = false }
     }
+    sourceSets["main"].res.srcDir("../branding/res")
     sourceSets["main"].jniLibs.srcDir("../../native-deps/apk-libs")
     packaging.jniLibs.useLegacyPackaging = true
 }

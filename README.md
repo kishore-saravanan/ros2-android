@@ -9,8 +9,10 @@ networking. The app has configurable publishers, a display subscriber, editable
 topics, matching-type topic discovery, and capability detection. The 0.1.1
 development build adds continuous camera capture (15 fps default, up to 30),
 stream metrics and foreground-service ownership of robot sessions. A separate
-developer runner now hosts native C++ ROS nodes, including custom messages and on-phone IMU processing. Supported ROS Python launch descriptions are resolved on the PC; full on-phone
-LaunchService and the embedded micro-ROS Agent remain pending. ABI-2 projects can launch several compiled C++ nodes
+developer runner now hosts native C++ ROS nodes, including custom messages and on-phone IMU processing. Group launch plans are resolved on the PC. Standard workspace APKs now include
+core ROS CLI commands and native LaunchService, verified with the example and
+Python/XML/YAML launch tests. Broad Linux compatibility and the embedded micro-ROS
+Agent remain pending. ABI-2 projects can launch several compiled C++ nodes
 with per-node parameters and remaps using a bounded JSON configuration. A separate
 Python feasibility runner embeds CPython and native rclpy, verified with custom
 messages, parameters, IMU computation and phone-hosted C++ interoperability.
@@ -19,12 +21,21 @@ messages, parameters, IMU computation and phone-hosted C++ interoperability.
 - **v0.2:** microcontroller ↔ phone over network and USB; embedded micro-ROS
   Agent integration remains pending.
 
-Start here: [v0.1 app and topic-monitoring guide](docs/V0.1.md).
+The 0.1.1-dev4 UI uses Home/Sensors/Projects/Settings navigation, compact sensor
+lists and dedicated controls, collapsed advanced information, and ROS-inspired
+light/dark palettes that follow the device. About is at the bottom of Settings.
+Projects now provides live workspace state, Start/Stop, connection settings and
+collapsed output logs in the main app. A custom dot/robot logo appears on Home
+and installed app icons. See [project controls](docs/PROJECTS.md) and [UI design](docs/UI-UX.md).
+
+Start here: [first battery-message walkthrough](docs/GETTING-STARTED.md).
+More sensors and transport details: [v0.1 guide](docs/V0.1.md).
 For custom nodes: [C++ project build and deployment guide](docs/CPP-PROJECTS.md).
 For multiple nodes: [workspace launch guide](docs/WORKSPACE-LAUNCH.md).
 For ROS descriptions: [supported launch-file adapter](docs/ROS-LAUNCH.md).
 For ordinary packages: [colcon workspace build/deploy guide](docs/COLCON-WORKSPACES.md).
 For Python: [Python project guide](docs/PYTHON-PROJECTS.md).
+For native ROS commands and launch files on the phone: [Android development shell](docs/ANDROID-SHELL.md).
 
 Resuming development? Read the [project knowledge base](docs/PROJECT-KNOWLEDGE.md)
 and the [community release handoff](docs/HANDOFF.md).
@@ -38,9 +49,13 @@ user nodes, launch files, camera performance, UI and reliability milestones.
 Build, install, and test instructions: [Development guide](docs/DEVELOPMENT.md).
 
 ```bash
-./tools/build.sh
-./tools/run-device.sh
+./setup/build.sh
+./setup/run-device.sh
 ```
+
+Scripts are separated by purpose: [setup/](setup/README.md) contains dependency
+setup, builds and installation; [tools/](tools/README.md) contains viewing,
+diagnostics and project commands. For the camera in RViz: `./tools/view-camera`.
 
 See [Architecture and implementation strategy](ARCHITECTURE.md) for the current
 design, standalone micro-ROS Agent requirement, compatibility policy, and delivery

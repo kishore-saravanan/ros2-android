@@ -1,5 +1,14 @@
 # ROS2 Android platform plan
 
+Current UI milestone: main Projects controls separate runners through
+signature-authenticated IPC (start/stop, state/nodes, connection and bounded
+workspace logs). See PROJECTS.md and verification/2026-10-25-unified-project-controls.md.
+Runner-per-workspace packaging remains; a shared runtime is future work.
+
+Current checkpoint: standard workspace builds include the native core ROS CLI
+and LaunchService. See [Android shell](ANDROID-SHELL.md) for measured scope;
+broad Linux package/launch compatibility and MCU integration remain pending.
+
 Planning baseline: 2026-10-24. Updated: 2026-10-25.
 Status: roadmap with explicit implementation and verification boundaries.
 
@@ -20,8 +29,25 @@ An ordinary three-package C++ colcon workspace now cross-builds and runs its
 unchanged main() executables as separate supervised Android processes; see
 [workspace workflow](COLCON-WORKSPACES.md). General/mixed workspaces, per-worker
 restart policies, full ROS launch, physical PC
-disconnection qualification, embedded micro-ROS Agent and the Compose redesign
-remain pending.
+disconnection qualification and embedded micro-ROS Agent remain pending. The
+initial operator UI pass now uses fixed navigation, expandable settings and a
+bounded camera thumbnail; see [UI design](UI-UX.md). Installed-project discovery/navigation and shared runner controls now pass a
+physical workspace flow (see [project controls](PROJECTS.md)); broader multi-workspace/device and accessibility/layout qualification and a possible Compose migration remain pending.
+
+## Current delivery priority
+
+The owner has deferred Google Play. Focus on a community alpha delivered through
+APKs and PC tooling. Clean UI/UX and clear setup steps are primary release gates:
+audit/design the core screens, implement consistent accessible controls, and
+verify sensor and project flows before expanding mixed-workspace support. See
+[community handoff](HANDOFF.md) for ordered work and acceptance criteria. No
+store preparation or public publishing is authorized by this roadmap update.
+
+Accessibility/onboarding update: adaptive large-text navigation, quieter status
+updates, API-appropriate headings and a direct battery-first path now pass scoped
+physical checks. The prepared-machine walkthrough is documented in
+[Getting started](GETTING-STARTED.md); a real new-contributor/clean-machine trial and
+full TalkBack/keyboard/device qualification remain gates.
 
 ## Product outcome
 

@@ -2,7 +2,54 @@
 
 Updated 2026-10-25. Start with AGENTS.md and PROJECT-KNOWLEDGE.md, then inspect
 `git status` and `git log`. Work on develop. This document records the handoff;
-it does not assert a public release or Google Play approval.
+it does not assert a public release. Google Play work is deferred by the owner.
+
+Build/install scripts now live in `setup/`; viewers and developer commands remain
+in `tools/`. Use `./setup/build.sh` and `./setup/run-device.sh`. Current guides
+and CLI delegation paths are updated; historical verification paths are unchanged.
+
+The runner connection form now synchronizes accepted PC start settings and
+retains them for phone-side restarts; CLI status exposes `config`. Workspace
+physical checks passed for PC domain changes and phone restart on domain 0.
+See PROJECT-KNOWLEDGE.md for scope and current evidence.
+
+Current namespace: dev.ros2android.android (sensor app) and
+dev.ros2android.android.runner.<id> (runners). Main/example workspace migrated
+with settings retained. Exit/reconnect old shells. Rebuild other legacy runners.
+Native ros2 node list/info now works through direct discovery; Android NumPy and
+packaging fixes raise the shell APK to 32.23 MiB. Seven new-package device checks
+passed; ROS graph inspection and PC interoperability passed. Camera wasn't
+requalified after the new-UID install. See the knowledge base for migration scope.
+
+Optional native CLI milestone: build a workspace with `--with-shell`, deploy,
+then `./tools/connect-shell`. Upstream `ros2 run` and package inspection execute
+on Android. Two terminals independently ran talker/processor, selective Ctrl+C
+worked, and PC probes passed. Initial run/pkg-only shell APK measured 21.65 MiB. This is a debug ADB
+shell; group status doesn't list shell processes. Native launch, extra CLI
+plugins, disconnect/background supervision and wireless ADB trials are pending.
+Read ANDROID-SHELL.md and verification/2026-10-25-native-ros-shell.md.
+
+Current CLI bundle supersedes the earlier run/pkg/node subset: workspace build
+includes standard core CLI and native LaunchService by default. --without-shell
+opts into minimal C++ mode. See native/ros-shell-packages.lock.json and
+ANDROID-SHELL.md. Typed custom-message echo/pub, parameters/services, native
+example launch and Python/XML/YAML frontends passed; full APK is 34.09 MiB.
+Bag/doctor/security/daemon backends and broad Linux package parity remain pending.
+
+Unified Projects now provides authenticated cross-app start/stop, live state/node
+names, saved connection settings and collapsed bounded workspace output logs.
+The separate runner APK model is retained. Read PROJECTS.md for signing keys,
+older-runner rebuilds, lifecycle and shell-node limitations. The custom icon is
+now eight navy dots around an original teal robot, shared by main/runners and visible
+on Home; it supersedes the earlier ROS/Android marks. See BRANDING.md and
+verification/2026-10-25-unified-project-controls.md for evidence and limits.
+
+Current priority: concise, familiar Android UI/UX and clear community onboarding.
+The 0.1.1-dev3 redesign supersedes the earlier text-heavy screens: Home, Sensors,
+Projects, Settings; sensor list → detail; extras collapsed; device light/dark
+mode with ROS navy. About stays visibly at the bottom of Settings (no dropdown
+or separate page), per the latest owner instruction. Read UI-UX.md before edits. Treat usability as
+a release requirement, not polish to add after runtime features.
 
 ## Product outcome
 
@@ -39,7 +86,7 @@ ROS SDK prerequisites; these commands do not install all prerequisites.
 ```bash
 git status --short
 git branch --show-current
-./tools/build.sh
+./setup/build.sh
 ./tools/pc-ros.sh -- /usr/bin/python3 -m unittest discover -s tools/tests -v
 ./tools/ros2android-workspace --workspace examples/android_test_ws inspect
 ./tools/ros2android-workspace --workspace examples/android_test_ws host-build
@@ -55,7 +102,63 @@ and expected topics are in COLCON-WORKSPACES.md. Build outputs are cached at
 Do not inspect phone personal data/apps; use only project apps and own artifacts.
 Do not change global stay-awake/security settings. Use the Activity keep-screen flag.
 
-## Next implementation milestone
+## Current implementation milestone: clean UI/UX
+
+The latest 0.1.1-dev3 build passed all 10 physical UI tests, main app build/unit
+tests/lint, and all three runner build/lint checks. Light/dark Settings snapshots
+confirm the visible About footer. The newly deployed workspace runner passed
+real custom-message/computation/graph/parameter checks. See
+[latest evidence](verification/2026-10-25-minimal-ui.md). Changes are uncommitted.
+
+
+Initial pass implemented in 0.1.1-dev2: Overview/Sensors/Connect/Help, expandable
+settings, topic/rate summaries, fixed Stop action, setup guidance, saved navigation
+and a bounded local camera preview. Battery percentage on /phone/battery_percent
+is the first sensor and default onboarding example; IMU remains available. Seven device UI/lifecycle checks passed. See
+[UI design and remaining work](UI-UX.md) and
+[evidence](verification/2026-10-25-operator-ui.md). Platform Views are retained;
+Compose has not been introduced. Installed project discovery/navigation and readable shared runner controls now
+work; see PROJECTS.md. Continue with cross-app live-state integration,
+TalkBack/keyboard/device qualification and an external first-user onboarding trial.
+The first app-local 200% portrait layout and quiet-status checks passed;
+GETTING-STARTED.md now supplies the battery-first walkthrough.
+
+
+Continue designing and implementing the core operator experience before expanding workspace
+features. Refine the implemented main app and runner screens using consistent
+spacing, typography, colors, controls and loading/error/empty states. Kotlin
+remains the platform choice. Views are retained; Compose is an option for a
+separately scoped migration, not a prerequisite for this usability milestone.
+
+Current navigation: Home, Sensors, Projects and Settings. Help opens from Settings;
+About is visible at its bottom. Keep advanced
+ROS/network settings available through progressive disclosure. Home should
+make the current session state and primary Start/Stop action obvious. Sensor
+configuration must clearly connect selected hardware, topic and publishing state.
+Keep configuration across navigation and recreation; UI changes must preserve the
+service-owned hardware/runtime lifecycle.
+
+Acceptance criteria:
+
+- A first-time robotics user can follow USB or Wi-Fi setup, understand required
+  permissions and verify a real received ROS message with the guide.
+- A user can find front/back cameras or available motion sensors, edit a topic,
+  start publishing, see measured activity and stop it without searching logs.
+- Camera preview and publishing controls show capture/publish state, resolution,
+  rate and errors clearly. Do not confuse preview FPS with received ROS FPS.
+- Project controls distinguish installed, starting, running, stopped and failed;
+  only expose actions actually supported by the backend. Planned features must
+  not appear as working controls.
+- Permission denial, no peer, unavailable sensor, invalid topic and runner failure
+  each have readable feedback and a concrete recovery action.
+- Layouts support larger text, readable contrast, accessible labels, appropriate
+  touch targets, keyboard-safe forms and consistent back navigation.
+- Navigation/recreation do not interrupt an active session. Recheck real camera,
+  IMU, text subscriber and runner start/stop behavior after the UI migration.
+- Review screens on the allowed foreground project app only; record evidence and
+  remaining usability gaps in the knowledge base.
+
+## Following runtime milestone: mixed workspaces
 
 Add standard ament_python packaging and mixed C++/Python launch to the ordinary
 workspace backend. Reuse embedded Python work, but preserve console-script entry
@@ -70,10 +173,11 @@ matrix and knowledge base with actual evidence.
 
 ## Community product work
 
-Ship a coherent first-run experience alongside runtime expansion:
+Clean UI/UX is a primary community-alpha gate. Build these flows before treating
+additional runtime features as release readiness:
 
 1. Welcome/setup: supported devices, permissions with purpose, USB/Wi-Fi choice,
-   connection diagnostics and a visible first successful ROS message.
+   connection diagnostics and a visible first successful ROS message (battery percentage by default).
 2. Sensors: available hardware list, front/back camera preview, editable topic,
    rate/quality controls and start/stop; explain unavailable capabilities.
 3. Projects: installed project and launch selection, arguments, per-node state,
@@ -85,7 +189,7 @@ Ship a coherent first-run experience alongside runtime expansion:
    contrast and clear navigation. Record design decisions before UI migration.
 
 Community alpha acceptance: a new contributor can set up a documented supported
-Linux machine, install the app, see IMU/camera topics and deploy the example using
+Linux machine, install the app, receive battery percentage, then see IMU/camera topics and deploy the example using
 only the guide. Verify from a clean environment, add repeatable CI checks and
 publish a tested phone/Android/ROS/transport matrix. No universal support claim.
 
@@ -95,38 +199,23 @@ issue templates and a private security-reporting route. Prepare release signing,
 checksums and reproducible build instructions. No license was chosen and no
 repository visibility, remote publishing or signing credentials were changed here.
 
-## Distribution and Google Play assessment
+## Distribution: community alpha first
 
-Recommendation: documented community alpha APKs and PC CLI first; prepare the
-main sensor/operator app for Play testing separately. Developers continue building
-and deploying their own project-runner APKs from the PC. This is a proposed
-product split, not a guarantee of Play approval. Do not turn the store app into
-a downloader of native ROS binaries without a new policy assessment.
+Owner decision: skip Google Play for now. Do not spend the current milestone on
+Play Console setup, store listings, store-specific testing, billing-policy work
+or submission. Revisit distribution requirements only if the owner reopens it.
+Android platform compatibility, permissions and native-library correctness still
+matter for sideloaded builds.
 
-Checked 2026-10-25 against official sources:
+Prepare versioned community alpha APKs with the Linux PC CLI, reproducible build
+instructions, checksums, release notes and a known-limitations/support matrix.
+Developers build and deploy their own project-runner APKs from the PC. Choose and
+document release signing and upgrades before distributing artifacts; keep keys
+outside Git. Publishing artifacts or changing repository visibility remains a
+separate owner-authorized action; neither has happened here.
 
-- Current new-app submission requirement is target API 36; app presently targets
-  35. Upgrade and test target-related behavior across main and runner modules.
-  https://developer.android.com/google/play/requirements/target-sdk
-- Native apps must satisfy applicable 16 KB page-size requirements. Build flags
-  alone are insufficient: inspect every shipped native library and test on a
-  16 KB environment, including Python dependencies if shipped.
-  https://developer.android.com/guide/practices/page-sizes
-- Play prohibits app self-updates outside Play and downloading executable native
-  code from outside Play; interpreted code has qualified exceptions, not blanket
-  permission for arbitrary runtime deployment.
-  https://support.google.com/googleplay/android-developer/answer/16559646?hl=en
-- Personal developer accounts created after 2023-11-13 require at least 12 opted-in
-  closed testers continuously for 14 days before applying for production access.
-  This is a minimum testing gate, not an approval timeline.
-  https://support.google.com/googleplay/android-developer/answer/14151465?hl=en
-
-Remaining Play preparation: release AAB/signing, current target/foreground-service
-and permission behavior, privacy policy and accurate Data safety declarations,
-store listing, account verification and testing/review. Audit the Sponsors link
-against applicable payments rules before submission. Full workspace portability
-and MCU support need not block a clearly scoped sensor/operator release.
-
-A near-term testing release is plausible after these gates; a production date
-cannot be promised from the current single-device development build. Recheck
-policies at submission. No Play Console or GitHub release was created.
+Release order: usable sensor/operator experience and clear first-run guide;
+external contributor trial on supported hardware; address usability/reliability
+findings; then publish a clearly scoped community alpha once licensing and release
+preparation are resolved. Do not require full ROS/Linux equivalence to release,
+but state exactly which workspace and launch features are supported.

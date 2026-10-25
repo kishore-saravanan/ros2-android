@@ -15,7 +15,7 @@ uses the pinned Android NumPy 1.26.2 and PyYAML 6.0.3 wheels.
 From the repository root:
 
 ```bash
-python3 tools/fetch-native-ros.py
+python3 setup/fetch-native-ros.py
 ./tools/ros2android --project examples/python_talker sdk
 ./tools/ros2android host-sdk
 ./tools/ros2android --project examples/python_talker host-interfaces

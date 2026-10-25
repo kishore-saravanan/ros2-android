@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "python_talker",
-  "applicationId": "dev.robotbrain.android.runner.python",
+  "applicationId": "dev.ros2android.android.runner.python",
   "name": "Python ROS demo",
   "runtimeAbi": 1,
   "runtime": "python"

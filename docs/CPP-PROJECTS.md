@@ -10,7 +10,7 @@ From this repository, with the Android SDK/NDK and ROS build prerequisites in
 [DEVELOPMENT.md](DEVELOPMENT.md):
 
 ```bash
-./tools/build-native-ros.sh --with-cpp
+./setup/build-native-ros.sh --with-cpp
 ./tools/ros2android host-sdk
 ./tools/ros2android host-interfaces
 ./tools/ros2android build
@@ -79,7 +79,7 @@ Edit the source, then run `build`, `deploy`, and `start` again. Deployment and
 startup reject source fingerprints that differ from the built/installed project.
 For another project, copy the example outside it, assign unique IDs, and pass
 `--project /absolute/project/path` before each CLI command. Generated application
-IDs must start with `dev.robotbrain.android.runner.`.
+IDs must start with `dev.ros2android.android.runner.`.
 
 The ABI-1 native factory returns one node to the host executor.
 For several compiled nodes, see [workspace launch](WORKSPACE-LAUNCH.md). The SDK includes

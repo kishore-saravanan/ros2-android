@@ -13,6 +13,7 @@ class Talker : public rclcpp::Node {
       sample.sequence = ++sequence_; sample.value = sequence_ * 0.25;
       publisher_->publish(sample);
     });
+    RCLCPP_INFO(get_logger(), "talker ready");
   }
  private:
   int64_t sequence_ = 0;
