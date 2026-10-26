@@ -2,6 +2,7 @@
 """Run esptool v5 through an authorized phone's CP2102 USB connection.
 
 Examples:
+  tools/esp32-via-phone --serial PHONE_ADB_ID status
   tools/esp32-via-phone --serial PHONE_ADB_ID flash-id
   tools/esp32-via-phone --serial PHONE_ADB_ID write-flash 0x10000 firmware.bin
 The UART uses 115200 baud; do not pass serial/baud/reset options.
@@ -63,20 +64,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--serial', help='Authorized USB or wireless ADB device')
     parser.add_argument('--python', type=Path, default=Path.home() / '.cache/ros2-android-esp32/toolchain-venv/bin/python', help='Python environment with esptool v5')
-    parser.add_argument('operation', choices=['flash-id', 'chip-id', 'read-flash', 'write-flash', 'verify-flash'])
+    parser.add_argument('operation', choices=['status', 'flash-id', 'chip-id', 'read-flash', 'write-flash', 'verify-flash'])
     parser.add_argument('arguments', nargs='*', help='Offsets, sizes and files for the selected esptool operation')
     args = parser.parse_args()
     # Restrict global esptool options: the phone owns baud and reset control.
     if any(value.startswith('-') for value in args.arguments):
         parser.error('Only positional operation arguments are accepted; no baud/reset/port overrides')
-    python = args.python.expanduser().absolute()  # Preserve venv executable symlink and pyvenv.cfg discovery.
-    if not python.is_file():
-        parser.error('Prepare the ESP32 toolchain using setup/esp32-usb.sh build, or pass --python')
-    version = subprocess.check_output([str(python), '-m', 'esptool', 'version'], text=True)
-    if not re.search(r'\b5\.\d', version):
-        parser.error('This command requires esptool v5')
-    # Ask esptool to validate arguments before changing the phone/board state.
-    if args.operation in ('flash-id', 'chip-id') and args.arguments:
+    # Validate operation inputs before touching the phone/board.
+    if args.operation in ('status', 'flash-id', 'chip-id') and args.arguments:
         parser.error('This operation takes no additional arguments')
     if args.operation in ('write-flash', 'verify-flash'):
         if not args.arguments or len(args.arguments) % 2:
@@ -107,6 +102,16 @@ def main():
         return json.loads(match[2])
 
     device('get-state')
+    if args.operation == 'status':
+        # Reading process status must not launch UI, reset UART or require esptool.
+        print(json.dumps(control('status'), indent=2))
+        return
+    python = args.python.expanduser().absolute()  # Preserve venv executable symlink and pyvenv.cfg discovery.
+    if not python.is_file():
+        parser.error('Prepare the ESP32 toolchain using setup/esp32-usb.sh build, or pass --python')
+    version = subprocess.check_output([str(python), '-m', 'esptool', 'version'], text=True)
+    if not re.search(r'\b5\.\d', version):
+        parser.error('This command requires esptool v5')
     if 'showing=true' in device('shell', 'dumpsys window policy'):
         parser.error('Unlock the phone first')
     device('shell', 'am start -W -n ' + PACKAGE + '/.MainActivity')

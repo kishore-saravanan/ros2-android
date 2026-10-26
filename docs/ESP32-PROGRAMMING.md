@@ -27,11 +27,19 @@ From the repository root, use the authorized wireless ADB target from
 `$HOME/Android/Sdk/platform-tools/adb devices -l`:
 
 ```bash
+./tools/esp32-via-phone --serial PHONE_ADB_ID status
 ./tools/esp32-via-phone --serial PHONE_ADB_ID flash-id
 ./tools/esp32-via-phone --serial PHONE_ADB_ID read-flash 0x10000 0x60000 /path/to/new-application-backup.bin
 ./tools/esp32-via-phone --serial PHONE_ADB_ID write-flash 0x10000 /path/to/firmware.bin
 ./tools/esp32-via-phone --serial PHONE_ADB_ID verify-flash 0x10000 /path/to/firmware.bin
 ```
+
+`status` only reads the app's programming state, Agent state and USB byte
+counters. It does not launch the Activity, open UART, reset the board or stop the
+Agent, and does not require the PC esptool environment. It still requires an
+authorized ADB connection and the current debug APK. A Running state/counter
+proves neither a healthy micro-ROS session nor message receipt; check fresh
+heartbeat/acknowledgement topics for that.
 
 Offsets and backup sizes above are examples for the existing ESP32 reference app,
 not universal partition layouts. Use your build's flash layout. Back up every

@@ -172,4 +172,4 @@ its foreground notification. No separate product destination or public LAN shell
 is added. PC starts programming through a protected debug-only ADB control.
 Reference CP2102 flash/hash verification and Agent/Dashboard recovery passed;
 other adapters, interrupted-write and endurance qualification remain pending. See
-PROJECT-KNOWLEDGE.md for actual tests and the saved Blink LED Dashboard example.
+PROJECT-KNOWLEDGE.md for actual tests and the saved ESP32 LED Switch example (physical LED wiring unverified).

@@ -1,8 +1,47 @@
 # ROS2 Android community release handoff
 
-Updated 2026-10-25. Start with AGENTS.md and PROJECT-KNOWLEDGE.md, then inspect
+Updated 2026-10-26. Start with AGENTS.md and PROJECT-KNOWLEDGE.md, then inspect
 `git status` and `git log`. Work on develop. This document records the handoff;
 it does not assert a public release. Google Play work is deferred by the owner.
+
+## Current checkpoint and next work
+
+`a5a0ce2` checkpoints Dashboard publisher/subscriber controls, phone-hosted
+UDP/CP2102 micro-ROS Agent, USB programming through authorized ADB, and their
+recorded interoperability evidence. Fresh Android assembly/unit/lint and 26 PC
+tooling tests passed before that commit. Device evidence below is historical,
+not a fresh device qualification at commit time. Nothing has been pushed.
+
+Current navigation is Home / Sensors / Dashboard / Projects / Settings.
+Dashboard endpoints persist across navigation; joysticks request zero on release,
+cancel, focus loss, navigation and pause. Sensor and Dashboard Stop scopes remain
+explicit. Home summarizes sensor topics, Dashboard topics, projects and Agent.
+About is visible at the bottom of Settings: plain Built by Kishore Saravanan and
+Sponsors only, with no Home credit or repository button.
+
+PC can inspect programming/Agent state without resetting the MCU:
+`./tools/esp32-via-phone --serial PHONE_ADB_ID status`.
+Other operations take exclusive USB ownership and reset the MCU. Read
+ESP32-PROGRAMMING.md before flashing. The debug-only receiver is protected by
+ADB-shell permission; this is not a public LAN programming service.
+
+The latched demo uses `/esp32/led` (Bool) and an ESP32 LED Dashboard Switch.
+Typed command/state tests passed, but the user reports no physical LED change.
+GPIO2 LED wiring is unverified on the clone; no external LED/meter is available.
+Do not probe arbitrary GPIOs or describe `/esp32/led_state` as physical feedback.
+
+Next priorities, in order:
+
+1. Qualify Agent/MCU restart, cable interruption and recovery with fresh typed
+   messages, then sustained operation and PC-link removal. Record failures as
+   qualification gaps; a Running label/USB byte counter is not ROS delivery.
+2. Add ordinary ament_python/mixed workspace support with a shared Linux/Android
+   example and real typed round-trip/failure/restart checks.
+3. Finish community onboarding, accessibility/second-device trials and dependency
+   compatibility documentation. Google Play and public release remain deferred.
+
+The following sections retain earlier milestone context; this checkpoint and
+PROJECT-KNOWLEDGE.md take precedence where older layouts are described.
 
 Dashboard follow-up: the dedicated bottom tab now hosts a single saved layout
 with Publish/Subscribe direction, standard scalar/text/Bool subscription cards
@@ -103,7 +142,9 @@ Android version or Linux ROS package.
   milestone. Previous device evidence is not a fresh device test at handoff.
 - The workspace builder currently accepts ament_cmake native executables only.
   Python feasibility is not mixed ament_python workspace support.
-- Launch is a supported static PC-side adapter, not full on-phone LaunchService.
+- The component adapter supports a static launch subset. The ordinary workspace
+  shell bundle also runs upstream on-phone LaunchService for the tested example;
+  mixed Python packaging and broader launch/package compatibility remain pending.
 - PC removal, one-hour operation, another phone, automatic restart and broader MCU/phone qualification remain pending. Phone-hosted UDP Agent
   traffic is now qualified for the reference board; reference CP2102 USB also passes typed traffic; broader USB qualification remains pending.
 
@@ -137,7 +178,8 @@ The latest 0.1.1-dev3 build passed all 10 physical UI tests, main app build/unit
 tests/lint, and all three runner build/lint checks. Light/dark Settings snapshots
 confirm the visible About footer. The newly deployed workspace runner passed
 real custom-message/computation/graph/parameter checks. See
-[latest evidence](verification/2026-10-25-minimal-ui.md). Changes are uncommitted.
+[latest evidence](verification/2026-10-25-minimal-ui.md). These changes are now checkpointed;
+see the current checkpoint above for subsequent milestones.
 
 
 Initial pass implemented in 0.1.1-dev2: Overview/Sensors/Connect/Help, expandable
@@ -159,7 +201,7 @@ spacing, typography, colors, controls and loading/error/empty states. Kotlin
 remains the platform choice. Views are retained; Compose is an option for a
 separately scoped migration, not a prerequisite for this usability milestone.
 
-Current navigation: Home, Sensors, Projects and Settings. Help opens from Settings;
+Current navigation: Home, Sensors, Dashboard, Projects and Settings. Help opens from Settings;
 About is visible at its bottom. Keep advanced
 ROS/network settings available through progressive disclosure. Home should
 make the current session state and primary Start/Stop action obvious. Sensor

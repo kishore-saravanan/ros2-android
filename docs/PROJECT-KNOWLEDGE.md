@@ -5,6 +5,20 @@ Last updated: 2026-10-26. Read this before resuming development, then read
 resume index; detailed architecture, usage and measurements remain in linked
 files. Update it whenever a milestone, finding or verification boundary changes.
 
+## Non-disruptive PC Agent/programming status (2026-10-26)
+
+Added `tools/esp32-via-phone --serial PHONE_ADB_ID status`: reads the protected
+debug receiver without Activity launch, UART ownership/reset, tunnel creation or
+esptool dependency. The full PC tooling suite passed 28 tests. Automated CLI tests assert only get-state/status ADB calls
+and rejection of unexpected arguments before device access. Live read-only
+trial returned programming inactive, USB Agent Running at 115200 and RX/TX byte
+counts. This is process/transport diagnostics, not a fresh ROS interoperability
+trial. Prior LED optical failure remains unresolved. Updated HANDOFF.md to put
+current five-tab UI, persistent Dashboard, USB programming, launch support and
+remaining priorities ahead of historical milestone descriptions. Checkpoint
+`a5a0ce2` contains the earlier implementation; this follow-up is separately
+committed. No push requested/performed.
+
 ## Development checkpoint (2026-10-26)
 
 Owner authorized commits and continued roadmap work. Fresh setup/build.sh

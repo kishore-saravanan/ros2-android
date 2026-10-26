@@ -5,6 +5,11 @@ from pathlib import Path
 import socket
 import threading
 import unittest
+from unittest import mock
+import contextlib
+import io
+import json
+import subprocess
 
 loader = importlib.machinery.SourceFileLoader('esp32_phone_tool', str(Path(__file__).parents[1] / 'esp32-via-phone'))
 spec = importlib.util.spec_from_loader(loader.name, loader)
@@ -57,6 +62,42 @@ class RelayTest(unittest.TestCase):
             relay = threading.Thread(target=tool.relay, args=(local, 1, 'a' * 64, errors, stopped))
             relay.start(); stopped.set(); relay.join(2)
             self.assertFalse(relay.is_alive()); self.assertEqual(errors, [])
+
+
+class StatusTest(unittest.TestCase):
+    def test_status_only_reads_adb_without_toolchain_or_board_reset(self):
+        status = {'active': False, 'state': 'Stopped', 'port': 0,
+                  'agentRunning': True, 'agentState': 'Running', 'usbDiagnostics': 'RX 64'}
+        calls = []
+
+        def run(command, **kwargs):
+            calls.append(command)
+            output = 'device' if command[-1] == 'get-state' else (
+                'Broadcast completed: result=0, data="' + json.dumps(status) + '"')
+            return subprocess.CompletedProcess(command, 0, output, '')
+
+        output = io.StringIO()
+        with mock.patch('sys.argv', ['esp32-via-phone', '--serial', 'test-phone',
+                                     '--python', '/missing/toolchain', 'status']), \
+                mock.patch.object(tool.subprocess, 'run', side_effect=run), \
+                mock.patch.object(tool.subprocess, 'check_output') as version, \
+                contextlib.redirect_stdout(output):
+            tool.main()
+        self.assertEqual(json.loads(output.getvalue()), status)
+        version.assert_not_called()
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(calls[0][-3:], ['-s', 'test-phone', 'get-state'])
+        self.assertIn('command status', calls[1][-1])
+        self.assertNotIn('am start', calls[1][-1])
+
+    def test_status_rejects_arguments_before_device_access(self):
+        with mock.patch('sys.argv', ['esp32-via-phone', 'status', 'extra']), \
+                mock.patch.object(tool.subprocess, 'run') as device, \
+                contextlib.redirect_stderr(io.StringIO()), \
+                self.assertRaises(SystemExit) as error:
+            tool.main()
+        self.assertEqual(error.exception.code, 2)
+        device.assert_not_called()
 
 
 if __name__ == '__main__':
