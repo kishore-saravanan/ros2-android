@@ -30,6 +30,11 @@ collapsed output logs in the main app. Workspace runners have no app-drawer
 entry; open them through Projects. A custom dot/robot logo appears on Home
 and installed app icons. See [project controls](docs/PROJECTS.md) and [UI design](docs/UI-UX.md).
 
+Installable host tooling is now available as a **local alpha wheel**; see
+[host package](docs/HOST-PACKAGE.md) for installation, commands and qualification limits.
+The [product requirements](docs/PRODUCT-REQUIREMENTS.md) prioritize independent
+robot operation, recovery and ordinary workspaces. No public package is published.
+
 Start here: [first battery-message walkthrough](docs/GETTING-STARTED.md).
 More sensors and transport details: [v0.1 guide](docs/V0.1.md).
 For custom nodes: [C++ project build and deployment guide](docs/CPP-PROJECTS.md).

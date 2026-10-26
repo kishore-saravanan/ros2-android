@@ -17,3 +17,7 @@ __pycache__/
 
 # ESP32 PlatformIO dependencies and local device build products
 **/.pio/
+
+# Python distribution outputs
+dist/
+*.egg-info/

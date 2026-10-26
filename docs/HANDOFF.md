@@ -4,6 +4,14 @@ Updated 2026-10-26. Start with AGENTS.md and PROJECT-KNOWLEDGE.md, then inspect
 `git status` and `git log`. Work on develop. This document records the handoff;
 it does not assert a public release. Google Play work is deferred by the owner.
 
+## Product direction update (2026-10-26)
+
+Owner reaffirmed Android as the primary onboard computer and requested a
+package-based open-source distribution. Read PRODUCT-REQUIREMENTS.md for critique,
+priorities and acceptance gates. HOST-PACKAGE.md describes the implemented local
+wheel/installed CLI foundation. Full build/deploy through the wheel, prebuilt SDK,
+licensing/public publication and clean-machine onboarding remain pending.
+
 ## Current checkpoint and next work
 
 `a5a0ce2` checkpoints Dashboard publisher/subscriber controls, phone-hosted

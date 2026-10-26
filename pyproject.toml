@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ros2-android"
+version = "0.1.0a1"
+description = "PC development tools for native ROS 2 robot computers on Android"
+requires-python = ">=3.10"
+readme = "README.md"
+
+[project.scripts]
+ros2-android = "ros2android.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["python"]
+
+[tool.setuptools.package-data]
+ros2android = ["sdk.zip"]

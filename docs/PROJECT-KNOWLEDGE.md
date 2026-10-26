@@ -5,6 +5,36 @@ Last updated: 2026-10-26. Read this before resuming development, then read
 resume index; detailed architecture, usage and measurements remain in linked
 files. Update it whenever a milestone, finding or verification boundary changes.
 
+## Product requirements and installed host CLI foundation (2026-10-26)
+
+Owner reaffirmed the phone as the primary onboard computer and requested product
+critique, requirements and package-based open-source delivery. PRODUCT-REQUIREMENTS.md
+now defines the complete robot journey, PC/Android/runner/SDK/MCU responsibilities,
+P0/P1/P2 acceptance criteria and ordered milestones. Independent operation,
+failure/recovery and safe MCU command expiry outrank more UI features. Android
+startup/background restrictions remain capability-specific gates. License choice,
+third-party notices and public publishing are pending owner/release decisions.
+
+Added Python distribution ros2-android 0.1.0a1 with installed ros2-android command:
+doctor, workspace, project, shell, esp32 and setup. Wheel bundles tracked backend
+sources/templates, extracts atomically into a content-keyed cache and preserves
+script modes. Existing build backends and workspace/native caches are reused;
+no user clone is needed to run the wheel. Doctor checks prerequisite presence
+only. Setup operations explicitly invoke documented dependency/app tasks.
+Maintainer build helper excludes untracked/local/device files; plain incomplete
+wheel builds fail with the helper command. No dependency on Git at user runtime
+for snapshot extraction; backend source fetch/build still needs developer tools.
+
+Verification: a local wheel built; offline install into a disposable venv outside
+the repository passed version, backend help, external C++ workspace inspection
+doctor JSON and private/generated artifact exclusion. The full 28-test tooling
+regression suite passed again. This is packaging qualification, not
+fresh build/deploy/ROS/device parity. Full wheel cross-build/deploy, prebuilt SDK
+artifacts, clean-machine setup, license/notices and distribution publication
+remain pending. See HOST-PACKAGE.md for commands and limits. Existing 28 tooling
+tests remain the regression suite. Product plan is linked from README, platform
+plan and handoff. No phone input, firmware changes or public upload in this step.
+
 ## Non-disruptive PC Agent/programming status (2026-10-26)
 
 Added `tools/esp32-via-phone --serial PHONE_ADB_ID status`: reads the protected

@@ -1,5 +1,10 @@
 # ROS2 Android platform plan
 
+Product requirements and current priorities: [robot-computer requirements](PRODUCT-REQUIREMENTS.md)
+(2026-10-26). This takes precedence over older feasibility-stage missing-feature
+lists below. Distribution is moving to an installable host CLI, APK and versioned
+SDK; see [local alpha packaging](HOST-PACKAGE.md). No public release yet.
+
 Current UI milestone: main Projects controls separate runners through
 signature-authenticated IPC (start/stop, state/nodes, connection and bounded
 workspace logs). See PROJECTS.md and verification/2026-10-25-unified-project-controls.md.
