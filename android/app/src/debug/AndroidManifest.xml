@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
+        <service android:name=".AutonomyQualificationService" android:exported="false" android:foregroundServiceType="connectedDevice" />
         <receiver android:name=".ProgrammingControlReceiver" android:exported="true" android:permission="android.permission.DUMP" />
         <activity android:name=".LargeTextPreviewActivity" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name=".LightPreviewActivity" android:exported="false" android:screenOrientation="portrait" />

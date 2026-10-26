@@ -5,6 +5,104 @@ Last updated: 2026-10-26. Read this before resuming development, then read
 resume index; detailed architecture, usage and measurements remain in linked
 files. Update it whenever a milestone, finding or verification boundary changes.
 
+## Offline result recovered; independent recorder added (2026-10-26)
+
+After USB reconnection, the phone's own robot-reliability.json reported a **pass**:
+120080 ms continuous trial, 119 samples including 98 with no Wi-Fi transport,
+maximum MCU message age 881 ms. Power Saving was false. Three USB Agent restarts
+recovered in 3992/2869/2970 ms. The PC/UTP reported an interrupted test connection,
+but instrumentation evidently continued on the phone and saved a final result.
+Do not equate that host-runner error with failed robot continuity. Earlier repeats
+without the refined multi-locator networking really did record stale data.
+
+Preserved the tested installed APK, SHA-256
+`d208973fb7b1bb2150ce08a10eb5e6b43534c4364df7a2eae511b67efed28c76`,
+result JSON and Agent XML under ignored device-logs. Its experimental source was
+rolled back before this delayed result was retrieved. Reconstructed the main-app
+networking mechanism from the preserved configuration: Cyclone loopback plus an
+external interface, redundant networking and explicit localhost discovery; Agent
+UDP transport with loopback/external default and metatraffic locators. Current
+source is a rebuilt revision requiring a fresh device trial; the old APK result
+is not automatic proof of this revision or any project runner. C++/Python and
+ordinary workspace networking remain unchanged in this revision.
+
+Added debug-only AutonomyQualificationService, non-exported, controlled through
+the existing DUMP-protected debug receiver. It owns a bounded battery -> USB MCU
+-> phone heartbeat/reply recording independently of instrumentation/ADB. Saves
+own cache/autonomy-qualification.json once per second, with freshness, Wi-Fi-
+absent samples and USB byte counters. Startup timeout 90 s; stale limit 10 s;
+30–7200 s run; default requires 30 Wi-Fi-absent samples. Temporary battery and
+Dashboard endpoints replace the active main session without editing saved layouts.
+Completion/cancel stops those endpoints; USB Agent remains separately controlled.
+No motor commands, camera capture, personal data or production UI changes.
+Build/unit/lint passed. New recorder's on-device qualification is pending.
+See verification/2026-10-26-robot-readiness.md for commands and evidence limits.
+
+Fresh recorder deployment passed install-only and unlocked project-foreground
+preflight. First start reached the USB permission prompt and timed out waiting
+for CP2102 approval before any round trip. This is setup-blocked, not a failed
+offline trial. Owner approval requested; restart the recorder after permission.
+A concurrent PC probe received no topics; external interoperability is pending,
+and needs an explicit PC interface plus a healthy fresh baseline before conclusions.
+
+Added --serial to the physical workspace-process harness and a read-only external
+PC battery/MCU probe. APT remains deferred.
+
+## Independent recorder: combined offline/task-removal failure (2026-10-26)
+
+After CP2102 approval, fresh baseline reached recording with battery, heartbeat
+and MCU replies. Owner disabled Wi-Fi, swiped both main and runner tasks away,
+then enabled Wi-Fi and reopened main. The independent recorder saved failed:
+110 samples, elapsed160904 ms, 33 Wi-Fi-absent samples, heartbeat/reply ages49705 ms,
+114 battery publications, Agent still running with USB byte counters. The missing
+~50 s of once-per-second samples indicates a scheduling/blocking interruption;
+this record cannot establish whether CPU suspension, main-thread/native blocking,
+DDS or task removal caused it. No contemporaneous app-process kill appears in
+own-package exit history. Do not call the rebuilt source offline-qualified.
+This was a combined-change trial, unlike the earlier recovered short pass.
+A Wi-Fi-on main-task-swipe-only trial was started to isolate that variable.
+No security/power settings changed. Source/build qualification and actual physical
+continuity remain separate. Current tested APK SHA-256:
+`b0705812352d72863d97a88f5af665e7fb53fa0a6c4751c93ad96db586cae476`.
+
+## Current-source healthy baseline and external unicast discovery (2026-10-26)
+
+Wi-Fi-on independent recorder completed passed:119 samples over120801 ms,
+zero Wi-Fi-absent samples, max MCU message age1720 ms,124 battery publications.
+Owner was asked to swipe only the main task for30 s during this run, but event
+confirmation is pending; do not label it a verified swipe-recovery test yet.
+After this result was saved, a separate90 s baseline was started for PC discovery.
+
+Default/explicit-PC-interface-only external observers received no data. With an
+explicit phone discovery peer in PC Cyclone XML, the real PC probe passed:
+12 battery,3 heartbeat,3 reply messages; observed inter-message maxima about1 s.
+This establishes bidirectional phone/MCU traffic and external PC receipt on this
+revision with unicast discovery. Multicast discovery across this current network
+is not qualified and no root cause is inferred. Transient addresses/XML remain
+in ignored artifacts. This is not proof of current-source offline/task-removal
+reliability, workspace execution, a one-hour soak or hard-real-time timing.
+
+## Smooth preview benchmark passed (2026-10-26)
+
+User reopened the app; unlocked/project-foreground and camera-permission gates
+passed. Physical NavigationUiTest preview/navigation/recreation/Stop test passed
+with zero skips/failures. Ten-second concurrent sample at requested 30 Hz:
+displayed 26.9446 FPS, local ROS publishing 26.9446 FPS, estimated frame-age p95
+110 ms and max116 ms. Subsequent five-second preview-visible publication measured
+29.6 FPS. These are local rates and app-estimated camera-timestamp age, not PC
+received FPS or optically measured panel latency. Existing clock-source mapping
+limits remain; no hard-real-time promise. Test logs stay ignored.
+
+Both theme readiness/capture cases subsequently passed; guarded light/dark Home
+captures were inspected, showing scoped status and all five tabs clearly. The
+controlled USB/power-saving comparison is being rerun separately. An initial
+combined batch hit an immediate focus assertion in RobotReliabilityTest before
+telemetry; the original focus guard remains. Three subsequent no-saver USB Agent recoveries
+passed in 2969–3997 ms; continuous baseline is healthy. Owner was asked to repeat
+the 60-second Wi-Fi-off interval. No root cause conclusion yet. Lifecycle intents reopen only the known project Activity after
+instrumentation closes it; unlock is checked first and project foreground is
+verified again before UI input/capture. No other app is inspected or controlled.
+
 ## Smooth camera preview correction (2026-10-26)
 
 Owner observed visibly laggy preview and requested robot-appropriate live timing.

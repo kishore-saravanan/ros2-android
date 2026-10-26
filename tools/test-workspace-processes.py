@@ -10,8 +10,11 @@ parser.add_argument('--workspace', type=Path, required=True)
 parser.add_argument('--peer', required=True)
 parser.add_argument('--local', required=True)
 parser.add_argument('--domain', type=int, default=42)
+parser.add_argument('--serial', help='Authorized USB or wireless ADB target')
 args = parser.parse_args()
 cli = [str(Path(__file__).resolve().parent / 'ros2android-workspace'), '--workspace', str(args.workspace)]
+if args.serial:
+    cli += ['--serial', args.serial]
 
 def command(*values):
     return subprocess.check_output([*cli, *values], text=True)

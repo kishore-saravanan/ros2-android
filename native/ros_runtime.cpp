@@ -25,6 +25,9 @@
 #include <geometry_msgs/msg/twist.h>
 #include <geometry_msgs/msg/detail/twist__rosidl_typesupport_introspection_c.h>
 #include <cmath>
+#include <ifaddrs.h>
+#include <net/if.h>
+#include <netinet/in.h>
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
@@ -194,11 +197,28 @@ extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_android_NativeRuntime_sta
         node_namespace = str(env, ns);
         setenv("LD_LIBRARY_PATH", lib.c_str(), 1);
         setenv("RMW_IMPLEMENTATION", "rmw_cyclonedds_cpp", 1);
-        std::string xml = "<CycloneDDS><Domain><General><AllowMulticast>true</AllowMulticast>";
-        if (!local_address.empty()) xml += "<NetworkInterfaceAddress>" + local_address + "</NetworkInterfaceAddress>";
-        xml += "</General><Discovery><ParticipantIndex>auto</ParticipantIndex><MaxAutoParticipantIndex>50</MaxAutoParticipantIndex>";
-        if (!peer_address.empty()) xml += "<Peers><Peer Address=\"" + peer_address + "\"/></Peers>";
-        xml += "</Discovery></Domain></CycloneDDS>";
+        // Advertise a stable phone-local path alongside the robot/PC network.
+        // Redundant networking avoids selecting only Wi-Fi for a local Agent.
+        bool external_available = false;
+        ifaddrs* interfaces = nullptr;
+        if (getifaddrs(&interfaces) == 0) {
+            for (auto* it = interfaces; it; it = it->ifa_next) {
+                if (it->ifa_addr && it->ifa_addr->sa_family == AF_INET &&
+                    (it->ifa_flags & IFF_UP) && !(it->ifa_flags & IFF_LOOPBACK)) external_available = true;
+            }
+            freeifaddrs(interfaces);
+        }
+        std::string xml = "<CycloneDDS><Domain><General><Interfaces>"
+            "<NetworkInterface address=\"127.0.0.1\" multicast=\"false\" priority=\"10\"/>";
+        if (!local_address.empty() && local_address != "127.0.0.1")
+            xml += "<NetworkInterface address=\"" + local_address + "\"/>";
+        else if (external_available) xml += "<NetworkInterface autodetermine=\"true\"/>";
+        xml += "</Interfaces><MulticastRecvNetworkInterfaceAddresses>all</MulticastRecvNetworkInterfaceAddresses>"
+            "<RedundantNetworking>true</RedundantNetworking><AllowMulticast>true</AllowMulticast></General>"
+            "<Discovery><ParticipantIndex>auto</ParticipantIndex><MaxAutoParticipantIndex>50</MaxAutoParticipantIndex>"
+            "<Peers><Peer Address=\"127.0.0.1\"/>";
+        if (!peer_address.empty() && peer_address != "127.0.0.1") xml += "<Peer Address=\"" + peer_address + "\"/>";
+        xml += "</Peers></Discovery></Domain></CycloneDDS>";
         setenv("CYCLONEDDS_URI", xml.c_str(), 1);
         auto options = rcl_get_zero_initialized_init_options();
         check(rcl_init_options_init(&options, rcl_get_default_allocator()));

@@ -193,3 +193,9 @@ stopped instead of Phone runtime stopped / On-device runtime active. This status
 belongs to RobotSessionService, not the independent workspace runners or Agent.
 Their live states remain in Home ROS activity. It is not a robot-wide readiness
 or verified-communication indicator.
+
+Preview performance evidence (2026-10-26): physical navigation/recreation/Stop
+regression passed with requested 30 Hz, 26.94 displayed FPS and 26.94 local ROS
+publish FPS concurrently over ten seconds. Estimated frame age p95 110 ms,
+max116 ms; later five-second local publication29.6 FPS. This is not remote FPS or
+an optical panel-latency measurement. See robot-readiness ledger.

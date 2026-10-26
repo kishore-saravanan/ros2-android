@@ -96,6 +96,26 @@ class MicroRosAgentService : Service() {
             builder.environment()["LD_LIBRARY_PATH"] = libs
             // UDP-only profiles avoid Linux shared-memory transports on Android.
             builder.environment()["FASTDDS_BUILTIN_TRANSPORTS"] = "UDPv4"
+            // Keep localhost locators discoverable when the external Wi-Fi link disappears.
+            val addresses = linkedSetOf("127.0.0.1")
+            java.net.NetworkInterface.getNetworkInterfaces()?.toList()?.filter { it.isUp && !it.isLoopback }?.forEach { network ->
+                network.inetAddresses.toList().filterIsInstance<java.net.Inet4Address>().forEach { addresses.add(it.hostAddress!!) }
+            }
+            fun locator(address: String) = "<locator><udpv4><address>$address</address></udpv4></locator>"
+            val locators = addresses.joinToString("") { locator(it) }
+            val profile = File(filesDir, "agent-dds-profile.xml")
+            profile.writeText("""<profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
+                <transport_descriptors><transport_descriptor>
+                <transport_id>robot_udp</transport_id><type>UDPv4</type><maxInitialPeersRange>60</maxInitialPeersRange>
+                <interfaceWhiteList>${addresses.joinToString("") { "<address>$it</address>" }}</interfaceWhiteList>
+                </transport_descriptor></transport_descriptors>
+                <participant profile_name="robot_agent" is_default_profile="true"><rtps>
+                <defaultUnicastLocatorList>$locators</defaultUnicastLocatorList>
+                <builtin><metatrafficUnicastLocatorList>$locators</metatrafficUnicastLocatorList><initialPeersList>${locator("127.0.0.1")}</initialPeersList></builtin>
+                <userTransports><transport_id>robot_udp</transport_id></userTransports><useBuiltinTransports>false</useBuiltinTransports>
+                </rtps></participant></profiles>""")
+            builder.environment()["FASTRTPS_DEFAULT_PROFILES_FILE"] = profile.absolutePath
+            builder.environment()["FASTDDS_DEFAULT_PROFILES_FILE"] = profile.absolutePath
             builder.directory(filesDir)
             val process = builder.start(); child = process
             running = true; state = "Starting · $label"

@@ -18,6 +18,18 @@ class ProgrammingControlReceiver : BroadcastReceiver() {
                 if (Esp32ProgrammingService.active) { resultCode = 1; return }
                 context.startForegroundService(Intent(context, MicroRosAgentService::class.java).putExtra(MicroRosAgentService.USB, true))
             }
+            "autonomy-start" -> {
+                if (AutonomyQualificationService.active || Esp32ProgrammingService.active) { resultCode = 1; resultData = "Test or programming already active"; return }
+                context.startForegroundService(Intent(context, AutonomyQualificationService::class.java)
+                    .putExtra("seconds", intent.getIntExtra("seconds", 180))
+                    .putExtra("minimumOfflineSamples", intent.getIntExtra("minimumOfflineSamples", 30)))
+            }
+            "autonomy-stop" -> if (AutonomyQualificationService.active) context.startService(Intent(context, AutonomyQualificationService::class.java).setAction(AutonomyQualificationService.STOP))
+            "autonomy-status" -> {
+                resultCode = 0
+                resultData = java.io.File(context.cacheDir, AutonomyQualificationService.FILE).takeIf { it.isFile }?.readText() ?: "No continuity test recorded"
+                return
+            }
             "status" -> Unit
             else -> { resultCode = 1; return }
         }
