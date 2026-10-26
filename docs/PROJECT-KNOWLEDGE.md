@@ -5,6 +5,42 @@ Last updated: 2026-10-26. Read this before resuming development, then read
 resume index; detailed architecture, usage and measurements remain in linked
 files. Update it whenever a milestone, finding or verification boundary changes.
 
+## Debian distribution and explicit device setup (2026-10-26)
+
+Owner selected Ubuntu .deb/APT distribution and authorized proceeding with the
+planned work. Added setup/build-deb.py using the existing wheel payload plus a
+validated signed main APK. Package is Architecture all (Python host client;
+ARM64 APK is phone data), depends on python3/adb/bash and uses configured Git
+maintainer identity. Files are under /usr/lib/ros2-android and /usr/share/doc;
+/usr/bin/ros2-android is the entry point. No maintainer scripts, automatic phone
+operations, user-cache cleanup or private signing keys are packaged.
+
+Added `ros2-android device setup --serial PHONE_ADB_ID`. Uses bundled artifact
+manifest and SHA-256, validates fixed main-app identity/API26/ARM64 target, then
+delegates setup/run-device.sh with install-only and explicit selection. Installer
+supports system adb fallback and checks phone API/ABI before install -r. There is
+no uninstall/clear-data/downgrade fallback, permission grant or automatic launch.
+Build-time aapt identity and apksigner checks precede packaging; debug APK requires
+explicit --allow-debug-apk. This is local development packaging, not production
+signing. A checksum detects mismatches, not malicious replacement of a package.
+
+Four new tests cover successful scoped update, wrong app identity, APK tamper
+and incompatible phone rejection using fake ADB. Rootless Debian verifier checks
+actual extracted launcher/help/bundled update path and absent maintainer scripts.
+Actual verification: setup/build.sh assembly/unit/lint passed; wheel rebuilt and
+its offline installation smoke passed; local Debian alpha built (about 8.6 MiB).
+Rootless extraction verifier passed launcher/backend help and fake-ADB device
+setup. Full tooling regression passed 32 tests. A real authorized wireless-ADB
+trial ran device setup through the extracted Debian launcher outside the checkout
+and successfully updated the bundled main APK with install -r. No app launch,
+permission grant, uninstall or data clear. This is extracted-package device
+qualification, not a system-installed .deb or fresh ROS interoperability trial.
+Clean-machine APT/dpkg install/upgrade/removal,
+policy/lint/source-package review, third-party notices and production signing
+remain public-release gates. No APT repository or signing credentials created.
+Read DEBIAN-PACKAGE.md. Wheel remains the reusable payload; .deb is the primary
+Ubuntu delivery path. Robot reliability/mixed-workspace milestones remain next.
+
 ## Apache-2.0 selection (2026-10-26)
 
 Owner explicitly selected Apache License 2.0, including commercial use. Added

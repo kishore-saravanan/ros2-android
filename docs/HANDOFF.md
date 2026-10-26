@@ -4,6 +4,17 @@ Updated 2026-10-26. Start with AGENTS.md and PROJECT-KNOWLEDGE.md, then inspect
 `git status` and `git log`. Work on develop. This document records the handoff;
 it does not assert a public release. Google Play work is deferred by the owner.
 
+## Debian/APT follow-up (2026-10-26)
+
+Owner selected .deb/APT delivery instead of requiring pipx. DEBIAN-PACKAGE.md
+records the local package builder, bundled main APK and explicit device setup.
+Installation must not contact a phone; no package maintainer scripts are used.
+Current artifact is a local debug alpha; clean-machine APT lifecycle testing,
+system-installed device setup and production APK signing remain gates. A real
+phone update through the extracted Debian launcher passed; see the knowledge
+base for its exact scope. Do not publish
+an APT repository or claim these validation gates complete from extraction tests.
+
 ## Product direction update (2026-10-26)
 
 Owner reaffirmed Android as the primary onboard computer and requested a

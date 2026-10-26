@@ -30,7 +30,9 @@ collapsed output logs in the main app. Workspace runners have no app-drawer
 entry; open them through Projects. A custom dot/robot logo appears on Home
 and installed app icons. See [project controls](docs/PROJECTS.md) and [UI design](docs/UI-UX.md).
 
-Installable host tooling is now available as a **local alpha wheel**; see
+Installable host tooling now has a **local Debian alpha with a bundled APK**;
+see [Debian installation](docs/DEBIAN-PACKAGE.md). No public APT repository exists yet.
+The reusable wheel is also available; see
 [host package](docs/HOST-PACKAGE.md) for installation, commands and qualification limits.
 The [product requirements](docs/PRODUCT-REQUIREMENTS.md) prioritize independent
 robot operation, recovery and ordinary workspaces. No public package is published.

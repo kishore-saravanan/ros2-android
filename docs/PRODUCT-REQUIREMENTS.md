@@ -77,9 +77,10 @@ motor driver or a robot stop mechanism.
 ## Delivery strategy
 
 Use three deliverables: Android APK, Python host CLI wheel and a versioned native
-SDK. The CLI's public command is `ros2-android`; pipx is the intended isolated
-installation path. ROS package sources remain ordinary colcon workspaces. A ROS
-package/deb can later wrap distribution if community demand warrants it; it does
+SDK. The CLI's public command is `ros2-android`. Owner selected a Debian/APT-first
+installation experience; the wheel remains a reusable internal/alternative
+artifact. See DEBIAN-PACKAGE.md for the local alpha. ROS package sources remain ordinary colcon workspaces. A ROS
+package can later wrap distribution if community demand warrants it; it does
 not remove Android ABI/cross-compilation requirements.
 
 The first local alpha wheel bundles existing tooling/templates and runs them in

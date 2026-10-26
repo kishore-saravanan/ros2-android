@@ -1,5 +1,9 @@
 # Installable host client — local alpha
 
+Owner selected Debian/APT as the primary Ubuntu delivery path. See
+[Debian package](DEBIAN-PACKAGE.md) for the implemented local .deb and bundled
+APK installation. The wheel described here remains the reusable host payload.
+
 The Python distribution is `ros2-android`; the installed command is
 `ros2-android`. It contains the current tooling and Android build templates.
 Users of a built wheel do not need a project checkout. This is a local alpha,
