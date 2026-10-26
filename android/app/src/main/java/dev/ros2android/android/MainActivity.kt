@@ -48,6 +48,30 @@ open class MainActivity : Activity() {
     private var preview: ImageView? = null
     private var previewId: String? = null
     private var previewStamp = 0L
+    internal var previewFramesDisplayed = 0L; private set
+    internal var previewFrameAgeMs = 0L; private set
+    private var previewMetrics: TextView? = null
+    private var previewWindowStart = 0L
+    private var previewWindowCount = 0L
+    private val previewTicker = object : Runnable {
+        override fun run() {
+            if (!resumed) return
+            refreshPreview()
+            if (preview != null) preview?.postOnAnimation(this)
+        }
+    }
+    private fun refreshPreview() {
+        val view = preview ?: return
+        val frame = session?.cameraPreview
+        if (previewId !in active) {
+            if (previewStamp != 0L) view.setImageDrawable(null)
+            previewStamp = 0
+        } else if (frame != null && frame.id == previewId && frame.stamp != previewStamp) {
+            view.setImageBitmap(frame.bitmap); previewStamp = frame.stamp; previewFramesDisplayed++
+            previewFrameAgeMs = (System.currentTimeMillis() - frame.capturedEpochNanos / 1_000_000).coerceAtLeast(0)
+        }
+    }
+
     private var pageScroll: ScrollView? = null
     private val expanded = mutableSetOf<String>()
     private val navButtons = mutableMapOf<String, Button>()
@@ -144,17 +168,18 @@ open class MainActivity : Activity() {
         render()
         bound = bindService(Intent(this, RobotSessionService::class.java), connection, Context.BIND_AUTO_CREATE)
     }
-    override fun onResume() { super.onResume(); resumed = true; if (tab == "Projects" || tab == "Overview") render(); main.removeCallbacks(ticker); main.post(ticker) }
+    override fun onResume() { super.onResume(); resumed = true; if (tab == "Projects" || tab == "Overview") render(); main.removeCallbacks(ticker); main.post(ticker); preview?.removeCallbacks(previewTicker); preview?.postOnAnimation(previewTicker) }
     override fun onSaveInstanceState(outState: Bundle) {
         save(); outState.putString("sensor", selectedSensor); outState.putString("screen", tab); outState.putString("filter", group)
         outState.putStringArrayList("expanded", ArrayList(expanded)); super.onSaveInstanceState(outState)
     }
-    override fun onPause() { session?.stopDashboardMotion(); save(); closeProjects(); resumed = false; main.removeCallbacks(ticker); session?.cameraPreviewEnabled = false; super.onPause() }
+    override fun onPause() { session?.stopDashboardMotion(); save(); closeProjects(); resumed = false; preview?.removeCallbacks(previewTicker); main.removeCallbacks(ticker); session?.cameraPreviewEnabled = false; super.onPause() }
     override fun onDestroy() {
         closeProjects()
         session?.cameraPreviewEnabled = false
         session?.onChange = null
         main.removeCallbacks(ticker)
+        preview?.removeCallbacks(previewTicker)
         if (bound) unbindService(connection)
         session = null
         super.onDestroy()
@@ -178,6 +203,8 @@ open class MainActivity : Activity() {
         rows.clear(); profileFields.clear(); capabilityStates.clear(); navButtons.clear()
         dashboard = null
         programmingStatus = null; programmingStop = null
+        preview?.removeCallbacks(previewTicker)
+        previewMetrics = null; previewFramesDisplayed = 0; previewWindowCount = 0; previewWindowStart = SystemClock.elapsedRealtime()
         overview = null; homeConnection = null; homeNetworks = null; homeNetworkStamp = 0L; preview = null; previewId = null; previewStamp = 0
         session?.cameraPreviewEnabled = false
         val selected = catalog.firstOrNull { it.id == selectedSensor }
@@ -309,6 +336,8 @@ open class MainActivity : Activity() {
                 previewId = cap.id
                 preview = ImageView(this).apply { contentDescription = "Local preview of ${shortName(cap)}"; scaleType = ImageView.ScaleType.FIT_CENTER; setBackgroundColor(getColor(R.color.ros_bg)) }
                 box.addView(preview, LinearLayout.LayoutParams(-1, dp(180)))
+                previewMetrics = text("Preview waiting", 13, muted).apply { tag = "camera_preview_rate" }.also { box.addView(it) }
+                if (resumed) preview?.postOnAnimation(previewTicker)
             }
             box.addView(text("Topic", 13, muted))
             val topic = field(prefs.getString("${cap.id}.topic", cap.defaultTopic)!!, "topic:${cap.id}").apply { contentDescription = "ROS topic for ${shortName(cap)}" }; box.addView(topic)
@@ -323,7 +352,7 @@ open class MainActivity : Activity() {
                 info.addView(text(cap.messageType, 13, muted)); info.addView(text(cap.detail, 14, muted))
                 info.addView(button("Find matching topics") { chooseTopic(topic, cap.messageType) })
                 info.addView(text("Best effort · volatile QoS", 13, muted))
-                if (cap.kind == 8) info.addView(text("Preview: up to 2 fps, sensor orientation. ROS publishing has its own rate. Images are not saved.", 13, muted))
+                if (cap.kind == 8) info.addView(text("Preview follows the camera rate and drops old frames if rendering falls behind. Capture, preview and ROS delivery rates are separate. Images are not saved.", 13, muted))
             }
         }
     }
@@ -549,9 +578,12 @@ open class MainActivity : Activity() {
             homeNetworkStamp = SystemClock.elapsedRealtime()
         }
         stopButton?.apply { isEnabled = session != null && !busy && (connected || errors.isNotEmpty()); visibility = if (connected || busy || errors.isNotEmpty()) android.view.View.VISIBLE else android.view.View.GONE }
-        val frame = session?.cameraPreview
-        if (previewId !in active) { if (previewStamp != 0L) preview?.setImageDrawable(null); previewStamp = 0 }
-        else if (frame != null && frame.id == previewId && frame.stamp != previewStamp) { preview?.setImageBitmap(frame.bitmap); previewStamp = frame.stamp }
+        val previewNow = SystemClock.elapsedRealtime()
+        if (previewMetrics != null && previewNow - previewWindowStart >= 1000) {
+            val fps = (previewFramesDisplayed - previewWindowCount) * 1000.0 / (previewNow - previewWindowStart)
+            previewMetrics?.show(if (previewId in active) "Preview: %.1f fps".format(java.util.Locale.ROOT, fps) else "Preview stopped")
+            previewWindowStart = previewNow; previewWindowCount = previewFramesDisplayed
+        }
     }
     private fun save() {
         val edit = prefs.edit()

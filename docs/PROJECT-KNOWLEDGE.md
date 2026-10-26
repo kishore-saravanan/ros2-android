@@ -5,6 +5,40 @@ Last updated: 2026-10-26. Read this before resuming development, then read
 resume index; detailed architecture, usage and measurements remain in linked
 files. Update it whenever a milestone, finding or verification boundary changes.
 
+## Smooth camera preview correction (2026-10-26)
+
+Owner observed visibly laggy preview and requested robot-appropriate live timing.
+Confirmed two deliberate UI bottlenecks: encoder emitted preview every 500 ms and
+Activity polled at 500 ms. Removed both limits. CameraPublisher submits each
+selected-rate encoded frame to a dedicated LatestPreviewDecoder: one pending
+latest frame, separate worker, epoch-based disable/navigation invalidation and
+bounded teardown. JPEG decoding no longer runs on the encoder worker. Activity
+presents latest bitmaps on animation frames only while a camera detail is visible
+and resumed, with no per-frame full-screen/status refresh. Preview displayed FPS
+is visible below the image. Saved camera publishing rates are unchanged; default
+15 Hz is not a 30 FPS request. Preview follows selected camera rate up to supported
+30 Hz. No direct GPU/Camera2 preview surface or hard real-time guarantee claimed.
+
+Expanded physical preview test to a ten-second simultaneous displayed/published
+FPS window and app-estimated sensor-timestamp-to-view age (using the existing
+camera clock mapping, not an optical display-latency instrument). Asserts both
+rates >=20 FPS for requested 30 and p95 estimated age <250 ms. Retains navigation,
+recreation and stop checks. Source/tests compile; build/unit/lint passed. Updated
+APK installed with setup/run-device.sh --install-only. On-device performance
+benchmark is pending: own app was not foreground at preflight, so no UI input or
+capture was attempted; user was asked to reopen it. Camera permission is granted.
+
+Before this correction, camera rerun passed five cases (preview/navigation,
+collapsed Help, both-camera JPEG publishing, 30-second continuous camera and
+background/recreation/notification Stop); two theme screenshot cases failed at
+focus/readiness checks, not camera capture. PC observer received valid back/front
+JPEGs without saving images. Theme startup test now waits for its own focused
+window/status instead of a fixed sleep; capture guards remain. Final theme rerun
+is pending. Controlled Wi-Fi-off/power-saving comparison, one-hour run and fresh
+phone workspace computation remain pending, as recorded in robot readiness ledger.
+APT remains deferred. Update measured FPS/age and final UI evidence after actual
+device tests; do not substitute compiled code for verified performance.
+
 ## Onboard reliability qualification and operator guide refinement (2026-10-26)
 
 Owner deferred further APT work and requested robot-computer runtime tests and

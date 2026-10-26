@@ -44,7 +44,13 @@ class ThemeUiTest {
     }
     private fun <T : MainActivity> checkTheme(type: Class<T>, mode: Int, name: String) {
         ActivityScenario.launch(type).use { scenario ->
-            SystemClock.sleep(1500)
+            val readyDeadline = SystemClock.elapsedRealtime() + 8000
+            var ready = false
+            while (!ready && SystemClock.elapsedRealtime() < readyDeadline) {
+                scenario.onActivity { ready = it.hasWindowFocus() && find(it.window.decorView, "session_status") != null }
+                if (!ready) SystemClock.sleep(100)
+            }
+            assertTrue("Theme Activity did not obtain project-window focus", ready)
             scenario.onActivity { app ->
                 assertEquals(mode, app.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK)
                 assertTrue((find(app.window.decorView, "session_status") as android.widget.TextView).text.startsWith("Sensors & dashboard"))

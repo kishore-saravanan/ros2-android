@@ -2,7 +2,6 @@ package dev.ros2android.android
 
 import android.app.*
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.hardware.SensorManager
@@ -20,6 +19,7 @@ class RobotSessionService : Service() {
     private lateinit var sensors: SensorPublishers
     private lateinit var battery: BatteryPublisher
     private lateinit var camera: CameraPublisher
+    private lateinit var previewDecoder: LatestPreviewDecoder
     private lateinit var catalog: List<PhoneCapability>
     private var multicast: WifiManager.MulticastLock? = null
     private var wake: PowerManager.WakeLock? = null
@@ -38,11 +38,11 @@ class RobotSessionService : Service() {
     var counts: Map<String, Long> = emptyMap(); private set
     val batteryPercent: Int? get() = battery.lastPercentage
     var cameraStats: CameraPublisher.Stats? = null; private set
-    data class Preview(val id: String, val stamp: Long, val bitmap: Bitmap)
+    data class Preview(val id: String, val stamp: Long, val bitmap: Bitmap, val capturedEpochNanos: Long)
     @Volatile var cameraPreview: Preview? = null; private set
     var cameraPreviewEnabled: Boolean
         get() = camera.previewEnabled
-        set(value) { camera.previewEnabled = value; if (!value) cameraPreview = null }
+        set(value) { camera.previewEnabled = value; previewDecoder.enabled = value; if (!value) cameraPreview = null }
     var onChange: (() -> Unit)? = null
 
     data class DashboardReading(val value: String, val receivedAt: Long) {
@@ -127,15 +127,11 @@ class RobotSessionService : Service() {
             stopPublisher("battery"); errors["battery"] = error; changed()
         }
         sensors = SensorPublishers(getSystemService(SensorManager::class.java))
-        camera = CameraPublisher(this, { id, bytes ->
-            // Decode only a small UI thumbnail, on the encoder worker, never the main thread.
-            // No Activity reference or stored image; publishing queues stay bounded.
-            if (camera.previewEnabled && !destroyed) {
-                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size,
-                    BitmapFactory.Options().apply { inSampleSize = 2 })
-                if (bitmap != null && camera.previewEnabled && !destroyed)
-                    cameraPreview = Preview(id, SystemClock.elapsedRealtimeNanos(), bitmap)
-            }
+        previewDecoder = LatestPreviewDecoder { id, capturedEpochNanos, bitmap ->
+            if (!destroyed) cameraPreview = Preview(id, SystemClock.elapsedRealtimeNanos(), bitmap, capturedEpochNanos)
+        }
+        camera = CameraPublisher(this, { id, bytes, capturedEpochNanos ->
+            previewDecoder.submit(id, bytes, capturedEpochNanos)
         }) { error -> main.post {
             active.firstOrNull { id -> catalog.any { it.id == id && it.kind == 8 } }?.let { id ->
                 stopPublisher(id); errors[id] = error; changed()
@@ -332,7 +328,7 @@ class RobotSessionService : Service() {
     override fun onDestroy() {
         stopControls()
         destroyed = true; generation++; onChange = null
-        sensors.stopAll(); battery.stop(); camera.stop(); active.clear()
+        sensors.stopAll(); battery.stop(); camera.stop(); previewDecoder.close(); cameraPreview = null; active.clear()
         if (connected || busy) worker.execute { runCatching { camera.awaitStopped(); if (NativeRuntime.available) NativeRuntime.stop() } }
         worker.shutdown(); releaseForeground()
         super.onDestroy()

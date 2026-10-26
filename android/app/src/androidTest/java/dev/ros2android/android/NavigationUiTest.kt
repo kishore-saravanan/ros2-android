@@ -113,13 +113,33 @@ class NavigationUiTest {
                     (view is ViewGroup && (0 until view.childCount).any { i -> hasImage(view.getChildAt(i)) })
                 imageShown = hasImage(it.window.decorView)
             }
-            // The bitmap is polled into the UI every 500 ms.
+            // Wait for the first animation-frame presentation.
             if (!imageShown) { SystemClock.sleep(700); activity.scenario.onActivity {
                 fun hasImage(view: View): Boolean = (view is ImageView && view.drawable != null) ||
                     (view is ViewGroup && (0 until view.childCount).any { i -> hasImage(view.getChildAt(i)) })
                 imageShown = hasImage(it.window.decorView)
             } }
-            assertTrue("ImageView has no live thumbnail", imageShown)
+            assertTrue("ImageView has no live preview", imageShown)
+            SystemClock.sleep(1000) // Exclude camera/decoder startup from the sample window.
+            var firstDisplayed = 0L
+            activity.scenario.onActivity { firstDisplayed = it.previewFramesDisplayed }
+            val firstPublished = NativeRuntime.publishedCount(cap.id)
+            val sampleStart = SystemClock.elapsedRealtime()
+            val ages = mutableListOf<Long>()
+            repeat(100) {
+                SystemClock.sleep(100)
+                activity.scenario.onActivity { ages += it.previewFrameAgeMs }
+            }
+            var lastDisplayed = 0L
+            activity.scenario.onActivity { lastDisplayed = it.previewFramesDisplayed }
+            val seconds = (SystemClock.elapsedRealtime() - sampleStart) / 1000.0
+            val displayedFps = (lastDisplayed - firstDisplayed) / seconds
+            val publishedFps = (NativeRuntime.publishedCount(cap.id) - firstPublished) / seconds
+            val p95Age = ages.sorted()[95]
+            android.util.Log.i("ROS2PreviewBenchmark", "displayedFps=$displayedFps publishedFps=$publishedFps p95FrameAgeMs=$p95Age maxFrameAgeMs=${ages.maxOrNull()}")
+            assertTrue("Preview too slow: $displayedFps fps", displayedFps >= 20.0)
+            assertTrue("Preview reduced ROS publishing: $publishedFps fps", publishedFps >= 20.0)
+            assertTrue("Preview is stale: p95 age ${p95Age}ms", p95Age < 250)
             val front = CapabilityCatalog.publishers(context).firstOrNull { it.kind == 8 && it.label.startsWith("Front") }
             if (front != null) {
                 click("detail_back"); click("sensor:${front.id}")

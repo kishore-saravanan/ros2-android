@@ -66,3 +66,20 @@ camera permission denied, ROS2 Android not foreground. User has been asked to
 approve camera and CP2102 permissions and reopen the app. No UI input/capture was
 attempted while another app was foreground. This is a pending prerequisite, not
 completion of the remaining camera/offline/endurance qualification.
+
+## Permission-approved camera rerun and preview finding
+
+After user granted camera permission, five of seven cases passed: live preview
+navigation, robot Help, front/back JPEG publication, 30-second continuous camera,
+and camera/IMU background/recreation/Stop. Independent PC observed valid JPEGs
+from back/front streams without retaining images. Two theme cases failed at
+own-window focus/readiness guards; no guard was bypassed or other-app capture
+made. They require rerun. Logs remain ignored.
+
+Owner then reported local preview visibly slow. Identified/fixed the intentional
+2 FPS preview callback and 500 ms view polling, using a dedicated latest-frame
+decoder and animation-frame UI updates. New ten-second preview/publish FPS and
+estimated timestamp-age assertions compile; actual performance is not yet
+qualified. New main APK installed. At last preflight, camera permission granted
+but own app not foreground; user asked to reopen it. No measured post-fix FPS is
+claimed. Camera clock mapping estimates age and does not measure panel latency.

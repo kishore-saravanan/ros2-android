@@ -86,9 +86,14 @@ UI observes RobotSessionService; it never takes ownership of the ROS/sensor/came
 lifetime. Selected sensor, screen and filter restore after Activity recreation;
 drafts persist across navigation. Back from sensor detail returns to the list.
 
-Preview reuses the existing JPEG stream and decodes only a small thumbnail at up
-to 2 fps while its detail screen is resumed. It opens no second camera and saves
-no images. Preview FPS, capture FPS, local ROS writes and PC receipt are separate.
+Preview reuses the existing JPEG stream and decodes on a dedicated worker while
+its detail screen is resumed. One pending latest frame replaces older work;
+decoding never blocks ROS encoding/publishing. The view presents the newest
+bitmap on animation frames and shows its measured displayed FPS. It opens no
+second camera and saves no images. The former 2 FPS production/500 ms UI polling
+limits are removed. Preview follows the selected camera publishing rate (up to
+30 FPS where supported); this is not an unconditional 30 FPS or hard real-time
+guarantee. Preview FPS, capture FPS, local ROS writes and PC receipt are separate.
 Orientation correction and selectable capture resolution/quality remain pending.
 
 Text updates only on changes. Headings and disclosures expose API-appropriate

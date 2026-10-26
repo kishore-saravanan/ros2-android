@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /** Continuous YUV capture -> bounded JPEG encoder -> bounded DDS publisher. No images are saved. */
-class CameraPublisher(context: Context, private val onPreview: (String, ByteArray) -> Unit = { _, _ -> }, private val onError: (String) -> Unit) {
+class CameraPublisher(context: Context, private val onPreview: (String, ByteArray, Long) -> Unit = { _, _, _ -> }, private val onError: (String) -> Unit) {
     private val manager = context.getSystemService(CameraManager::class.java)
     @Volatile var previewEnabled = false
     @Volatile private var current: Stream? = null
@@ -130,7 +130,6 @@ class CameraPublisher(context: Context, private val onPreview: (String, ByteArra
         private val encodeNanos = AtomicLong()
         private val clock = CameraClock(realtime, System.currentTimeMillis() * 1_000_000L - SystemClock.elapsedRealtimeNanos())
         private val interval = (1_000_000_000.0 / rate).toLong()
-        private var nextPreview = 0L
         private var nextFrame = 0L
         private var lastTime = SystemClock.elapsedRealtimeNanos()
         private var lastCaptured = 0L
@@ -184,11 +183,7 @@ class CameraPublisher(context: Context, private val onPreview: (String, ByteArra
                         encoded.incrementAndGet()
                         jpeg.poll()?.let { dropped.incrementAndGet() }
                         if (running.get()) jpeg.offer(result)
-                        val now = SystemClock.elapsedRealtime()
-                        if (previewEnabled && now >= nextPreview && running.get()) {
-                            nextPreview = now + 500
-                            onPreview(id, result.bytes)
-                        }
+                        if (previewEnabled && running.get()) onPreview(id, result.bytes, result.timestamp)
                     } finally { free.offer(frame.bytes) }
                 }
             } catch (_: InterruptedException) { /* Explicit stop wakes the bounded queue. */ }
