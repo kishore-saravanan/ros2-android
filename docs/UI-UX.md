@@ -173,3 +173,18 @@ is added. PC starts programming through a protected debug-only ADB control.
 Reference CP2102 flash/hash verification and Agent/Dashboard recovery passed;
 other adapters, interrupted-write and endurance qualification remain pending. See
 PROJECT-KNOWLEDGE.md for actual tests and the saved ESP32 LED Switch example (physical LED wiring unverified).
+
+Robot-operation refinement (2026-10-26): Help → Run without the PC is a collapsed
+task section explaining workspace/sensor/MCU startup, fresh-feedback checks and
+independent Stop scopes. Camera/subscriber help now explicitly says Stop all
+stops sensors and Dashboard, while projects and Agent remain independent. No
+new navigation destination or automatically started hardware is introduced.
+GETTING-STARTED.md now uses Sensors → Battery percentage instead of the removed
+Home battery card. Visual/device regression results are recorded in the robot
+readiness ledger; existing broad accessibility gaps remain explicit.
+
+Status scope correction: the main toolbar now says Sensors & dashboard active /
+stopped instead of Phone runtime stopped / On-device runtime active. This status
+belongs to RobotSessionService, not the independent workspace runners or Agent.
+Their live states remain in Home ROS activity. It is not a robot-wide readiness
+or verified-communication indicator.

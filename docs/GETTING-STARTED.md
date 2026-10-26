@@ -49,14 +49,14 @@ not proof that a peer has been reached.
 
 ## 3. Start battery publishing
 
-From Home, tap **Configure** on the Battery card to open its controls. You can
-also open Sensors → Battery percentage. Opening controls does not start publishing. The default card shows:
+Open **Sensors → Battery percentage**. Opening its controls does not start
+publishing. The detail screen shows:
 
 - Topic: /phone/battery_percent
 - Rate: 1 Hz
 - Type: std_msgs/msg/Float64 (a percentage from 0 to 100)
 
-Tap **Publish** (also available directly on Home). Expected: the button becomes Stop and the card shows a value
+Tap **Publish**. Expected: the button becomes Stop and the detail screen shows a value
 such as 85% battery; its local sent-message count is available under Advanced. The phone can
 repeat the same percentage for a long time while its charge stays constant.
 
@@ -98,7 +98,8 @@ It does not install ROS. Adapt it if your installation uses another prefix.
 ## 5. Stop and recover
 
 Tap Stop on the battery card to stop that publisher, or Stop all to release
-all main-app endpoints. Start again by tapping Publish. Leaving the screen keeps
+all main-app sensor and Dashboard endpoints. It does not stop projects or the
+micro-ROS Agent; each has its own Stop action. Start again by tapping Publish. Leaving the screen keeps
 an active service-owned session running; process death or APK replacement can
 stop it. Project runners have their own Stop project action and independent
 profiles; see [PROJECTS.md](PROJECTS.md).
@@ -134,3 +135,9 @@ step, recovery and whether real PC samples arrived. Confirm initial installation
 Publish, stop/restart and another session after reconnect. Record licensing/artifact
 access obstacles too. A maintainer's prepared-machine walkthrough is not evidence
 that this trial or a clean-machine dependency install has passed.
+
+## Next: use the phone as the robot computer
+
+Continue with [Robot operation](ROBOT-OPERATION.md) for the workspace/MCU setup,
+start/stop scopes, loss-of-connection checks and recovery. APT distribution work
+is deferred while runtime qualification and usability are completed.

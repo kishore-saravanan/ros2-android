@@ -5,6 +5,52 @@ Last updated: 2026-10-26. Read this before resuming development, then read
 resume index; detailed architecture, usage and measurements remain in linked
 files. Update it whenever a milestone, finding or verification boundary changes.
 
+## Onboard reliability qualification and operator guide refinement (2026-10-26)
+
+Owner deferred further APT work and requested robot-computer runtime tests and
+clear guides/UX. Added RobotReliabilityTest: phone battery -> USB ESP32 -> phone
+acknowledgement/heartbeat, repeated Agent restart, continuous freshness assertions
+and bounded app-cache JSON evidence. No PC ROS publisher/Agent is required by the
+path. Updated test also records power-saving-at-start and Wi-Fi-absent sample
+counts without identifiers. Long soak duration is configurable, not yet run.
+
+Actual first physical trial: five restarts recovered fresh data in 3008–3401 ms.
+Continuous phase failed at ~90 s with MCU messages stale >10 s during owner
+Wi-Fi disable/re-enable. Owner reported Power Saving on; diagnostic subsequently
+read low_power=1. This is a real application-data failure with confounded cause;
+no DDS patch applied or root cause proven. Owner disabled Power Saving (verified
+0). Repeat did not reach telemetry because app update required renewed USB
+permission (Agent waiting for CP2102 approval). Do not label that repeat an
+offline/power comparison success or failure. Updated test starts from a stopped
+Agent to avoid carrying a previously failed session into baseline.
+
+Fresh physical 21-case UI/runtime batch: 17 passes, four failures solely at denied
+camera-permission assertions. Passing cases include native runtime/sensor/battery,
+endpoint edits, Dashboard persistence/joystick zeros, navigation/collapsed Help,
+light/dark/200% text and PTY/Agent binary tests. Independent PC received reserved
+Bool/UTF-8 String/Float64/Twist and two motion-to-zero transitions. Main build,
+unit/lint and 32 tooling tests passed. Linux workspace build and parity probe
+passed custom messages, computation, both nodes and parameter service. Refreshed
+Android workspace built and installed; fresh phone workspace probe is pending.
+
+UX: corrected obsolete Home battery-card steps to Sensors -> Battery percentage.
+Added ROBOT-OPERATION.md for startup/feedback checks/Stop scopes/recovery. Added
+collapsed Help -> Run without the PC and read-only power/idle diagnostics. Main
+status now explicitly Sensors & dashboard active/stopped (not whole-phone state);
+projects and Agent remain separate. Test checks expanded to all five nav tabs.
+Final main APK installed without launch. Latest UI wording and camera cases need
+relevant final device reruns; do not claim visual verification from compilation.
+
+Current blocker: requested camera While using permission and CP2102 approval,
+then own app foreground. At last read camera denied, Power Saving off and own app
+not foreground; no UI input/capture attempted. Continue only after those gates.
+One-hour/thermal, controlled Wi-Fi-off repeat, fresh Android workspace parity,
+cable-recovery rerun and broad accessibility remain outstanding. Physical motor
+watchdog/stop, unknown LED mapping, mixed Python workspace and second-phone tests
+also remain unqualified. See verification/2026-10-26-robot-readiness.md. Logs and
+device targets remain ignored; no personal apps/files, global settings or firmware
+changed by the agent. Owner manually changed Power Saving. APT work stays deferred.
+
 ## Debian distribution and explicit device setup (2026-10-26)
 
 Owner selected Ubuntu .deb/APT distribution and authorized proceeding with the

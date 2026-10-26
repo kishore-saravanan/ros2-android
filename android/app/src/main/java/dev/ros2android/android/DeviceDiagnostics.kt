@@ -11,6 +11,11 @@ import java.net.NetworkInterface
 object DeviceDiagnostics {
     fun phone(): String = "${Build.MANUFACTURER} ${Build.MODEL}\nAndroid ${Build.VERSION.RELEASE} · API ${Build.VERSION.SDK_INT}\nABI: ${Build.SUPPORTED_ABIS.joinToString()}"
 
+    fun power(context: Context): String {
+        val manager = context.getSystemService(android.os.PowerManager::class.java)
+        return "Power saving: ${if (manager.isPowerSaveMode) "on" else "off"} · Device idle: ${if (manager.isDeviceIdleMode) "yes" else "no"}"
+    }
+
     fun sensors(context: Context): String {
         val manager = context.getSystemService(SensorManager::class.java)
         val names = listOf(

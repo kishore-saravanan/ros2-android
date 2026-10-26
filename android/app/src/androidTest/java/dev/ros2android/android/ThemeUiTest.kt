@@ -47,6 +47,7 @@ class ThemeUiTest {
             SystemClock.sleep(1500)
             scenario.onActivity { app ->
                 assertEquals(mode, app.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK)
+                assertTrue((find(app.window.decorView, "session_status") as android.widget.TextView).text.startsWith("Sensors & dashboard"))
                 val surface = app.getColor(R.color.ros_surface)
                 for (text in listOf(R.color.ros_text, R.color.ros_muted)) assertTrue("Text contrast below 4.5", contrast(app.getColor(text), surface) >= 4.5)
                 assertTrue(contrast(app.getColor(R.color.ros_accent), app.getColor(R.color.ros_on_accent)) >= 4.5)
@@ -72,6 +73,7 @@ class ThemeUiTest {
                 assertEquals(View.GONE, find(app.window.decorView, "body:sensor_info:battery")!!.visibility)
                 find(app.window.decorView, "nav:Connect")!!.performClick()
                 assertEquals(View.GONE, find(app.window.decorView, "body:runtime_info")!!.visibility)
+                assertTrue((find(app.window.decorView, "power_diagnostics") as android.widget.TextView).text.contains("Power saving:"))
                 assertTrue("About footer must not require expansion", find(app.window.decorView, "about_credit")!!.isShown)
                 val credit = (find(app.window.decorView, "about_credit") as android.widget.TextView).text
                 assertEquals("Built by Kishore Saravanan", credit.toString())

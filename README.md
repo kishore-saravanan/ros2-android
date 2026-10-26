@@ -38,6 +38,9 @@ The [product requirements](docs/PRODUCT-REQUIREMENTS.md) prioritize independent
 robot operation, recovery and ordinary workspaces. No public package is published.
 
 Start here: [first battery-message walkthrough](docs/GETTING-STARTED.md).
+Then follow [Robot operation](docs/ROBOT-OPERATION.md) for workspace/MCU startup,
+verification, stop scopes and recovery. APT publication is deferred while robot
+runtime and usability qualification take priority.
 More sensors and transport details: [v0.1 guide](docs/V0.1.md).
 For custom nodes: [C++ project build and deployment guide](docs/CPP-PROJECTS.md).
 For multiple nodes: [workspace launch guide](docs/WORKSPACE-LAUNCH.md).

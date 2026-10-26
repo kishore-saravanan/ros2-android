@@ -36,6 +36,20 @@ class NavigationUiTest {
         while (!check() && SystemClock.elapsedRealtime() < deadline) SystemClock.sleep(100)
         assertTrue(label, check())
     }
+    @Test fun robotHelpIsCollapsedAndExplainsIndependentStopScopes() {
+        activity.scenario.onActivity { app ->
+            find(app.window.decorView, "nav:Connect")!!.performClick()
+            find(app.window.decorView, "nav:Help")!!.performClick()
+            assertEquals(View.GONE, find(app.window.decorView, "body:help_robot_operation")!!.visibility)
+            find(app.window.decorView, "expand:help_robot_operation")!!.performClick()
+            val body = find(app.window.decorView, "body:help_robot_operation") as ViewGroup
+            val text = (0 until body.childCount).mapNotNull { (body.getChildAt(it) as? android.widget.TextView)?.text }.joinToString(" ")
+            assertTrue(text.contains("Stop project stops that workspace"))
+            assertTrue(text.contains("Stop all stops sensors and Dashboard"))
+            assertTrue(text.contains("None is a hardware emergency stop"))
+            assertTrue(find(app.window.decorView, "nav:Connect")!!.isSelected)
+        }
+    }
     @Test fun sensorDraftAndSelectionSurviveNavigationAndRecreation() {
         click("nav:Sensors"); click("sensor:imu")
         var old = ""

@@ -342,7 +342,7 @@ open class MainActivity : Activity() {
             box.addView(button("Save") { runCatching { arguments(); save() }.onSuccess { announce("Connection saved") }.onFailure { announce(it.message) } })
         }
         disclosure(page, "network_info", "Network addresses") { box -> box.addView(text(DeviceDiagnostics.networks(), 14)); box.addView(text(DeviceDiagnostics.usb(this), 13, muted)) }
-        disclosure(page, "runtime_info", "Runtime diagnostics") { box -> box.addView(text(NativeRuntime.diagnostic(), 13, muted)); box.addView(text(DeviceDiagnostics.phone(), 13, muted)) }
+        disclosure(page, "runtime_info", "Runtime diagnostics") { box -> box.addView(text(NativeRuntime.diagnostic(), 13, muted)); box.addView(text(DeviceDiagnostics.phone(), 13, muted)); box.addView(text(DeviceDiagnostics.power(this), 13, muted).apply { tag = "power_diagnostics" }) }
         disclosure(page, "micro_ros_agent", "Microcontrollers") { box ->
             programmingStatus = text("", 14).apply { tag = "usb_programming_status" }.also { box.addView(it) }
             programmingStop = button("Stop USB programming") {
@@ -414,7 +414,10 @@ open class MainActivity : Activity() {
             } }.apply { isEnabled = commands.isSuccess })
             box.addView(button("Open battery publisher") { openBattery() }.apply { tag = "help_battery" })
         }
-        disclosure(page, "help_camera", "Camera & display") { box -> box.addView(text("Sensors → Cameras: select a camera, allow camera permission, then Publish.\n\nDashboard → Add widget → Subscribe: choose std_msgs/msg/String and a topic, then Start dashboard to show text.\n\nStop all releases this app's sensors. Project runners have a separate Stop project control.", 14, muted)) }
+        disclosure(page, "help_robot_operation", "Run without the PC") { box ->
+            box.addView(text("Deploy a workspace, then start it in Projects. Start the required sensors and, for a USB microcontroller, the USB agent in Settings → Microcontrollers.\n\nThe PC is for development; installed nodes execute on the phone. Check fresh robot feedback before disconnecting the PC. A Running label alone does not prove communication.\n\nStop project stops that workspace. Stop dashboard stops its widgets. Stop all stops sensors and Dashboard. Stop agent disconnects the microcontroller. None is a hardware emergency stop.", 14, muted))
+        }
+        disclosure(page, "help_camera", "Camera & display") { box -> box.addView(text("Sensors → Cameras: select a camera, allow camera permission, then Publish.\n\nDashboard → Add widget → Subscribe: choose std_msgs/msg/String and a topic, then Start dashboard to show text.\n\nStop all stops sensors and Dashboard. Projects and the micro-ROS Agent have their own Stop controls.", 14, muted)) }
         disclosure(page, "help_troubleshooting", "Troubleshooting") { box -> box.addView(text("No topic: tap Publish first. Check the domain, topic and network addresses.\n\nCamera denied: allow Camera for ROS2 Android in app permissions, then retry.\n\nLocked settings: stop the session before editing.\n\nA local sent count does not confirm delivery. Check samples on the PC.", 14, muted)) }
     }
     private fun aboutSection() {
@@ -532,7 +535,7 @@ open class MainActivity : Activity() {
             else -> "Unavailable"
         }) }
         profileFields.values.forEach { it.isEnabled = !connected && !busy }
-        status.show(when { session == null -> "Loading…"; busy -> session?.state ?: "Working…"; connected -> "On-device runtime active"; else -> "Phone runtime stopped" })
+        status.show(when { session == null -> "Loading…"; busy -> session?.state ?: "Working…"; connected -> "Sensors & dashboard active"; else -> "Sensors & dashboard stopped" })
         refreshHomeActivity()
         homeConnection?.show(buildString {
             append("ROS domain ${prefs.getString("domain", "0")} · ${prefs.getString("namespace", "/phone")}")

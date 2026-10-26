@@ -58,7 +58,7 @@ class AccessibilityUiTest {
                 }
                 val navigation = find(root, "navigation_scroll") as HorizontalScrollView
                 assertTrue("Large text needs scrollable navigation", navigation.isHorizontalScrollBarEnabled)
-                for (name in listOf("Overview", "Sensors", "Projects", "Connect")) {
+                for (name in listOf("Overview", "Sensors", "Dashboard", "Projects", "Connect")) {
                     val target = find(root, "nav:$name") as Button
                     assertTrue(target.contentDescription == null || target.contentDescription.toString().isNotBlank())
                     assertTrue("Navigation touch height too small", target.height >= (48 * app.resources.displayMetrics.density).toInt())

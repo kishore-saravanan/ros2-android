@@ -4,6 +4,15 @@ Updated 2026-10-26. Start with AGENTS.md and PROJECT-KNOWLEDGE.md, then inspect
 `git status` and `git log`. Work on develop. This document records the handoff;
 it does not assert a public release. Google Play work is deferred by the owner.
 
+## Current priority: robot operation and usability (2026-10-26)
+
+Owner deferred further APT preparation. Focus on independent phone/MCU operation,
+recovery/endurance and current guides/UI. Read ROBOT-OPERATION.md and
+verification/2026-10-26-robot-readiness.md for stop scopes and actual qualification
+boundaries. Distribution tooling remains available but is not the next milestone.
+Full mixed-workspace support, real motor watchdog/stop and second-device
+qualification must not be implied by reference USB telemetry tests.
+
 ## Debian/APT follow-up (2026-10-26)
 
 Owner selected .deb/APT delivery instead of requiring pipx. DEBIAN-PACKAGE.md
