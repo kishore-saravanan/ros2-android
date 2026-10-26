@@ -35,7 +35,7 @@
 ## UI / UX
 
 - Use familiar Android navigation and controls. Main tabs are Home, Sensors,
-  Projects and Settings. Keep default screens concise and action-focused;
+  Dashboard, Projects and Settings. Keep default screens concise and action-focused;
   technical detail, instructions and diagnostics belong in collapsed sections.
 - Sensor lists open dedicated controls; keep topic/rate and Publish/Stop visible
   on detail screens. Preserve service-owned ROS/hardware lifetime.

@@ -2,7 +2,10 @@
 
 Open **ROS2 Android → Projects**. Each compatible installed runner has a card
 with live state, runtime-reported node names and **Start project / Stop project**.
-You can operate it without opening a second app. **Connection settings** shows
+You can operate it without opening a second app. Runner APKs have no launcher
+entry: ROS2 Android is the only project app shown in the app drawer. Runners
+remain listed in Android Settings as installed apps. Rebuild/redeploy existing
+runners to apply this change. **Connection settings** shows
 its saved domain, namespace, peer/local IPv4 and ROS arguments. Stop before
 editing; Save validates the profile in the runner. A PC start updates the same
 profile, so main-app controls and runner controls follow accepted PC settings.

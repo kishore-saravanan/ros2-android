@@ -56,39 +56,17 @@ class NavigationUiTest {
             click("nav:Overview")
         }
     }
-    @Test fun displaySubscriberControlsRemainUsableAfterNavigation() {
-        click("nav:Sensors"); click("filter:Display")
-        fun enabled(): Boolean {
-            var result = false
-            activity.scenario.onActivity { result = (find(it.window.decorView, "toggle:display") as Button).isEnabled }
-            return result
+    @Test fun subscribersBelongInDashboardRatherThanSensors() {
+        click("nav:Sensors")
+        activity.scenario.onActivity {
+            assertNull(find(it.window.decorView, "filter:Display"))
+            assertNull(find(it.window.decorView, "topic:display"))
+            assertNotNull(find(it.window.decorView, "sensor:battery"))
         }
-        waitFor("Display controls did not bind", ::enabled)
-        try {
-            click("toggle:display")
-            waitFor("Display subscription did not start") {
-                var result = false
-                activity.scenario.onActivity {
-                    val toggle = find(it.window.decorView, "toggle:display") as Button
-                    result = toggle.isEnabled && toggle.text.toString() == "Stop" &&
-                        !(find(it.window.decorView, "topic:display") as EditText).isEnabled
-                }
-                result
-            }
-            click("nav:Connect"); click("nav:Help"); click("nav:Sensors")
-            activity.scenario.onActivity {
-                assertEquals("Stop", (find(it.window.decorView, "toggle:display") as Button).text.toString())
-            }
-            click("toggle:display")
-            activity.scenario.onActivity { assertTrue((find(it.window.decorView, "topic:display") as EditText).isEnabled) }
-        } finally {
-            click("stop_session")
-            waitFor("Display session did not stop") {
-                var result = false
-                activity.scenario.onActivity { result = !(find(it.window.decorView, "stop_session") as Button).isEnabled }
-                result && NativeRuntime.status().contains("stopped")
-            }
-        }
+        click("nav:Dashboard")
+        activity.scenario.onActivity { assertTrue(find(it.window.decorView, "nav:Dashboard")!!.isSelected) }
+        click("nav:Sensors")
+        activity.scenario.onActivity { assertNull(find(it.window.decorView, "filter:Display")) }
     }
 
     @Test fun cameraPreviewAndPublicationSurviveNavigation() {

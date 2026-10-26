@@ -122,7 +122,7 @@ Exclude device identifiers, personal information and camera images from reports.
 
 - Sensors → Motion for IMU/gyro; Sensors → Cameras for the local thumbnail and
   ROS JPEG stream. Camera publishing asks for camera permission.
-- Sensors → Display for a debug-text subscriber.
+- Dashboard → Add widget → Subscribe → std_msgs/msg/String for debug text.
 - Projects for ordinary workspace runners; the example is
   examples/android_test_ws. Use the workspace guide's matching domain/overlay.
 

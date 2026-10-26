@@ -16,7 +16,7 @@ find_package(rcl REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
-add_library(ros2android SHARED ros_runtime.cpp)
+add_library(ros2android SHARED ros_runtime.cpp usb_pty.cpp)
 target_link_libraries(ros2android PRIVATE rcl::rcl
   sensor_msgs::sensor_msgs__rosidl_generator_c
   sensor_msgs::sensor_msgs__rosidl_typesupport_introspection_c

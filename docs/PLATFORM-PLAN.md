@@ -29,7 +29,10 @@ An ordinary three-package C++ colcon workspace now cross-builds and runs its
 unchanged main() executables as separate supervised Android processes; see
 [workspace workflow](COLCON-WORKSPACES.md). General/mixed workspaces, per-worker
 restart policies, full ROS launch, physical PC
-disconnection qualification and embedded micro-ROS Agent remain pending. The
+disconnection/endurance qualification and broader MCU USB support remain pending. Reference ESP32 UDP
+phone-hosted XRCE-DDS Agent traffic and Agent restart/reconnect now pass; see
+ESP32-WIFI.md. Reference CP2102 USB serial round-trip/restart also passes; see
+ESP32-USB.md. The ROS-specific graph-manager wrapper is not yet bundled. The
 initial operator UI pass now uses fixed navigation, expandable settings and a
 bounded camera thumbnail; see [UI design](UI-UX.md). Installed-project discovery/navigation and shared runner controls now pass a
 physical workspace flow (see [project controls](PROJECTS.md)); broader multi-workspace/device and accessibility/layout qualification and a possible Compose migration remain pending.

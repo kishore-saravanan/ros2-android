@@ -19,3 +19,10 @@ delegate build/install work here. Camera viewers and diagnostics remain in
 `prepare-ros-shell.py` stages the optional workspace shell's standalone Android
 Python interpreter and upstream ROS CLI; the workspace builder calls it for
 standard workspace builds (or explicit `build --with-shell`). See [Android shell](../docs/ANDROID-SHELL.md).
+
+For ESP32 Wi-Fi setup, use [ESP32-WIFI.md](../docs/ESP32-WIFI.md):
+configure-esp32-wifi.py prepares private credentials, esp32-wifi.sh builds/flashes
+the reference board, and build-micro-ros-agent.sh stages the optional phone Agent.
+
+For direct phone-to-ESP32 USB, see [ESP32-USB.md](../docs/ESP32-USB.md);
+`./setup/esp32-usb.sh build|upload` builds the separate serial firmware profile.

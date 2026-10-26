@@ -14,7 +14,12 @@ object NativeRuntime {
     external fun createPublisher(id: String, topic: String, kind: Int)
     external fun removePublisher(id: String)
     external fun publishSample(id: String, timestampNanos: Long, values: FloatArray): Boolean
+    fun publishControl(id: String, values: DoubleArray, text: String): Boolean = publishControlBytes(id, values, text.toByteArray(Charsets.UTF_8))
+    private external fun publishControlBytes(id: String, values: DoubleArray, text: ByteArray): Boolean
     external fun publishImage(id: String, timestampNanos: Long, jpeg: ByteArray): Boolean
+    external fun createDashboardSubscription(id: String, topic: String, kind: Int)
+    external fun removeDashboardSubscription(id: String)
+    external fun pollDashboard(): Array<ByteArray>
     external fun subscribeDisplay(topic: String)
     external fun unsubscribeDisplay()
     external fun pollDisplay(): String?

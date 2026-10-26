@@ -4,6 +4,31 @@ Updated 2026-10-25. Start with AGENTS.md and PROJECT-KNOWLEDGE.md, then inspect
 `git status` and `git log`. Work on develop. This document records the handoff;
 it does not assert a public release. Google Play work is deferred by the owner.
 
+Dashboard follow-up: the dedicated bottom tab now hosts a single saved layout
+with Publish/Subscribe direction, standard scalar/text/Bool subscription cards
+and Waiting/Live/Stale state. One Start/Stop action; no graphs/gauges or page
+designer. Existing layouts still load. See CONTROLS.md and the newest knowledge
+entry/verification for supported types and actual checks. This supersedes the
+Home shortcut described in the preceding controls milestone below.
+
+Controls milestone: Home → Open dashboard now supports configurable native ROS 2
+buttons, switches, sliders and a joystick. Read CONTROLS.md and the latest
+PROJECT-KNOWLEDGE entry for supported types, explicit enable behavior and command
+expiry limits. Real PC traffic and editor/lifecycle checks are recorded under
+verification/2026-10-25-controls.md. Phone USB ADB is available again; verify live
+state before testing and preserve phone privacy boundaries.
+
+ESP32 Wi-Fi milestone: the phone-hosted UDP XRCE-DDS Agent now passes a real
+phone battery → ESP32 → phone display round trip and an Agent restart/reconnect
+trial. Read ESP32-WIFI.md and the latest PROJECT-KNOWLEDGE.md entry first for
+build pitfalls, private credentials and qualification limits. Settings →
+Microcontrollers owns its independent foreground service. The reference CP2102
+USB serial path now also passes real phone→MCU→phone messages and software Agent
+restart; read ESP32-USB.md and its verification record. The board currently has
+serial firmware. Manual Start after a real cable unplug/replug also restored
+messages. Fully offline discovery, other adapters, endurance and the
+ROS-specific graph-manager wrapper remain pending; Play is still deferred.
+
 Build/install scripts now live in `setup/`; viewers and developer commands remain
 in `tools/`. Use `./setup/build.sh` and `./setup/run-device.sh`. Current guides
 and CLI delegation paths are updated; historical verification paths are unchanged.
@@ -35,6 +60,10 @@ opts into minimal C++ mode. See native/ros-shell-packages.lock.json and
 ANDROID-SHELL.md. Typed custom-message echo/pub, parameters/services, native
 example launch and Python/XML/YAML frontends passed; full APK is 34.09 MiB.
 Bag/doctor/security/daemon backends and broad Linux package parity remain pending.
+
+Runner APKs now omit launcher entries; use main Projects or its Open runner
+fallback. Existing runners need rebuilding/redeploying. Android Settings still
+lists them as installed apps. This does not change per-workspace packaging.
 
 Unified Projects now provides authenticated cross-app start/stop, live state/node
 names, saved connection settings and collapsed bounded workspace output logs.
@@ -75,8 +104,8 @@ Android version or Linux ROS package.
 - The workspace builder currently accepts ament_cmake native executables only.
   Python feasibility is not mixed ament_python workspace support.
 - Launch is a supported static PC-side adapter, not full on-phone LaunchService.
-- PC removal, one-hour operation, another phone, automatic restart and phone-hosted
-  micro-ROS Agent remain unqualified or unimplemented.
+- PC removal, one-hour operation, another phone, automatic restart and broader MCU/phone qualification remain pending. Phone-hosted UDP Agent
+  traffic is now qualified for the reference board; reference CP2102 USB also passes typed traffic; broader USB qualification remains pending.
 
 ## Resume commands
 

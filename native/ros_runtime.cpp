@@ -20,6 +20,21 @@
 #include <sensor_msgs/msg/detail/compressed_image__rosidl_typesupport_introspection_c.h>
 #include <std_msgs/msg/string.h>
 #include <std_msgs/msg/float64.h>
+#include <std_msgs/msg/bool.h>
+#include <std_msgs/msg/detail/bool__rosidl_typesupport_introspection_c.h>
+#include <geometry_msgs/msg/twist.h>
+#include <geometry_msgs/msg/detail/twist__rosidl_typesupport_introspection_c.h>
+#include <cmath>
+#include <algorithm>
+#include <sstream>
+#include <iomanip>
+#include <limits>
+#include <std_msgs/msg/int32.h>
+#include <std_msgs/msg/int64.h>
+#include <std_msgs/msg/float32.h>
+#include <std_msgs/msg/detail/int32__rosidl_typesupport_introspection_c.h>
+#include <std_msgs/msg/detail/int64__rosidl_typesupport_introspection_c.h>
+#include <std_msgs/msg/detail/float32__rosidl_typesupport_introspection_c.h>
 #include <std_msgs/msg/detail/string__rosidl_typesupport_introspection_c.h>
 #include <std_msgs/msg/detail/float64__rosidl_typesupport_introspection_c.h>
 #include <chrono>
@@ -42,6 +57,8 @@ std::string last_error;
 std::string node_namespace;
 struct Publisher { rcl_publisher_t handle = rcl_get_zero_initialized_publisher(); int kind = 0; int64_t sent = 0; };
 std::map<std::string, std::unique_ptr<Publisher>> publishers;
+struct DashboardSubscription { rcl_subscription_t handle = rcl_get_zero_initialized_subscription(); int kind = 0; };
+std::map<std::string, std::unique_ptr<DashboardSubscription>> dashboard_subscriptions;
 
 std::string str(JNIEnv* env, jstring input) {
     if (!input) return {};
@@ -69,6 +86,8 @@ void stop_locked() {
     if (subscribed) { finish(rcl_subscription_fini(&display, &node)); subscribed = false; }
     for (auto& item : publishers) finish(rcl_publisher_fini(&item.second->handle, &node));
     publishers.clear();
+    for (auto& item : dashboard_subscriptions) finish(rcl_subscription_fini(&item.second->handle, &node));
+    dashboard_subscriptions.clear();
     finish(rcl_node_fini(&node));
     finish(rcl_shutdown(&context));
     finish(rcl_context_fini(&context));
@@ -82,9 +101,15 @@ const rosidl_message_type_support_t* support(int kind) {
         case 1: case 2: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, geometry_msgs, msg, Vector3Stamped)();
         case 3: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, sensor_msgs, msg, MagneticField)();
         case 4: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, sensor_msgs, msg, Illuminance)();
-        case 5: case 9: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, std_msgs, msg, Float64)();
+        case 5: case 9: case 13: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, std_msgs, msg, Float64)();
         case 6: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, sensor_msgs, msg, FluidPressure)();
         case 8: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, sensor_msgs, msg, CompressedImage)();
+        case 10: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, std_msgs, msg, Bool)();
+        case 11: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, std_msgs, msg, String)();
+        case 12: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, geometry_msgs, msg, Twist)();
+        case 14: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, std_msgs, msg, Int32)();
+        case 15: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, std_msgs, msg, Float32)();
+        case 16: return ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, std_msgs, msg, Int64)();
         default: throw std::runtime_error("Unsupported publisher type");
     }
 }
@@ -140,7 +165,7 @@ bool sample(Publisher& pub, int64_t time, const std::vector<float>& values) {
             header(m->header, time); m->illuminance = values[0];
             result = send(pub, m); sensor_msgs__msg__Illuminance__destroy(m); break;
         }
-        case 5: case 9: {
+        case 5: case 9: case 13: {
             std_msgs__msg__Float64 m{}; m.data = values[0]; result = send(pub, &m); break;
         }
         case 6: {
@@ -201,7 +226,8 @@ extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_android_NativeRuntime_cre
         require_running(); const auto key = str(env, id);
         if (publishers.count(key)) throw std::runtime_error("Publisher already active");
         auto pub = std::make_unique<Publisher>(); pub->kind = kind;
-        auto options = rcl_publisher_get_default_options(); options.qos = rmw_qos_profile_sensor_data;
+        auto options = rcl_publisher_get_default_options(); options.qos = kind >= 10 ? rmw_qos_profile_default : rmw_qos_profile_sensor_data;
+        if (kind >= 10) options.qos.depth = 1;
         check(rcl_publisher_init(&pub->handle, &node, support(kind), str(env, topic).c_str(), &options));
         publishers[key] = std::move(pub);
     } catch (const std::exception& error) { raise(env, error); }
@@ -220,6 +246,32 @@ extern "C" JNIEXPORT jboolean JNICALL Java_dev_ros2android_android_NativeRuntime
         return sample(*it->second, time, values) ? JNI_TRUE : JNI_FALSE;
     } catch (const std::exception& error) { last_error = error.what(); return JNI_FALSE; }
 }
+extern "C" JNIEXPORT jboolean JNICALL Java_dev_ros2android_android_NativeRuntime_publishControlBytes(JNIEnv* env, jobject, jstring id, jdoubleArray data, jbyteArray text) {
+    std::lock_guard<std::mutex> lock(gate);
+    try {
+        require_running();
+        auto found = publishers.find(str(env, id));
+        if (found == publishers.end()) return false;
+        auto& pub = *found->second;
+        const auto length = env->GetArrayLength(data);
+        if (length < 2) throw std::runtime_error("Control needs two numeric fields");
+        jdouble values[2]; env->GetDoubleArrayRegion(data, 0, 2, values);
+        if (!std::isfinite(values[0]) || !std::isfinite(values[1])) throw std::runtime_error("Invalid control value");
+        if (pub.kind == 10) { std_msgs__msg__Bool msg{}; msg.data = values[0] != 0; return send(pub, &msg); }
+        if (pub.kind == 13) { std_msgs__msg__Float64 msg{}; msg.data = values[0]; return send(pub, &msg); }
+        if (pub.kind == 12) { geometry_msgs__msg__Twist msg{}; msg.linear.x = values[0]; msg.angular.z = values[1]; return send(pub, &msg); }
+        if (pub.kind == 11) {
+            std_msgs__msg__String msg{}; std_msgs__msg__String__init(&msg);
+            const auto size = env->GetArrayLength(text);
+            if (size > 4096) { std_msgs__msg__String__fini(&msg); throw std::runtime_error("Control text too long"); }
+            std::string value(static_cast<size_t>(size), '\0');
+            env->GetByteArrayRegion(text, 0, size, reinterpret_cast<jbyte*>(value.data()));
+            const bool assigned = rosidl_runtime_c__String__assignn(&msg.data, value.data(), value.size());
+            const bool sent = assigned && send(pub, &msg); std_msgs__msg__String__fini(&msg); return sent;
+        }
+        throw std::runtime_error("Unsupported control publisher");
+    } catch (const std::exception& error) { raise(env, error); return false; }
+}
 extern "C" JNIEXPORT jboolean JNICALL Java_dev_ros2android_android_NativeRuntime_publishImage(JNIEnv* env, jobject, jstring id, jlong time, jbyteArray data) {
     std::lock_guard<std::mutex> lock(gate);
     const auto it = publishers.find(str(env, id)); if (it == publishers.end() || it->second->kind != 8) return JNI_FALSE;
@@ -236,6 +288,76 @@ extern "C" JNIEXPORT jboolean JNICALL Java_dev_ros2android_android_NativeRuntime
     } catch (const std::exception& error) { last_error = error.what(); }
     sensor_msgs__msg__CompressedImage__destroy(message);
     return result ? JNI_TRUE : JNI_FALSE;
+}
+namespace {
+template <typename Message> bool take_dashboard_scalar(rcl_subscription_t& handle, std::string& out) {
+    bool received = false;
+    for (int i = 0; i < 16; ++i) {
+        Message message{};
+        const auto result = rcl_take(&handle, &message, nullptr, nullptr);
+        if (result == RCL_RET_SUBSCRIPTION_TAKE_FAILED) break;
+        check(result);
+        std::ostringstream formatted;
+        formatted << std::setprecision(std::numeric_limits<decltype(message.data)>::max_digits10) << message.data;
+        out = formatted.str(); received = true;
+    }
+    return received;
+}
+bool take_dashboard_string(rcl_subscription_t& handle, std::string& out) {
+    bool received = false;
+    for (int i = 0; i < 16; ++i) {
+        std_msgs__msg__String message{}; std_msgs__msg__String__init(&message);
+        const auto result = rcl_take(&handle, &message, nullptr, nullptr);
+        if (result == RCL_RET_OK) { out.assign(message.data.data, std::min(message.data.size, size_t(4096))); received = true; }
+        std_msgs__msg__String__fini(&message);
+        if (result == RCL_RET_SUBSCRIPTION_TAKE_FAILED) break;
+        check(result);
+    }
+    return received;
+}
+}
+extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_android_NativeRuntime_createDashboardSubscription(JNIEnv* env, jobject, jstring id, jstring topic, jint kind) {
+    std::lock_guard<std::mutex> lock(gate);
+    try {
+        require_running(); const auto key = str(env, id);
+        if (dashboard_subscriptions.count(key)) throw std::runtime_error("Dashboard subscriber already exists");
+        if (kind != 10 && kind != 11 && kind != 13 && kind != 14 && kind != 15 && kind != 16) throw std::runtime_error("Unsupported dashboard subscriber type");
+        auto sub = std::make_unique<DashboardSubscription>(); sub->kind = kind;
+        auto options = rcl_subscription_get_default_options(); options.qos = rmw_qos_profile_sensor_data; options.qos.depth = 1;
+        check(rcl_subscription_init(&sub->handle, &node, support(kind), str(env, topic).c_str(), &options));
+        dashboard_subscriptions[key] = std::move(sub);
+    } catch (const std::exception& error) { raise(env, error); }
+}
+extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_android_NativeRuntime_removeDashboardSubscription(JNIEnv* env, jobject, jstring id) {
+    std::lock_guard<std::mutex> lock(gate);
+    const auto found = dashboard_subscriptions.find(str(env, id));
+    if (found != dashboard_subscriptions.end()) { finish(rcl_subscription_fini(&found->second->handle, &node)); dashboard_subscriptions.erase(found); }
+}
+extern "C" JNIEXPORT jobjectArray JNICALL Java_dev_ros2android_android_NativeRuntime_pollDashboard(JNIEnv* env, jobject) {
+    std::lock_guard<std::mutex> lock(gate);
+    try {
+        std::vector<std::string> updates;
+        for (auto& item : dashboard_subscriptions) {
+            auto& sub = *item.second; std::string value; bool received = false;
+            switch (sub.kind) {
+                case 10: received = take_dashboard_scalar<std_msgs__msg__Bool>(sub.handle, value); value = value == "1" ? "true" : "false"; break;
+                case 11: received = take_dashboard_string(sub.handle, value); break;
+                case 13: received = take_dashboard_scalar<std_msgs__msg__Float64>(sub.handle, value); break;
+                case 14: received = take_dashboard_scalar<std_msgs__msg__Int32>(sub.handle, value); break;
+                case 15: received = take_dashboard_scalar<std_msgs__msg__Float32>(sub.handle, value); break;
+                case 16: received = take_dashboard_scalar<std_msgs__msg__Int64>(sub.handle, value); break;
+                default: break;
+            }
+            if (received) updates.push_back(item.first + "\n" + value);
+        }
+        auto result = env->NewObjectArray(static_cast<jsize>(updates.size()), env->FindClass("[B"), nullptr);
+        for (size_t i = 0; i < updates.size(); ++i) {
+            auto bytes = env->NewByteArray(static_cast<jsize>(updates[i].size()));
+            env->SetByteArrayRegion(bytes, 0, static_cast<jsize>(updates[i].size()), reinterpret_cast<const jbyte*>(updates[i].data()));
+            env->SetObjectArrayElement(result, static_cast<jsize>(i), bytes); env->DeleteLocalRef(bytes);
+        }
+        return result;
+    } catch (const std::exception& error) { raise(env, error); return nullptr; }
 }
 extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_android_NativeRuntime_subscribeDisplay(JNIEnv* env, jobject, jstring topic) {
     std::lock_guard<std::mutex> lock(gate);

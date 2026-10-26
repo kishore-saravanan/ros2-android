@@ -45,6 +45,81 @@ class RobotSessionService : Service() {
         set(value) { camera.previewEnabled = value; if (!value) cameraPreview = null }
     var onChange: (() -> Unit)? = null
 
+    data class DashboardReading(val value: String, val receivedAt: Long) {
+        fun state(now: Long): String = if (now - receivedAt > 5000) "Stale" else "Live"
+    }
+    val dashboardReadings = mutableMapOf<String, DashboardReading>() // main-thread observations
+    @Volatile private var dashboardEpoch = 0
+    @Volatile var controlsEnabled = false; private set
+    val dashboardPublisherCount: Int get() = if (controlsEnabled) controlWidgets.count { !it.subscriber } else 0
+    val dashboardSubscriberCount: Int get() = if (controlsEnabled) controlWidgets.count { it.subscriber } else 0
+    private val switchValues = mutableMapOf<String, Boolean>() // Last requested input, not remote state.
+    fun switchValue(id: String): Boolean = switchValues[id] ?: false
+    private var controlsRequested = false
+    @Volatile private var controlWidgets = emptyList<ControlWidget>()
+    private data class Command(val values: DoubleArray, val text: String, val stamp: Long)
+    private val controlValues = java.util.concurrent.ConcurrentHashMap<String, Command>()
+    private val motionActive = mutableSetOf<String>() // worker-owned
+    fun startControls(widgets: List<ControlWidget>, profile: Profile) {
+        if (busy || controlsRequested || widgets.isEmpty()) return
+        require(widgets.size <= 32 && widgets.map { it.id }.distinct().size == widgets.size) { "Use at most 32 unique controls" }
+        require(widgets.map { it.topic }.distinct().size == widgets.size) { "Each control needs its own topic" }
+        keepRunning(false)
+        dashboardEpoch++; dashboardReadings.clear()
+        switchValues.keys.retainAll(widgets.filter { it.type == "Switch" }.map { it.id }.toSet())
+        controlWidgets = widgets.toList(); controlsRequested = true
+        val token = generation
+        busy = true; errors.remove("controls"); changed()
+        worker.execute {
+            val result = runCatching {
+                ensureRuntime(profile)
+                widgets.forEach {
+                    if (it.subscriber) NativeRuntime.createDashboardSubscription(it.id, it.topic, it.kind)
+                    else NativeRuntime.createPublisher("control:${it.id}", it.topic, it.kind)
+                }
+            }
+            if (result.isFailure) widgets.forEach { runCatching {
+                if (it.subscriber) NativeRuntime.removeDashboardSubscription(it.id)
+                else NativeRuntime.removePublisher("control:${it.id}")
+            } }
+            main.post {
+                if (token != generation || destroyed) return@post
+                busy = false
+                result.onSuccess { if (controlsRequested) controlsEnabled = true }
+                    .onFailure { controlsRequested = false; errors["controls"] = it.message ?: "Control connection failed" }
+                changed()
+            }
+        }
+    }
+    fun control(widget: ControlWidget, first: Double = 0.0, second: Double = 0.0, text: String = "") {
+        if (!controlsEnabled || widget.subscriber || widget !in controlWidgets) return
+        require(first.isFinite() && second.isFinite() && text.length <= 1024)
+        val a = when (widget.kind) { 12 -> first.coerceIn(-widget.linear, widget.linear); 13 -> first.coerceIn(widget.minimum, widget.maximum); else -> first }
+        val b = if (widget.kind == 12) second.coerceIn(-widget.angular, widget.angular) else 0.0
+        if (widget.type == "Switch") switchValues[widget.id] = a != 0.0
+        controlValues[widget.id] = Command(doubleArrayOf(a, b), text, SystemClock.elapsedRealtime())
+    }
+    /** End motion input without tearing down dashboard endpoints or readings. */
+    fun stopDashboardMotion() {
+        controlWidgets.filter { !it.subscriber && it.kind == 12 }.forEach { control(it) }
+    }
+    fun stopControls() {
+        dashboardEpoch++; dashboardReadings.clear()
+        controlsRequested = false; controlsEnabled = false
+        val widgets = controlWidgets; controlWidgets = emptyList(); controlValues.clear()
+        worker.execute {
+            widgets.forEach { widget ->
+                runCatching {
+                    if (widget.kind == 12) NativeRuntime.publishControl("control:${widget.id}", doubleArrayOf(0.0, 0.0), "")
+                    if (widget.subscriber) NativeRuntime.removeDashboardSubscription(widget.id)
+                    else NativeRuntime.removePublisher("control:${widget.id}")
+                }
+            }
+            motionActive.clear()
+        }
+        changed()
+    }
+
     override fun onCreate() {
         super.onCreate()
         catalog = CapabilityCatalog.publishers(this)
@@ -70,15 +145,39 @@ class RobotSessionService : Service() {
             NotificationChannel(CHANNEL, "Robot runtime", NotificationManager.IMPORTANCE_LOW))
         worker.scheduleWithFixedDelay({
             if (!connected || destroyed) return@scheduleWithFixedDelay
+            controlValues.entries.toList().forEach { (id, command) ->
+                if (!controlsEnabled) return@forEach
+                val widget = controlWidgets.firstOrNull { it.id == id } ?: return@forEach
+                val stale = SystemClock.elapsedRealtime() - command.stamp > 300
+                if (widget.kind == 12 && stale && id !in motionActive) return@forEach
+                val values = if (widget.kind == 12 && stale) doubleArrayOf(0.0, 0.0) else command.values
+                val result = runCatching { check(NativeRuntime.publishControl("control:$id", values, command.text)) { "Control write failed" } }
+                if (widget.kind == 12) {
+                    if (!stale && values.any { it != 0.0 }) motionActive += id else motionActive -= id
+                } else controlValues.remove(id, command)
+                result.onFailure { error -> main.post { errors["controls"] = error.message ?: "Control failed"; stopControls() } }
+            }
+        }, 0, 50, TimeUnit.MILLISECONDS)
+        worker.scheduleWithFixedDelay({
+            if (!connected || destroyed) return@scheduleWithFixedDelay
             val token = generation
             val status = runCatching { NativeRuntime.status() }.getOrDefault("ROS runtime error")
             val message = runCatching { NativeRuntime.pollDisplay() }.getOrNull()
             val latestCounts = catalog.associate { it.id to NativeRuntime.publishedCount(it.id) }
             val latestCamera = camera.stats()
+            val epoch = dashboardEpoch
+            val updates = runCatching { NativeRuntime.pollDashboard() }.getOrDefault(emptyArray())
+            val receivedAt = SystemClock.elapsedRealtime()
             main.post {
                 if (token != generation || destroyed || !connected) return@post
                 if (!busy) state = status
                 if (message != null) { received = message; receivedCount++ }
+                if (epoch == dashboardEpoch && controlsEnabled) updates.forEach { bytes ->
+                    val update = bytes.toString(Charsets.UTF_8)
+                    val id = update.substringBefore('\n')
+                    if (controlWidgets.any { it.id == id && it.subscriber })
+                        dashboardReadings[id] = DashboardReading(update.substringAfter('\n'), receivedAt)
+                }
                 counts = latestCounts; cameraStats = latestCamera; changed()
             }
         }, 0, 500, TimeUnit.MILLISECONDS)
@@ -206,6 +305,7 @@ class RobotSessionService : Service() {
     }
 
     fun stopSession() {
+        stopControls()
         generation++; val token = generation
         busy = true; state = "Stopping robot session…"
         sensors.stopAll(); battery.stop(); camera.stop(); cameraPreview = null; active.clear(); subscribed = false; cameraStats = null
@@ -230,6 +330,7 @@ class RobotSessionService : Service() {
         foreground = false; foregroundTypes = 0
     }
     override fun onDestroy() {
+        stopControls()
         destroyed = true; generation++; onChange = null
         sensors.stopAll(); battery.stop(); camera.stop(); active.clear()
         if (connected || busy) worker.execute { runCatching { camera.awaitStopped(); if (NativeRuntime.available) NativeRuntime.stop() } }

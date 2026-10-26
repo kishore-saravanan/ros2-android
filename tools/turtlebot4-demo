@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Isolated simulator environment; no system/phone appearance or graphics changes.
+set -euo pipefail
+project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+pc_interface=""
+if [[ "${1:-}" == --interface ]]; then pc_interface="${2:?Missing IPv4}"; shift 2; fi
+if [[ -z "$pc_interface" ]]; then
+    pc_interface="$(ip -j route get 1.1.1.1 | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["prefsrc"])')"
+fi
+pc_interface="$(python3 -c 'import ipaddress,sys; print(ipaddress.IPv4Address(sys.argv[1]))' "$pc_interface")"
+export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-0}"
+export CYCLONEDDS_URI="<CycloneDDS><Domain><General><Interfaces><NetworkInterface address=\"$pc_interface\"/></Interfaces></General><Discovery><ParticipantIndex>auto</ParticipantIndex><MaxAutoParticipantIndex>120</MaxAutoParticipantIndex></Discovery></Domain></CycloneDDS>"
+export GZ_PARTITION=ros2android_dashboard_stable
+case "${1:-start}" in
+    start)
+        mkdir -p "$HOME/.cache/ros2-android-demo"
+        cp "$project_root/examples/turtlebot4_dashboard/world.sdf" "$HOME/.cache/ros2-android-demo/dashboard-world.sdf"
+        export QT_QPA_PLATFORM=xcb QT_XCB_GL_INTEGRATION=xcb_glx
+        # Use NVIDIA only when the installed GLVND vendor is available.
+        if [[ -f /usr/share/glvnd/egl_vendor.d/10_nvidia.json ]]; then
+            export __GLX_VENDOR_LIBRARY_NAME=nvidia
+            export __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/10_nvidia.json
+        fi
+        exec "$project_root/tools/pc-ros.sh" -- ros2 launch "$project_root/examples/turtlebot4_dashboard/demo.launch.py" ;;
+    telemetry) exec "$project_root/tools/pc-ros.sh" -- python3 "$project_root/tools/turtlebot4-dashboard-telemetry.py" ;;
+    undock) exec "$project_root/tools/pc-ros.sh" -- ros2 action send_goal /tb4_demo/undock irobot_create_msgs/action/Undock '{}' ;;
+    ros) shift; exec "$project_root/tools/pc-ros.sh" -- ros2 "$@" ;;
+    *) printf 'Usage: %s [--interface PC_IPV4] {start|telemetry|undock|ros ARGS...}\n' "$0" >&2; exit 2 ;;
+esac

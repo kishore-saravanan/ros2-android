@@ -26,10 +26,10 @@ object DeviceDiagnostics {
         return (names + "Cameras reported: $cameras").joinToString("\n")
     }
 
-    fun networks(): String = runCatching {
+    fun networks(ipv4Only: Boolean = false): String = runCatching {
         NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()
             .filter { it.isUp && !it.isLoopback }
-            .flatMap { iface -> iface.inetAddresses.toList().filterNot { it.isLoopbackAddress || it.isLinkLocalAddress }
+            .flatMap { iface -> iface.inetAddresses.toList().filterNot { it.isLoopbackAddress || it.isLinkLocalAddress || (ipv4Only && it !is java.net.Inet4Address) }
                 .map { "${iface.name}: ${it.hostAddress}" } }
             .joinToString("\n").ifBlank { "No active IP interface found." }
     }.getOrElse { "Network inspection unavailable: ${it.javaClass.simpleName}" }

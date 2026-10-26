@@ -87,7 +87,7 @@ Device access is limited to this project app, its debug artifacts, hardware
 capability diagnostics, and development settings. Do not inspect or modify
 personal files or other apps.
 
-Use **Overview**, **Sensors** (including **Display**), **Projects**, **Connect**, and **Help** as described in
+Use **Home**, **Sensors**, **Dashboard**, **Projects**, **Settings**, and **Help** as described in
 `docs/V0.1.md`. The foreground service owns active sessions independently of the
 Activity; navigation and Activity recreation do not request a runtime stop.
 Use Stop session or the notification Stop action to release the session. The sensor frame uses Android device axes and

@@ -147,6 +147,24 @@ SSH server, public command listener or global security/stay-awake changes are
 installed. Wireless ADB, disconnect/background recovery and unattended execution
 are not qualified; keep connected development sessions for current trials.
 
+## Selecting one of several phones
+
+Shell control targets an authorized ADB device, not every phone on the LAN.
+List devices with `$HOME/Android/Sdk/platform-tools/adb devices -l`, then select
+one explicitly:
+
+```bash
+./tools/connect-shell --workspace examples/android_test_ws --serial DEVICE_ID
+```
+
+For an already connected wireless ADB device, DEVICE_ID is its ADB HOST:PORT.
+The workspace runner must be deployed on that selected phone. Without --serial,
+the tool uses ADB -d (the single USB device); multiple USB devices cause an error,
+not an arbitrary selection. Wi-Fi membership alone does not enable ADB access.
+ROS discovery is separate: both reachable phones may participate in the same
+ROS domain. Use distinct absolute topic names to distinguish their sensor data;
+namespace settings do not rewrite configured absolute topics.
+
 ## APK and identity
 
 Each extra package changes APK size. The initial run/pkg-only shell was 21.65 MiB;

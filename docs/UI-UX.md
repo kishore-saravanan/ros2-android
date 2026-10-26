@@ -9,7 +9,7 @@ belong in Help or repository documentation.
 - Use familiar Android navigation, list rows, forms, back navigation and buttons.
 - Show the current task's mandatory controls. Put explanations, counters, ROS
   types, QoS, build identifiers and diagnostics behind disclosures.
-- Main navigation is Home, Sensors, Projects and Settings. Keep labels and icons
+- Main navigation is Home, Sensors, Dashboard, Projects and Settings. Keep labels and icons
   stable; avoid inventing interaction patterns for ordinary settings.
 - Follow the device's light/dark appearance automatically. Do not add a forced
   dark theme or change system appearance/security settings.
@@ -23,26 +23,39 @@ BRANDING.md. About remains a visible footer with author credit and support link.
 
 ## Screens
 
-**Home:** local runtime state, current battery percentage, Publish/Stop and
-Configure, and a small active-endpoint summary. Session details are collapsed.
-The battery value can be read while stopped; only Publish starts ROS output.
+**Home:** local runtime state, a Connection card with saved ROS domain/namespace,
+automatic or explicit peer discovery, optional selected phone address and current
+phone IPv4 interfaces. Connection settings opens Settings. A ROS activity card
+shows Sensor topics publishing counts and Dashboard topics publishing/subscribed counts,
+project running/installed and active node counts, and micro-ROS Agent state. Sensors, Dashboard and Projects remain directly available in bottom navigation;
+the activity card has no shortcut button.
+These counts do not include services or actions. Session details
+remain collapsed. Author credit and Sponsors are in Settings → About only. Battery
+controls live under Sensors, alongside other hardware; Home has no sensor form.
+An active local runtime is not proof of a reachable PC/robot. Addresses refresh
+every five seconds while Home is visible; project runners retain separate profiles.
 
 **Sensors:** compact hardware rows (icon, name, state and chevron) with category
 filters. Tap a row to open a detail screen. Topic and publish rate are visible
 there; message type, QoS, discovery and explanations are under Advanced. The
 primary Publish/Stop control stays below the scrolling form. Cameras show a
-preview. Display is the debug-text subscriber, selected through its filter.
+preview. Sensors contains hardware publishers only. Text subscribers belong in
+Dashboard (Subscribe, std_msgs/msg/String); there is no separate Display filter.
 
 **Projects:** project name, live runtime state, active node names and one
 Start/Stop action. Connection settings opens a familiar dialog; fields lock while
 running. Logs and package/build details are collapsed. Details retains Open runner
 as a fallback. Signature-authenticated controls never expose a shell endpoint.
-Refresh stays in the toolbar. See PROJECTS.md for lifecycle and log limitations.
+Refresh stays in the toolbar. Runner activities have no launcher entry; Projects
+and its explicit Open runner action remain their entry points. See PROJECTS.md
+for lifecycle and log limitations.
 
 **Settings:** domain and Save, collapsed advanced connection fields, collapsed
-network/runtime diagnostics, a device-appearance indication, Help and the visible
+network/runtime diagnostics, a collapsed Microcontrollers section with Agent
+Wi-Fi/USB Start, shared Stop and nested bounded logs, a device-appearance indication, Help and the visible
 About footer. Namespace and IPv4 fields lock during a session. About shows app
-version, Built by Kishore Saravanan and the support link.
+version, Built by Kishore Saravanan (plain text) and the existing support link.
+There is no author hyperlink or repository button.
 
 **Help:** collapsed task sections for connection, first message, camera/display
 and troubleshooting. First-message commands use the validated saved topic/domain
@@ -92,3 +105,71 @@ qualification, a second phone and a real external contributor trial remain gates
 Cross-app state/control and bounded workspace logs now exist. Full launch/parameter
 editing and simultaneous multi-workspace trials remain pending. Google Play stays deferred; licensing, signing and public artifact
 preparation are separate release requirements.
+
+Microcontroller evidence: two physical Agent/ESP32 tests passed, including a
+phone battery acknowledgement in the real phone subscriber and reconnect after
+Agent restart. Normal-use startup also passed with PC-observed heartbeat/reply.
+See verification/2026-10-25-esp32-wifi-agent.md. The Agent's control is collapsed
+under Settings → Microcontrollers and remains independent of sensor Stop all.
+
+USB follow-up: Start USB agent lives inside the existing Microcontrollers section,
+with Android's permission prompt and concise Running/Disconnected/error status.
+The actual project Settings UI showed Running · USB · 115200 baud after manual
+permission. Two raw-PTY device tests and a real USB round-trip/restart test passed;
+see verification/2026-10-25-esp32-usb.md. General layout/accessibility scope remains
+unchanged. Reconnect uses an explicit Start action.
+
+**Controls (Home sub-screen):** explicit Enable/Disable, Add widget, then concise
+control cards with label/topic/action and an overflow menu for Edit/Move/Delete.
+The editor uses a standard widget selector and only relevant fields. Buttons,
+switches and sliders use Android controls; the round joystick returns to center
+on release. Layout saves privately. Navigation/backgrounding disables controls
+without stopping sensors. This introduces no extra main tab. See CONTROLS.md and
+verification/2026-10-25-controls.md for actual test scope and remaining gaps.
+
+Actual visual follow-up: the empty dashboard was inspected on the reference
+phone in its current dark/landscape mode. Enable/Add share one row, disabled
+actions use muted text, and joystick height adapts to landscape. Home retains
+battery first with a compact dashboard entry afterward. No device appearance
+settings were altered. Populated-editor persistence and joystick release/focus
+checks passed; broader visual/accessibility qualification remains pending.
+
+## Dashboard tab and subscribed values (current follow-up)
+
+Dashboard is now a main bottom tab, between Sensors and Projects; the Home
+shortcut is removed. At narrow widths/large fonts the existing navigation scroll
+keeps labels and touch targets usable. Add widget has Direction (Publish or
+Subscribe), then only the relevant widget/type and fields. One Start/Stop action
+connects that dashboard; publish widgets remain idle until operated. Subscribers
+are simple text/numeric/Bool value cards, with Waiting/Live/Stale states (five
+seconds since the last sample). No gauges, plots or additional setup screens.
+Existing layouts load without migration; About and device-driven themes remain.
+See CONTROLS.md and verification/2026-10-25-dashboard-subscribers.md for scope.
+Earlier Home-subscreen paragraphs above describe the preceding milestone only.
+
+Dashboard visual evidence: a guarded app-content image on the reference phone
+showed real String/Bool/numeric cards and selected Dashboard navigation in its
+current dark/portrait appearance. Card Waiting/Live/Stale/recovery/Stop text was
+asserted on-device. The portrait label-wrap finding led to single-line nav text
+with normal letter spacing and reduced horizontal padding; touch targets remain.
+
+Home follow-up (2026-10-25): battery shortcut replaced by connection overview and
+sensor summary, with Developed by Kishore Saravanan below collapsed session
+details. Both physical light/dark theme tests passed; guarded portrait captures
+were inspected with readable content and all five navigation labels visible.
+No global appearance setting changed. Large-text/second-device qualification for
+this revised Home remains pending.
+
+Dashboard lifetime follow-up: endpoints/readings remain service-owned across
+navigation and Activity pause. Navigation/pause requests zero for all joysticks;
+release/cancel/focus loss/detachment also requests zero. Explicit Stop dashboard
+or Stop all removes endpoints. Returning never restores a held joystick command.
+Home polls project status while visible without starting project execution.
+
+ESP32 programming follow-up: Settings → Microcontrollers conditionally displays
+USB programming state and Stop USB programming, with the same stop action in
+its foreground notification. No separate product destination or public LAN shell
+is added. PC starts programming through a protected debug-only ADB control.
+Reference CP2102 flash/hash verification and Agent/Dashboard recovery passed;
+other adapters, interrupted-write and endurance qualification remain pending. See
+PROJECT-KNOWLEDGE.md for actual tests and the saved Blink LED Dashboard example.

@@ -11,21 +11,23 @@ development build adds continuous camera capture (15 fps default, up to 30),
 stream metrics and foreground-service ownership of robot sessions. A separate
 developer runner now hosts native C++ ROS nodes, including custom messages and on-phone IMU processing. Group launch plans are resolved on the PC. Standard workspace APKs now include
 core ROS CLI commands and native LaunchService, verified with the example and
-Python/XML/YAML launch tests. Broad Linux compatibility and the embedded micro-ROS
-Agent remain pending. ABI-2 projects can launch several compiled C++ nodes
+Python/XML/YAML launch tests. Phone-hosted Wi-Fi XRCE-DDS Agent communication
+with the reference ESP32 is verified. Broad Linux compatibility, broader MCU USB drivers and
+the micro-ROS graph-manager wrapper remain pending. ABI-2 projects can launch several compiled C++ nodes
 with per-node parameters and remaps using a bounded JSON configuration. A separate
 Python feasibility runner embeds CPython and native rclpy, verified with custom
 messages, parameters, IMU computation and phone-hosted C++ interoperability.
 
 - **v0.1:** PC ↔ phone over Wi-Fi and USB networking.
-- **v0.2:** microcontroller ↔ phone over network and USB; embedded micro-ROS
-  Agent integration remains pending.
+- **v0.2:** microcontroller ↔ phone; Wi-Fi round trip with a phone-hosted Agent
+  verified on one ESP32. Reference CP2102 USB serial traffic and software Agent restart also pass; broader USB qualification remains pending.
 
-The 0.1.1-dev4 UI uses Home/Sensors/Projects/Settings navigation, compact sensor
+The 0.1.1-dev4 UI uses Home/Sensors/Dashboard/Projects/Settings navigation, compact sensor
 lists and dedicated controls, collapsed advanced information, and ROS-inspired
 light/dark palettes that follow the device. About is at the bottom of Settings.
 Projects now provides live workspace state, Start/Stop, connection settings and
-collapsed output logs in the main app. A custom dot/robot logo appears on Home
+collapsed output logs in the main app. Workspace runners have no app-drawer
+entry; open them through Projects. A custom dot/robot logo appears on Home
 and installed app icons. See [project controls](docs/PROJECTS.md) and [UI design](docs/UI-UX.md).
 
 Start here: [first battery-message walkthrough](docs/GETTING-STARTED.md).
@@ -35,6 +37,8 @@ For multiple nodes: [workspace launch guide](docs/WORKSPACE-LAUNCH.md).
 For ROS descriptions: [supported launch-file adapter](docs/ROS-LAUNCH.md).
 For ordinary packages: [colcon workspace build/deploy guide](docs/COLCON-WORKSPACES.md).
 For Python: [Python project guide](docs/PYTHON-PROJECTS.md).
+For ESP32: [Wi-Fi setup](docs/ESP32-WIFI.md), [direct phone USB setup and LED button](docs/ESP32-USB.md),
+or [upload firmware through the phone](docs/ESP32-PROGRAMMING.md).
 For native ROS commands and launch files on the phone: [Android development shell](docs/ANDROID-SHELL.md).
 
 Resuming development? Read the [project knowledge base](docs/PROJECT-KNOWLEDGE.md)
@@ -153,7 +157,7 @@ navigation, SLAM, and on-device AI are future scope after these two phases.
 ## Next milestone
 
 Complete the remaining v0.1 hardware and usability checks on the Realme RMX2085
-(Android 12, API 31, ARM64), then begin v0.2 embedded micro-ROS Agent feasibility
+(Android 12, API 31, ARM64), then continue v0.2 MCU USB and graph-manager qualification
 so the final robot can operate with a phone and MCU without requiring a PC.
 
 ## Primary references
@@ -165,3 +169,5 @@ so the final robot can operate with a phone and MCU without requiring a PC.
 
 References reviewed on 2026-10-24. Architecture and interface names above are
 project proposals, not claims of tested implementation.
+
+Configurable controls and standard subscribed values: [Controls dashboard](docs/CONTROLS.md).

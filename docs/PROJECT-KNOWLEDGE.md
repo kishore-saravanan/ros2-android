@@ -1,9 +1,420 @@
 # ROS2 Android development knowledge base
 
-Last updated: 2026-10-25. Read this before resuming development, then read
+Last updated: 2026-10-26. Read this before resuming development, then read
 [AGENTS.md](../AGENTS.md) and check the actual Git/device state. This file is the
 resume index; detailed architecture, usage and measurements remain in linked
 files. Update it whenever a milestone, finding or verification boundary changes.
+
+## Development checkpoint (2026-10-26)
+
+Owner authorized commits and continued roadmap work. Fresh setup/build.sh
+assembly/unit/lint passed; the scoped PC ROS tooling suite passed all 26 tests.
+Checkpoint includes Dashboard pub/sub and persistent joystick safety behavior,
+phone-hosted UDP/CP2102 micro-ROS Agent, programming through authorized ADB and
+the latched LED command example. Earlier physical evidence remains historical;
+no fresh device trial is implied by these build checks. User reports no optical
+LED change and has no external LED or multimeter; physical GPIO/LED mapping is
+blocked on hardware identification or measurement. Do not probe arbitrary pins.
+Next maintenance step: non-disruptive PC programming/Agent status and current
+handoff, then address restart/reconnect qualification and mixed workspaces.
+
+## LED toggle follow-up — supersedes the pulse demo (2026-10-26)
+
+Owner changed the requested behavior to on-until-off. Firmware now subscribes to
+/esp32/led Bool, drives true/false directly and has no automatic-off timer. Boot
+starts off; /esp32/led_state remains commanded GPIO telemetry. The Dashboard demo
+is ESP32 LED, type Switch. Physical test migrates the requested old Blink LED
+widget/topic in place and preserves other widgets. GPIO2 active-high remains an
+unverified board assumption; the supplied marking did not establish PCB wiring.
+User reported a blue LED already flashing. An independent 12-second idle check
+saw zero LED commands/state changes and 12 heartbeats, so background blink was
+not caused by Dashboard LED publishes. Do not claim physical optical success.
+
+Generic Switch requested values are now service-owned, retained across tab
+navigation and Dashboard Stop/Start, initialized before listeners attach, with
+no unsolicited publication during reconstruction. This is requested input,
+not remote-state synchronization; device/service restarts remain independent.
+Firmware build, Android assembly/unit/lint and verified remote flash passed.
+Esp32LedTest passed an actual Switch ON, >3-second hold, tab navigation and
+Activity recreation with no unsolicited publish, then explicit Switch OFF and
+fresh MCU state. Independent PC observer measured 4.577 seconds between on/off
+state messages. The first toggle test incorrectly asserted the return value of
+CompoundButton.performClick; cleanup was also corrected to bind the test via
+applicationContext so Activity recreation does not auto-unbind it. The final
+trial passed with zero skips/failures. Test APK removed; normal app/USB Agent
+restored. Physical LED mapping remains unconfirmed: the user's photo resembles
+a 38-pin DevKit-style USB-C variant, but does not establish the LED connection.
+Standard Espressif DevKitC documentation identifies a power-on indicator; do not
+infer a GPIO2-controlled LED for this clone. A back-side model/schematic or an
+external LED is needed to settle the physical output. No image/device data is
+committed. See ESP32-USB.md. No commit/push requested.
+
+## ESP32 programming through phone — real upload/recovery passed (2026-10-26)
+
+Added debug-only DUMP-protected ProgrammingControlReceiver, exclusive foreground
+Esp32ProgrammingService, shared CP2102 UART/modem driver and PC
+`tools/esp32-via-phone`. PC esptool v5 reaches a per-session-token-authenticated
+loopback UART socket through authorized ADB forwarding; no LAN listener. Phone
+owns 115200 baud and bootloader/normal DTR/RTS reset. Existing Agent is stopped
+before UART opens; successful completion restores its previous transport only if
+it was running. Failure/cancellation leaves Agent stopped. Detach/connect/idle
+and 15-minute deadlines bound sessions. Settings Microcontrollers/notification
+provide Stop. Release APK has no exported programming receiver.
+
+Actual checks: assembly/unit/lint passed; all 26 tooling tests passed, including
+two binary relay/cancellation cases. Real remote flash-id identified the ESP32
+and 4 MB flash while ESP32 was attached only to the phone and PC used wireless
+ADB. Initial sustained backup failed: 4096-byte reads exceeded the 100 ms USB
+transfer timeout at 115200 baud. Fixed shared UART reads to request endpoint-size
+packets. Subsequent 393216-byte application backup completed with integrity check
+and matched the reference application before writing. Python venv launcher must
+preserve its symlink path (do not resolve it to the base interpreter).
+
+Reflashed the backed-up reference application (343248 bytes, 198747 compressed)
+through phone; esptool verified flash hash. The coordinated physical
+Esp32ProgrammingTest passed: pre-upload battery→MCU acknowledgement, Agent stops
+for programming, sensors/Dashboard remain active, previous USB Agent restores,
+and fresh typed acknowledgement plus heartbeat return after completion. A later
+LED-enabled firmware upload also passed hash verification. Esp32LedTest then
+passed the actual Dashboard button→Bool→MCU on/off→phone typed state path with a
+fresh MCU heartbeat required before the click. The independent PC observer saw
+the command and a 0.922 s MCU on/off message interval. This is ROS telemetry, not
+an optical LED measurement; user visual confirmation remains separate. The test
+saved the requested Blink LED Bool/true widget on /esp32/led_flash without
+replacing existing Dashboard layout. GPIO2 active-high is the reference default;
+/esp32/led_state reports commanded GPIO state. True renews a nonblocking one-second
+pulse; false turns it off. LED source is shared by USB and Wi-Fi examples, but
+only USB firmware was built/flashed/physically tested here.
+
+Early LED attempts failed on missing MCU feedback: stale test endpoint setup and
+an Agent/MCU session that needed a clean restart. A scoped MCU UART boot capture
+confirmed normal boot and XRCE ping frames. USB byte counters and protected debug
+Agent status/start help diagnose process-running versus real session traffic.
+The final LED trial gates on fresh heartbeat rather than the Agent process label.
+Reliable automatic recovery after all rapid restarts remains a qualification gap.
+Two UsbAgentTransportTest device cases also passed. Final light/dark ThemeUiTest
+and USB PTY/packaged-Agent tests passed (four cases, zero skips/failures). Guarded
+About captures confirmed plain Built by credit, Sponsors only and no repository
+button. Test APK removed; normal main app reopened, MCU rebooted via the protected
+programming path, and USB Agent started with bidirectional byte counts. User has
+been asked to confirm the saved button's physical LED blink. See ESP32-PROGRAMMING.md and ESP32-USB.md. Backups/logs
+and transient device/network targets remain ignored. Other adapters/phones,
+interrupted-write recovery and endurance are unqualified. No commit/push asked.
+
+## About-only credit and device selection (2026-10-26)
+
+Removed the Home credit. Settings → About keeps Built by Kishore Saravanan as
+plain text and the existing Sponsors button; no author hyperlink or repository
+button. Repository URL resources removed. UI guide reflects the final preference.
+Shell selection documented in ANDROID-SHELL.md: connect-shell --serial selects
+one authorized ADB device; default -d requires a single USB device. LAN discovery
+is independent of shell authorization. Distinct absolute sensor topics avoid
+mixing readings from phones on a shared domain. Multi-phone runtime has not been
+physically qualified; this selection behavior is verified from the tool code.
+Assembly/unit/lint passed and setup/run-device.sh installed the final APK.
+Physical UI checks for this About change were not rerun because the phone was
+locked; no input/capture was attempted. Existing ThemeUiTest assertions now
+expect no Home credit, plain About credit and no repository button. Visual and
+link-opening checks remain pending; no commit requested.
+
+## Home footer placement (2026-10-25)
+
+Removed Open sensors from the ROS activity card; Sensors remains directly
+available in bottom navigation. Developed by Kishore Saravanan is now a fixed
+Home-only footer directly above bottom navigation, outside the page ScrollView.
+Main content scrolls independently when space is limited. About in Settings is
+unchanged. Assembly/unit/lint and both physical ThemeUiTest cases passed with
+zero skips/failures. Guarded light/dark portrait captures were visually inspected:
+no activity shortcut button, credit directly above navigation, content readable.
+Test APK removed and normal Home reopened. Large-text/landscape qualification
+of the fixed footer remains pending; no commit requested.
+
+## Remove duplicate Debug Display UI (2026-10-25)
+
+Sensors now lists hardware publishers only (All/Motion/Cameras/Other). Removed
+the Display filter, standalone String subscriber form and its Activity handlers.
+A restored legacy Display filter selection falls back to All. Home Sensor topics
+shows publishing count only; subscribed-topic counts belong to Dashboard.
+Use Dashboard → Add widget → Subscribe → std_msgs/msg/String for debug text,
+including /phone/display/text MCU acknowledgements. Existing saved Dashboard
+layouts and legacy saved topic preferences are preserved; no automatic widget
+or subscription is created. Help, first-message/subscriber and ESP32 guides now
+point to Dashboard. The internal legacy service/native subscriber API remains
+for existing interoperability tests; it is no longer exposed as a product screen.
+
+Verification: setup/build.sh assembly/unit/lint passed. Three physical UI cases
+passed with zero skips/failures: light/dark theme regression and the replacement
+Sensors→Dashboard navigation test asserting Display controls are absent. Guarded
+app-only sensor-list capture was visually inspected: All/Motion/Cameras/Other,
+hardware rows and five-tab navigation. Instrumentation APK removed; normal app
+reopened. Existing subscriber type coverage is unchanged; no new ROS message
+support or repeated MCU traffic qualification is claimed for this UI removal.
+Large-text/other-device checks remain pending. No commit requested.
+
+## Persistent Dashboard and complete Home activity summary (2026-10-25)
+
+Dashboard navigation and Activity pause call stopDashboardMotion rather than
+stopControls. All joystick command slots receive zero; view release/cancel,
+window focus loss and detachment still send zero. The service's 300 ms renewal
+lease remains. Endpoints and readings persist until explicit Stop dashboard,
+Stop all or service teardown/error. No held joystick command resumes on return.
+Buttons/switches/sliders continue publishing only when operated. Robot-side
+command expiry is still required for process/network failures.
+
+Home ROS activity now separates Sensor topics and Dashboard topics (publisher/
+subscriber counts), project running/installed totals and active project node
+counts, plus micro-ROS Agent status. Counts describe configured local endpoints,
+not services/actions or confirmed remote receivers. Home binds/polls signed
+project status services while visible; this does not start workspace execution.
+Unknown project states are labeled awaiting status; main runtime status remains
+separate from project runtime status. Dashboard cards remain service-owned.
+
+Verification: assembly/unit tests/lint passed. All three physical ControlsTest
+cases passed without skips/failures, including joystick release/focus loss,
+persistent navigation/pause, fresh native battery-topic reception while away and
+explicit Stop clearing readings. Independent PC ROS observer received Bool,
+Unicode String, Float64 and Twist plus two motion→zero transitions (lease expiry
+and navigation). Both physical light/dark ThemeUiTest cases also passed with explicit Home group
+assertions. Guarded app-only portrait captures were visually inspected: topic
+labels, one running installed project with two nodes, Agent state and author
+credit were readable with all five navigation tabs. No system theme changed.
+The instrumentation APK was removed and normal Home reopened. See
+[verification](verification/2026-10-25-dashboard-persistence.md). Large-text,
+second-device and endurance checks remain pending; no commit requested.
+
+## Home connection overview (2026-10-25)
+
+Home no longer pins the battery first-message demo. Battery remains in Sensors
+with its topic/rate and Publish/Stop controls. Home shows the saved main-app ROS
+domain/namespace, automatic discovery or explicit peer, optional selected phone
+address, current IPv4 interfaces (refresh every five seconds), active phone sensor
+publisher/debug subscriber counts under ROS activity and shortcuts to
+Settings/Sensors. The heading describes endpoint activity rather than hardware. Technical
+session details remain collapsed. Footer: Developed by Kishore Saravanan. About
+and Sponsors in Settings remain unchanged. Runtime status describes local state,
+not verified reachability; installed project runners retain independent profiles.
+
+Verification: setup/build.sh assembly/unit tests/lint passed; both existing physical
+ThemeUiTest cases passed without skips/failures, including new Home content and
+absence-of-battery/form assertions, plus sensor-detail/Settings regressions. Guarded
+app-only light/dark portrait captures were visually inspected: connection details,
+sensor summary, collapsed details, credit and all five tabs fit. Previews change
+only app configuration, not device theme. Test APK removed and normal main app
+reopened. Broader accessibility, large-text and second-device checks remain
+pending for this layout. Device captures stay ignored. No commit requested.
+
+## TurtleBot 4 phone-dashboard reference demo (2026-10-25)
+
+See TURTLEBOT4-DASHBOARD.md. tools/turtlebot4-demo scopes domain/NIC/Cyclone
+participant limit and Gazebo partition/renderer settings; start uses the installed
+official standard robot/Create 3 stack in a simple local world under /tb4_demo.
+Its telemetry action runs a small odometry→std_msgs/Float64 speed extractor;
+undock calls the demo's own action. Joystick topic is
+/tb4_demo/cmd_vel_unstamped (Twist); /tb4_demo/cmd_vel requires TwistStamped.
+Current app subscriber cannot directly display nav_msgs/Odometry.
+
+Launch findings: the default auto-participant range exhausted on the full stack;
+use MaxAutoParticipantIndex 120 in the demo processes. Never pass a world file
+path through the upstream world-name argument, which also forms ROS bridge
+names. Keep path/name separate. The official robot already embeds Sensors and
+Contact plugins. This demo avoids an additional world Sensors plugin; Contact
+is still declared in both the world and robot description. The maze package's
+launch explicitly removes the embedded plugins when its world owns them.
+An additional Sensors system was present in the failed rendering attempts. Ogre 2 and a
+software-EGL fallback also failed; current GUI uses Ogre classic and one embedded
+sensor system. No system graphics/packages or maze source were modified.
+
+Actual PC checks: scoped cleanup of failed launch trees; GUI camera RPC replied;
+clock/odom live; undock succeeded; 0.1 m/s bounded drive moved 0.122 m and stopped
+at measured 0.0 m/s. Odom-derived Float64 speed reached a PC subscriber.
+The subsequent phone joystick→simulation→phone feedback trial passed: the user
+configured Drive (Twist, maximum 0.15 m/s and 0.5 rad/s) and Speed (Float64),
+confirmed Live, then confirmed robot movement, stopping on release and changing
+speed on the phone. An independent subscriber-only observer recorded nonzero
+phone commands, 0.238 m odometry displacement and final speed 0.0 m/s. The ROS
+graph identified the phone publisher and speed subscriber. A LiDAR message also
+arrived; complete sensor/camera coverage, endurance and other systems remain
+separate qualification. Code/docs remain uncommitted until requested.
+
+## Dashboard tab and standard subscribers (2026-10-25)
+
+Current navigation is Home / Sensors / Dashboard / Projects / Settings. Dashboard
+replaces the Home shortcut/subscreen. The owner explicitly requested this fifth
+tab and a minimal approach; no chart/gauge/page-designer features were added.
+Add widget now chooses Publish or Subscribe. One Start dashboard/Stop dashboard
+action connects its endpoints, with no automatic publisher commands. Existing
+control_dashboard_v1 layouts remain compatible (optional messageType defaults).
+
+Subscribed value is a single read-only card for String, Bool, Int32, Int64,
+Float32 and Float64. It shows Waiting before receipt, Live after receipt and
+Stale after five seconds without a new sample. Bool uses On/Off text plus a
+symbol. Old values are muted and labeled; Stop clears readings. Native typed
+subscription storage is separate from the existing debug display. UTF-8 goes
+through byte arrays and 64-bit integers stay exact strings. Best-effort/volatile
+depth-1 subscriptions, bounded polling/text and main-thread receive timestamps
+keep queues/state small. An epoch rejects readings queued before stop/restart.
+
+RobotSessionService owns the mixed endpoints. Leaving Dashboard or pausing now
+requests zero Twist while preserving publishers/subscribers and readings; explicit
+Stop dashboard or Stop all tears them down. Sensor/display and MCU Agent ownership
+remain independent. Receiving robots still need command expiry.
+
+Assembly/unit/lint and all 24 tooling tests passed. A four-test physical run
+passed (zero skips/failures): publisher/lifecycle/editor regression plus PC→phone
+samples for all six types, stale detection and recovery, and the editor Subscribe
+flow/Waiting state. Exact Int64/Unicode and independent debug-display traffic were
+verified. A final real-wire/UI trial also passed Waiting/Live/Stale/recovery
+card assertions and clearing on Stop; its guarded app-content image was visually
+inspected. Portrait nav label spacing was refined to keep Dashboard on one line; the final
+editor test passed and a guarded screenshot confirmed all five labels fit.
+Instrumentation APK removed, original layout restored and normal Dashboard left
+visible.
+Actual checks are recorded in
+[verification](verification/2026-10-25-dashboard-subscribers.md). Read
+[Dashboard guide](CONTROLS.md) before operating. Custom message schemas, graphs,
+gauges, layout import/export, full accessibility/device coverage and motor
+qualification remain pending. Changes remain uncommitted until requested.
+
+## Configurable controls dashboard (2026-10-25)
+
+Home → Open dashboard now offers saved Bool/String buttons, Bool switches,
+Float64 sliders and a Twist joystick. Add/edit/reorder/delete controls, choose
+absolute topics and values/limits, then explicitly Enable controls. Main tabs
+remain Home/Sensors/Projects/Settings. Layout lives in app-private
+control_dashboard_v1 preferences; it starts empty and publishes nothing on open.
+Relevant fields only are visible in the editor. ROS-Mobile's public widget
+workflow inspired the design; its installed app, code and artwork were untouched.
+
+RobotSessionService owns reliable/volatile depth-1 control publishers alongside
+sensors. A bounded latest-command slot per widget feeds a 20 Hz worker; the
+joystick renews at 10 Hz with a 300 ms worker lease. Release/cancel/focus loss
+requests zero. The subsequent persistence milestone keeps endpoints across
+navigation/pause, requesting zero without removing publishers. Battery and the MCU Agent remain independent.
+A receiving robot still needs command expiry: app/network/process failure can
+prevent a final zero. No automatic re-enable after return. At most 32 unique
+widget topics; schemas/finite bounds/speed limits validated. JNI publishes proper
+UTF-8 payload bytes rather than JNI modified UTF-8 strings.
+
+Assembly/unit/lint and 24 existing tooling tests passed. Physical editor
+validation/persistence, joystick release/focus loss and service pause with battery
+continuation were checked. Independent PC subscribers received Bool, UTF-8
+String, Float64 and Twist, including separate zero transitions after lease expiry
+and Activity pause. See [guide](CONTROLS.md) and
+[verification](verification/2026-10-25-controls.md). Physical tests use reserved
+control_test topics; no actuator commands or ESP32 firmware changes were made.
+
+Sources: ControlWidget.kt (schema), ControlDashboard.kt (UI/persistence/joystick),
+RobotSessionService.kt (publisher/lease lifetime), NativeRuntime/native ros_runtime
+(control serialization), ControlsTest.kt and tools/pc-controls-probe.py (evidence).
+Three physical controls tests passed, plus a final editor/recreation check after
+compacting the controls action row. A guarded dark/landscape screenshot was
+visually inspected; no global theme/orientation settings were changed. Home keeps
+the battery first and adds a compact Open dashboard action afterward.
+Custom ROSIDL schemas, press/release buttons, telemetry widgets/multiple named
+layouts, import/export, cross-device accessibility and motor qualification remain
+pending. Changes remain uncommitted until requested.
+
+## Reference phone-to-ESP32 USB serial milestone (2026-10-25)
+
+Implemented Android USB host CP2102 support and a raw app-owned PTY bridge to the
+packaged upstream serial XRCE-DDS Agent. Settings → Microcontrollers has Start USB
+agent and the shared Stop action; only one transport runs at a time. Permission
+is requested through Android, no root/serial device-node access. The service owns
+both bulk pumps, USB connection and Agent; detach releases them and asks for an
+explicit restart. Sensor/workspace ownership remains separate. Scope is a single
+10c4:ea60 CP2102 interface, not generic USB/MCU support.
+
+`setup/esp32-usb.sh build|upload` selects a separate serial cache/profile with
+115200 baud, 8N1 and ROS domain 0 by default; ROS2_ANDROID_ESP32_DOMAIN overrides it
+(0–101). It shares the source/pinned SDK with Wi-Fi, but uses no credentials and
+prints no debug text on the XRCE UART. Upload replaces Wi-Fi firmware; existing
+Wi-Fi build/upload remains available. Reference board now has serial firmware.
+Original flash backup remains private and ignored.
+
+Main assembly/unit/lint passed; all 24 existing host tooling tests passed. Two
+physical PTY tests passed (binary integrity both directions and packaged serial
+Agent startup). USB firmware build/upload and hash verification passed. User
+connected the MCU directly to the phone, which enumerated its CP2102 endpoints
+and requested permission. Real battery → MCU → phone acknowledgement AND fresh
+acknowledgements after serial Agent restart passed one physical instrumentation
+trial (0 skips/failures). No Linux Agent; wireless ADB was development-only.
+See [USB guide](ESP32-USB.md) and
+[verification](verification/2026-10-25-esp32-usb.md).
+
+Normal app startup was restored with the instrumentation APK removed. User then
+physically unplugged/replugged the board and selected Start USB agent; the app
+reported Running USB and a fresh PC ROS subscriber received a new acknowledgement.
+No reflash/PC Agent was needed. Battery publishing, USB Agent and the normal phone
+Display subscriber remain active; the project screen visibly showed fresh MCU
+acknowledgements.
+Configured capacity is 11,520 bytes/s per direction before XRCE overhead; no
+throughput/latency comparison with Wi-Fi is claimed. Endurance, fully offline
+phone DDS discovery, power limits, broader drivers and the graph-manager wrapper
+remain pending. Code remains uncommitted until requested. Keep transient addresses,
+identifiers, firmware backups and device logs out of Git.
+
+## Phone-hosted ESP32 Wi-Fi micro-ROS data path (2026-10-25)
+
+Reference ESP32 firmware now uses micro-ROS Jazzy/rclc via PlatformIO and joins
+the configured Wi-Fi. It publishes /esp32/heartbeat (Int32), subscribes to the
+phone's /phone/battery_percent (Float64) and returns an acknowledgement String to
+/phone/display/text. The phone hosts the UDP XRCE-DDS Agent on port 8888 in a
+separate packaged native process, owned by MicroRosAgentService. Settings →
+Microcontrollers provides Start/Stop and collapsed Agent logs. Its foreground
+service/wake/multicast locks are independent of sensors and workspace runners.
+No Linux Agent is used. See ESP32-WIFI.md for complete reproducible commands.
+
+The backend is upstream Micro-XRCE-DDS-Agent v2.4.3/Fast DDS, not the ROS-specific
+micro_ros_agent graph-manager wrapper. Actual typed phone→ESP32→phone traffic
+and ESP32 reconnect after stopping/restarting the phone Agent passed physical
+instrumentation tests, including a final two-test run with the restart receive
+baseline captured after draining old messages. See
+[verification](verification/2026-10-25-esp32-wifi-agent.md). Node graph metadata/ros2 node list for the MCU, one-hour endurance and other devices remain pending. USB serial support was subsequently
+implemented and verified for the reference CP2102 board; see the USB milestone above. Do
+not equate this UDP proof with completed v0.2 USB or arbitrary MCU support.
+
+Setup scripts build the Agent and stage its ARM64 ELF closure separately under
+native-deps/agent-apk-libs, with vendor licenses under agent-assets. Agent libs
+are optional build artifacts; a clean sensor-only build needs this setup step
+before the Agent can start. Normal-use services were restored after tests; PC subscribers received heartbeat
+and battery acknowledgement without a PC Agent. The instrumentation APK was
+removed. APK with the Agent measured 8.66 MiB. Firmware uses
+about 20.5% RAM and 61.9% of the default application flash partition.
+
+Build findings: propagate Android ABI/API and shared libc++ to every dependency;
+force target TinyXML2 and prevent host ROS/CMake packages from satisfying cross
+builds. Foonathan caches generated container sizes independently of CMake's ABI
+cache: stale ARM32 sizes caused runtime allocator exceptions even in an ARM64
+ELF. Regenerate its node-size header and rebuild consumers on ABI migration.
+The helper records an ABI stamp. APK-native SONAME/NEEDED names are normalized,
+ELFs verified and stripped. Temporary throw tracing was removed. Agent log text
+strips ANSI/control bytes so logs and test result XML remain readable.
+
+Firmware builds use a private cache path without spaces because the upstream
+PlatformIO micro-ROS builder assembles unquoted shell paths. Its isolated
+PlatformIO core points at the task venv; inherited Linux ROS PATH/prefix variables
+are removed to avoid selecting host C++ typesupport. NetworkManager credentials
+are generated locally without printing, stay outside Git, and are embedded only
+in private firmware artifacts. The original board flash backup is ignored under
+device-logs/esp32-private; do not commit it, device IDs, addresses or passwords.
+
+## Workspace runners hidden from the app drawer (2026-10-25)
+
+Removed MAIN/LAUNCHER from the shared runner manifest, retaining OPEN_PROJECT
+metadata/action and the explicit fallback Activity. Applies to C++, Python and
+ordinary workspace runner builds. Only the main app advertises a launcher icon;
+runners remain installed apps in Android Settings. Current workspace rebuilt and
+deployed; Android package queries returned no launcher Activity for that runner,
+one OPEN_PROJECT Activity, and the main app's launcher Activity. Explicit PC start
+still reached Running with both workspace nodes. All three runner build/lint
+checks passed. Installed-project discovery/recreation device test passed with
+the hidden runner; the instrumentation APK was removed afterward. No personal
+launcher screen or app inventory was inspected.
+
+This changes visibility, not packaging. Main app plus one runner APK per workspace
+remains the model. A single combined APK could package workspaces with the main
+app, coupling native code deployment to main-app updates. A shared runtime with
+independent workspace delivery remains a separate design/qualification project.
 
 ## Original project robot logo (2026-10-25)
 

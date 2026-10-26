@@ -8,6 +8,6 @@
     <string name="about_support_button">Support development</string>
     <string name="about_support_accessibility">Support development on GitHub Sponsors — opens in your browser</string>
     <string name="about_support_destination">Opens GitHub Sponsors in your browser.</string>
-    <string name="about_no_browser">No browser is available to open GitHub Sponsors.</string>
+    <string name="about_no_browser">No browser is available to open this link.</string>
     <string name="sponsor_url" translatable="false">https://github.com/sponsors/kishore-saravanan</string>
 </resources>

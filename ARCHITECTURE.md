@@ -13,7 +13,10 @@ evidence.
 Planning baseline: 2026-10-24. This document records proposed decisions.
 The Kotlin app and native Jazzy `rcl` runtime are implemented. PC/phone ROS
 round trips have passed over Wi-Fi and USB networking. The phone-hosted Agent
-is v0.2 work and remains unimplemented. See `docs/V0.1.md`,
+now passes reference ESP32 UDP and CP2102 USB round trips and software Agent
+restart/reconnect trials. Broader USB drivers, endurance and the micro_ros_agent
+graph-manager wrapper remain pending. See [Wi-Fi setup](docs/ESP32-WIFI.md) and
+[direct USB setup](docs/ESP32-USB.md) for the current data paths. See `docs/V0.1.md`,
 `docs/DEVELOPMENT.md`, and `docs/verification/` for current behavior and evidence.
 
 Release boundary: v0.1 is PC ↔ phone over USB and network; v0.2 is
@@ -49,7 +52,7 @@ flowchart TB
     Hardware[Hardware adapters: IMU, camera, audio, display]
     Core[Robot core: typed interfaces, timestamps, frames, bounded queues]
     ROS[Native ROS 2 runtime through JNI]
-    Agent[Embedded micro-ROS Agent: experimental until validated]
+    Agent[Phone XRCE-DDS Agent: UDP proof verified]
     IP[Selected IP interface: Wi-Fi or USB network]
     USB[Android USB host adapter: supported serial devices]
     Linux[Linux ROS 2 peers]
@@ -79,7 +82,7 @@ dependencies safely is part of the feasibility work.
 | Native client API | Jazzy `rcl` C API inside C++ | Smaller cross-build; direct typed endpoints without exposing native ownership to Kotlin |
 | Alternate binding | Evaluate rcljava during the build experiment | Existing Android bindings, but historical build instructions require current compatibility verification |
 | Middleware | Cyclone DDS, pinned 0.10.x revision | Android cross-build and PC Fast DDS interoperability verified; Agent DDS integration remains a separate v0.2 gate |
-| Microcontroller integration | micro-ROS Agent hosted on phone, planned for v0.2 | Required for the intended standalone phone-plus-MCU topology |
+| Microcontroller integration | Phone-hosted XRCE-DDS Agent: reference ESP32 UDP proof passed | Reference CP2102 USB proof passed; graph-manager and broader qualification pending |
 | Data contract | Fixed, versioned ROS interface set initially | Predictable generation, packaging, memory, and interoperability |
 | Sensor APIs | SensorManager, CameraX where supported, AudioRecord, TextToSpeech | Use Android APIs behind replaceable capability adapters |
 | Build | Gradle wrapper plus CMake/NDK and reproducible native dependency build | Keep Android app builds separate from ROS cross-compilation |
