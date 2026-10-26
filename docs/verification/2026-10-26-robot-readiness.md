@@ -7,11 +7,11 @@ include device identifiers, addresses or private diagnostics in Git.
 | Gate | Current evidence | Remaining qualification |
 | --- | --- | --- |
 | Main native ROS/sensors | Earlier typed IMU/battery/camera PC trials | Fresh regression after refinements |
-| Workspace computation | Earlier Linux/Android custom-message, parameters and child-failure recovery | Fresh regression, physical PC-link removal, mixed ament_python packages |
-| USB MCU round trip | Earlier phone battery → MCU → phone acknowledgement | Repeated no-delay Agent restarts and sustained application data |
+| Workspace computation | Fresh phone custom-message/computation/node/parameter parity and child-exit group recovery pass | Workspace PC-link removal, one-hour run, mixed ament_python packages |
+| USB MCU round trip | Repeated Agent recovery plus fresh180 s phone-only round trip,64 Wi-Fi-absent samples | One-hour/thermal, combined task removal/offline failure |
 | Dashboard safety | Earlier release/navigation/focus zero tests and real Gazebo movement | Fresh regression; real MCU motor command expiry/hardware stop |
 | Camera operation | Earlier ~30 received FPS, ten-minute USB run | New background/lifecycle check, one-hour/thermal and another device |
-| Offline autonomy | Architecture runs native nodes on phone | Physical PC-link removal with continued application computation and post-reconnect evidence |
+| Offline autonomy | Current-source phone/USB MCU180 s pass including64 samples without Wi-Fi; PC receipt recovered | Combined task removal/offline failure, workspace-offline computation, screen-off/endurance |
 | UI/usability | Earlier light/dark/large-text and navigation checks | Fresh relevant regressions; full TalkBack/keyboard, second phone, external onboarding |
 | Fault handling | Earlier process exit and explicit restart tests | Endurance, cable/repeated-restart trials and failure-state clarity |
 
@@ -179,3 +179,31 @@ zero samples, so automatic discovery remains unresolved; explicit-peer success
 must not be presented as automatic discovery success. No private addresses are
 stored here. Tool pc-usb-robot-probe.py --continuous observes its full duration,
 records max gaps/last ages and requires each stream's freshness below10 s.
+
+
+## Current-source isolated Wi-Fi interruption: passed
+
+No app/task removal in this controlled trial. Independent service recorder saved
+passed:elapsed180392 ms,178 samples,64 without Wi-Fi,184 battery publications,
+maximum heartbeat/reply age1008 ms. Power Saving off. Armed a shell-owned60 s
+Wi-Fi-enable failsafe, verified it existed, then disabled Wi-Fi. Restore marker
+and wifi_on=1 verified after wireless reconnection; no owner reconnect required.
+No security/power setting was altered. Logs/addresses remain ignored.
+
+After return,45 s explicit-peer PC continuity probe passed:44 battery,44 heartbeat,
+43 reply samples; maximum inter-arrival1.154 s. This demonstrates recovery of PC
+receipt as well as continued phone-local typed data during PC disconnection.
+It does not resolve automatic discovery or the earlier combined task-removal and
+Wi-Fi interruption. Owner later confirmed performing the requested main-only
+swipe, but no timestamped task-removal event was captured for causal correlation.
+
+Fresh ordinary C++ Android workspace parity passed custom messages, computation,
+both nodes and parameter service. Process fault/recovery harness passed all five
+checks: clean stop, child exit detected, failed group stopped, controller survived,
+restart. Current workspace networking unchanged; this is a Wi-Fi parity test,
+not a test of workspace computation while Wi-Fi is absent.
+
+Post-restart PC parity passed all four checks again (three matching samples).
+The test example workspace was then stopped and confirmed not running; main
+Activity reopened. Recorder test endpoints stopped at completion, while the
+separate USB Agent remains running. No test motor commands were sent.

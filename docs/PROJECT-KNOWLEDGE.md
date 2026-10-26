@@ -5,6 +5,35 @@ Last updated: 2026-10-26. Read this before resuming development, then read
 resume index; detailed architecture, usage and measurements remain in linked
 files. Update it whenever a milestone, finding or verification boundary changes.
 
+## Current-source Wi-Fi-only autonomy and workspace regression passed (2026-10-26)
+
+Using the APK built from3a463d5, the independent service recorder passed180392 ms:
+178 samples,64 with no Wi-Fi transport,184 battery publications, max MCU heartbeat/
+reply age1008 ms. A shell-owned timed restore was armed/verified before disabling
+Wi-Fi for60 s; Wi-Fi restored and wireless ADB reconnected without owner action.
+Apps were left alone and Power Saving was off. This is a real PC-link interruption
+for the reference phone battery -> USB ESP32 -> phone data path. It is not an
+all-transport, all-phone, project-workspace-offline or one-hour qualification.
+After reconnect, a45 s explicit-peer PC observer passed continuously:44 battery,
+44 heartbeat and43 reply messages; maximum observed inter-arrival1.154 s.
+Automatic/multicast discovery remains unqualified on this network.
+
+Owner confirmed completing the earlier requested Wi-Fi-on main-task swipe. Saved
+Wi-Fi-on120 s and90 s runs passed; task-removal timing was not independently
+recorded, so avoid a precise causal claim. The combined Wi-Fi-off + removal of
+both main and runner tasks still has a recorded49.7 s interruption and remains
+unresolved. Do not promise reliable unattended/screen-off/combined recovery yet.
+
+Fresh ordinary C++ workspace on-phone parity passed: custom Sample input, correct
+squaring computation, both node identities and period_ms parameter service.
+Physical process test passed clean stop, intentional processor child exit,
+failed-group teardown, controller survival and explicit restart. These use
+standard workspace executables, not composed factories. Post-restart computation
+is checked separately; detailed results live in ignored readiness artifacts.
+One-hour/thermal, second phone, workspace offline execution, actual motor watchdog/
+physical stop, mixed ament_python and full accessibility/onboarding remain gates.
+No firmware, personal apps/data or global security/power settings were changed.
+
 ## Offline result recovered; independent recorder added (2026-10-26)
 
 After USB reconnection, the phone's own robot-reliability.json reported a **pass**:
@@ -1275,3 +1304,8 @@ No new runtime-wide soak or Wi-Fi Python result is implied by USB checks.
 Before ending a milestone, update this file and its evidence links with what
 changed, checks actually run, limitations, current next action and commit state.
 Do not store transient phone identifiers or mark untested roadmap items complete.
+
+Post-restart PC parity passed all four checks again (three matching samples).
+The test example workspace was then stopped and confirmed not running; main
+Activity reopened. Recorder test endpoints stopped at completion, while the
+separate USB Agent remains running. No test motor commands were sent.
