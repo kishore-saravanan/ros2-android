@@ -17,10 +17,12 @@ def main():
     args = parser.parse_args()
     wheel = args.wheel.resolve()
     with zipfile.ZipFile(wheel) as archive:
+        for legal in ('LICENSE', 'NOTICE'):
+            assert any('.dist-info/' in name and name.endswith('/' + legal) for name in archive.namelist()), legal
         with zipfile.ZipFile(io.BytesIO(archive.read('ros2android/sdk.zip'))) as sdk:
             forbidden = {'device-logs', '.git', 'local.properties', 'native-deps', '.gradle', '.cxx', '.pio', '__pycache__', 'build'}
             assert not any(forbidden.intersection(Path(name).parts) for name in sdk.namelist())
-            assert 'gradlew' in sdk.namelist()
+            assert {'gradlew', 'LICENSE', 'NOTICE', 'CITATION.cff'}.issubset(sdk.namelist())
     with tempfile.TemporaryDirectory(prefix='ros2android-wheel-test-') as temp:
         root = Path(temp)
         venv.EnvBuilder(with_pip=True).create(root / 'venv')

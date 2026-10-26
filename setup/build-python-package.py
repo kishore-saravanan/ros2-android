@@ -10,7 +10,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 SDK_DIRS = {'android', 'native', 'setup', 'tools', 'examples', 'gradle'}
-SDK_FILES = {'gradlew', 'gradlew.bat', 'gradle.properties', 'build.gradle.kts', 'settings.gradle.kts'}
+SDK_FILES = {'LICENSE', 'NOTICE', 'CITATION.cff', 'gradlew', 'gradlew.bat', 'gradle.properties', 'build.gradle.kts', 'settings.gradle.kts'}
 
 
 def main():
@@ -21,7 +21,7 @@ def main():
     tracked = subprocess.check_output(['git', '-C', str(ROOT), 'ls-files', '-z']).decode().split('\0')
     with tempfile.TemporaryDirectory(prefix='ros2android-package-') as temp:
         stage = Path(temp)
-        for name in ('pyproject.toml', 'setup.py', 'README.md'):
+        for name in ('pyproject.toml', 'setup.py', 'README.md', 'LICENSE', 'NOTICE', 'CITATION.cff'):
             shutil.copy2(ROOT / name, stage / name)
         shutil.copytree(ROOT / 'python', stage / 'python', ignore=shutil.ignore_patterns('__pycache__', '*.egg-info', 'sdk.zip'))
         with zipfile.ZipFile(stage / 'python/ros2android/sdk.zip', 'w', zipfile.ZIP_DEFLATED) as archive:

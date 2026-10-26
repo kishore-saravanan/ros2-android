@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use ROS2 Android in your research or project, please cite this software. Citation is requested, not an additional license condition."
+type: software
+title: "ROS2 Android"
+authors:
+  - family-names: "Saravanan"
+    given-names: "Kishore"
+repository-code: "https://github.com/kishore-saravanan/ros2-android"
+url: "https://github.com/kishore-saravanan/ros2-android"
+license: Apache-2.0

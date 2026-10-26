@@ -83,5 +83,7 @@ flash hardware.
 - SDK preparation, full build/deploy, shell and flashing are forwarded to existing
   backends. Their packaging-specific end-to-end qualification is pending; their
   earlier checkout tests do not establish wheel parity.
-- No public publishing or license selection. This local artifact is for maintainer
-  validation until licensing/notices and release gates are complete.
+- Apache-2.0 is selected for original project material; LICENSE/NOTICE are
+  included in wheel metadata and the backend snapshot, with CITATION.cff in the
+  snapshot. No public publishing. Third-party notices and release gates still
+  require review before public distribution.

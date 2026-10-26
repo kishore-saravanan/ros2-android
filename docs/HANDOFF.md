@@ -10,7 +10,7 @@ Owner reaffirmed Android as the primary onboard computer and requested a
 package-based open-source distribution. Read PRODUCT-REQUIREMENTS.md for critique,
 priorities and acceptance gates. HOST-PACKAGE.md describes the implemented local
 wheel/installed CLI foundation. Full build/deploy through the wheel, prebuilt SDK,
-licensing/public publication and clean-machine onboarding remain pending.
+third-party license review/public publication and clean-machine onboarding remain pending.
 
 ## Current checkpoint and next work
 
@@ -272,11 +272,11 @@ Linux machine, install the app, receive battery percentage, then see IMU/camera 
 only the guide. Verify from a clean environment, add repeatable CI checks and
 publish a tested phone/Android/ROS/transport matrix. No universal support claim.
 
-Before public source distribution: owner chooses a top-level license; audit
-upstream licenses/notices and sample Proprietary metadata. Add CONTRIBUTING,
+Owner selected Apache-2.0 on 2026-10-26; LICENSE, NOTICE and CITATION.cff are
+present and original example package metadata matches. Before public source
+distribution: audit upstream licenses/notices. Add CONTRIBUTING,
 issue templates and a private security-reporting route. Prepare release signing,
-checksums and reproducible build instructions. No license was chosen and no
-repository visibility, remote publishing or signing credentials were changed here.
+checksums and reproducible build instructions. No repository visibility, remote publishing or signing credentials were changed.
 
 ## Distribution: community alpha first
 

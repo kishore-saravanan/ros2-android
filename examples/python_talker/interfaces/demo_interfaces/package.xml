@@ -4,7 +4,7 @@
   <version>0.1.0</version>
   <description>Custom messages for the ROS2 Android C++ example.</description>
   <maintainer email="maintainers@example.invalid">ROS2 Android contributors</maintainer>
-  <license>Proprietary</license>
+  <license>Apache-2.0</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>

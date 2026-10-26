@@ -5,6 +5,25 @@ Last updated: 2026-10-26. Read this before resuming development, then read
 resume index; detailed architecture, usage and measurements remain in linked
 files. Update it whenever a milestone, finding or verification boundary changes.
 
+## Apache-2.0 selection (2026-10-26)
+
+Owner explicitly selected Apache License 2.0, including commercial use. Added
+unaltered official LICENSE text, NOTICE crediting Kishore Saravanan (2026), and
+CITATION.cff with author/project/repository metadata. Citation is requested, not
+a new license condition; no DOI, publication or release date invented. README
+and host package metadata state Apache-2.0 for original project material;
+third-party material retains its own terms. Five original example ROS package
+manifests now use Apache-2.0 instead of Proprietary. This changes example source
+fingerprints; rebuild before deployment rather than assuming old APK parity.
+Wheel builder includes LICENSE/NOTICE in distribution metadata and SDK snapshot,
+plus CITATION.cff in the snapshot; package verification checks legal-file presence.
+Verification passed: rebuilt wheel, offline installed CLI/SDK legal-file checks
+and all 28 tooling regression tests. Updated current product/handoff licensing
+status. Dependency license inventory,
+complete third-party notices and legal-file inclusion in Android release APKs
+remain public-release gates; top-level licensing is not a full dependency audit.
+No phone changes, repository publication or APT publishing performed.
+
 ## Product requirements and installed host CLI foundation (2026-10-26)
 
 Owner reaffirmed the phone as the primary onboard computer and requested product

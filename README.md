@@ -176,3 +176,13 @@ References reviewed on 2026-10-24. Architecture and interface names above are
 project proposals, not claims of tested implementation.
 
 Configurable controls and standard subscribed values: [Controls dashboard](docs/CONTROLS.md).
+
+## License and citation
+
+Original ROS2 Android project material is licensed under the
+[Apache License 2.0](LICENSE). Copyright 2026 Kishore Saravanan. See [NOTICE](NOTICE).
+Third-party components retain their own licenses and attribution requirements.
+
+If you use ROS2 Android in your research or project, please cite the software
+using [CITATION.cff](CITATION.cff). Citation is requested, not an additional
+condition of the Apache license.

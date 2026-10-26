@@ -90,11 +90,11 @@ repository-relative error hints with installed-command guidance. Do not silently
 download unpinned code or assume Linux apt packages work on Android.
 
 No public package-name reservation, PyPI upload, GitHub release or Play submission
-has been performed. Before public distribution: owner chooses a project license;
+has been performed. Owner selected Apache-2.0 on 2026-10-26. Before public distribution:
 review bundled third-party licenses/notices, signing, dependency provenance,
 security reporting and contribution policy. Public source visibility alone does
-not establish open-source licensing. No license has been chosen on the owner's
-behalf.
+not establish open-source licensing. LICENSE, NOTICE and CITATION.cff record the
+selected project terms and requested citation; upstream terms remain independent.
 
 ## Ordered implementation milestones
 
