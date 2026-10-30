@@ -15,6 +15,7 @@ No public APT repository or stable package release is available yet.
 | Python and launch | Separate Python/rclpy examples and supported launch paths passed reference tests. Arbitrary mixed workspaces and Linux dependencies are not guaranteed. |
 | Dashboard | Scalar subscriptions, joystick release/focus-loss zero commands and JPEG/PNG image receipt/recovery passed physical tests. Two-phone camera viewing and reference robot control were also confirmed by the operator. |
 | Camera options | Supported 1280×720, quality 80, automatic FPS produced about 29.9 capture/publish FPS in a reference sample; a PC received 20 valid JPEGs. This is not an endurance or latency measurement. |
+| Python onboard vision | Two rclpy nodes process phone camera JPEGs and compute following commands locally. Short live run: 161/161 ball detections, 8.05 results/sec, 61.95 ms mean / 92.39 ms p95 processing. Annotated/masked JPEG output verified; physical following and calibrated depth remain pending. |
 | Latest regression | Build, lint and 16 unit tests passed; camera-options and Dashboard-image device tests each passed with zero skips. |
 | ESP32 programming through phone | ROM-loader application writes passed hash verification and micro-ROS recovery checks. Sustained stub transfers remain unreliable; see the programming guide. |
 
@@ -35,6 +36,13 @@ support through this YUV/JPEG publishing path.
   app drawer. Developer-started shell processes are outside project supervision.
 - Reference MCU firmware includes a 300 ms stale-command timeout. Physical stop
   timing and behavior must be qualified for each robot.
+
+## Next after the ball-following test
+
+- Add Dashboard subscription/display for standard `sensor_msgs/msg/Image`
+  (raw images), alongside current `CompressedImage`. Requested after completing
+  this test; not implemented yet. Define supported encodings, bounded decode and
+  payload handling, stale/recovery behavior and physical interoperability tests.
 
 ## Community-readiness priorities
 

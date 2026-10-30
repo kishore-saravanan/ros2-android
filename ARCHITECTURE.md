@@ -80,6 +80,13 @@ processes started outside the project supervisor are not managed by its card.
 See [workspace compatibility](docs/COLCON-WORKSPACES.md),
 [Python projects](docs/PYTHON-PROJECTS.md) and [Android shell](docs/ANDROID-SHELL.md).
 
+The Python project runner embeds CPython and native `rclpy`. Its entry module
+can create several standard ROS nodes in one process, managed by a multi-threaded
+executor. Project requirements must have Android-compatible wheels or native
+builds. This path currently uses a project manifest; it does not make arbitrary
+ament_python workspaces compatible with the ordinary C++ workspace builder.
+See the [two-node ball-following example](docs/BALL-FOLLOWER.md).
+
 ## ESP32 and other microcontrollers
 
 The ESP32 runs micro-ROS firmware using XRCE-DDS. The phone hosts the native Agent

@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "ball_follower",
+  "applicationId": "dev.ros2android.android.runner.ball_follower",
+  "name": "Red ball follower (Python)",
+  "runtimeAbi": 1,
+  "runtime": "python",
+  "pythonSourceDir": "src/ball_follower"
+}

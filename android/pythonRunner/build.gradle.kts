@@ -10,6 +10,10 @@ val requestedProject = rootProject.file(providers.gradleProperty("robotProjectDi
 val requestedManifest = JsonSlurper().parse(requestedProject.resolve("robot-project.json")) as Map<*, *>
 val robotProject = if (requestedManifest["runtime"] == "python") requestedProject else rootProject.file("examples/python_talker").canonicalFile
 val manifest = JsonSlurper().parse(robotProject.resolve("robot-project.json")) as Map<*, *>
+val pythonSource = manifest["pythonSourceDir"]?.toString()?.let { robotProject.resolve(it).canonicalFile }
+require(pythonSource == null || (pythonSource.isDirectory && pythonSource.toPath().startsWith(robotProject.toPath()))) {
+    "pythonSourceDir must be an existing directory inside the project"
+}
 val pythonLock = JsonSlurper().parse(rootProject.file("native/python-runtime.lock.json")) as Map<*, *>
 val projectId = manifest["id"].toString()
 val runnerApplicationId = manifest["applicationId"].toString()
@@ -64,10 +68,15 @@ chaquopy {
     defaultConfig {
         version = pythonLock["python"].toString().split(".").take(2).joinToString(".")
         buildPython("/usr/bin/python3")
-        pip { install("numpy==${pythonLock["numpy"]}"); install("PyYAML==${pythonLock["pyyaml"]}") }
+        pip {
+            install("numpy==${pythonLock["numpy"]}"); install("PyYAML==${pythonLock["pyyaml"]}")
+            val requirements = robotProject.resolve("requirements.txt")
+            if (requirements.isFile) install("-r", requirements.path)
+        }
     }
     sourceSets.getByName("main") {
         srcDir(robotProject)
+        pythonSource?.let { srcDir(it) }
         srcDir("../../native-deps/python-packages")
     }
 }

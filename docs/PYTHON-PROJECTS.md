@@ -95,6 +95,25 @@ The recovery test intentionally throws after three ticks, checks failed status,
 removed service and stopped node, then restarts with normal defaults. It leaves
 the bridge disabled; stop/start with `cpp_bridge_enabled:=true` to test it again.
 
+## Multiple Python nodes and project dependencies
+
+A Python project may export `create_nodes(context=..., namespace=..., cli_args=...)`
+in `phone_node.py`, returning 1..16 `rclpy.node.Node` instances. The runner adds
+all nodes to a three-thread MultiThreadedExecutor, lists their names and stops
+them together. Existing `PhoneNode` entry points remain supported. Nodes share
+one embedded Python process; this is not independent per-node supervision.
+Default mutually exclusive callback groups serialize each node's own callbacks.
+A factory which fails partway through constructing nodes must clean up its own
+partial list before re-raising.
+
+An optional `pythonSourceDir` in robot-project.json adds a source directory inside
+the project. A project-local requirements.txt installs build-time dependencies
+using compatible Android wheels. Native Linux wheels do not become portable.
+Use exact version pins and rebuild/deploy after edits. See the
+[two-node Python ball example](BALL-FOLLOWER.md) for a normal ament_python package
+included through this project entry point. The ordinary colcon workspace builder
+still supports ament_cmake, not arbitrary mixed Python workspaces.
+
 ## Supported scope and remaining work
 
 This proves native `rclpy`, typed topics, parameters, custom messages, Python IMU
@@ -105,8 +124,7 @@ APK; no runtime pip installation flow is provided.
 
 The example entry module is `phone_node`, exporting `PhoneNode`. The current SDK
 build script includes this example's interface package; a general Python package
-workspace builder is future work. Python multi-node launch, ROS Python launch
-files, independent worker supervision, physical PC disconnection, Wi-Fi Python
+workspace builder is future work. General Python-workspace launch packaging, independent worker supervision, physical PC disconnection, Wi-Fi Python
 qualification, long-duration testing and the embedded micro-ROS Agent remain
 pending. Fatal native errors or callbacks that block Python/native execution can
 require `kill`; caught Python exceptions do not establish fatal-crash recovery.

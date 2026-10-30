@@ -39,6 +39,7 @@ For multiple nodes: [workspace launch guide](docs/WORKSPACE-LAUNCH.md).
 For ROS descriptions: [supported launch-file adapter](docs/ROS-LAUNCH.md).
 For ordinary packages: [colcon workspace build/deploy guide](docs/COLCON-WORKSPACES.md).
 For Python: [Python project guide](docs/PYTHON-PROJECTS.md).
+For onboard vision: [Python red-ball detection and following](docs/BALL-FOLLOWER.md).
 For ESP32: [Wi-Fi setup](docs/ESP32-WIFI.md), [direct phone USB setup and LED button](docs/ESP32-USB.md),
 or [upload firmware through the phone](docs/ESP32-PROGRAMMING.md).
 For native ROS commands and launch files on the phone: [Android development shell](docs/ANDROID-SHELL.md).

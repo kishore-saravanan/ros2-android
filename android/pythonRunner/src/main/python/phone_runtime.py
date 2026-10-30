@@ -5,6 +5,8 @@ import threading
 import traceback
 
 _context = _executor = _node = _host = _thread = None
+_nodes = []
+_names = []
 _running = False
 _heartbeat = 0
 _error = ''
@@ -13,29 +15,39 @@ _stop = threading.Event()
 
 
 def start(domain, namespace, arguments):
-    global _context, _executor, _node, _host, _thread, _running, _heartbeat, _error, _name
+    global _context, _executor, _node, _nodes, _names, _host, _thread, _running, _heartbeat, _error, _name
     if _context is not None:
         raise RuntimeError('Stop the current Python project before starting again')
     import rclpy
     from rclpy.context import Context
-    from rclpy.executors import SingleThreadedExecutor
+    from rclpy.executors import MultiThreadedExecutor
     from rclpy.node import Node
     from rclpy.signals import SignalHandlerOptions
-    from phone_node import PhoneNode
+    import phone_node
     _error = ''; _heartbeat = 0; _stop.clear()
     try:
         _context = Context()
         rclpy.init(args=[], context=_context, domain_id=domain,
                    signal_handler_options=SignalHandlerOptions.NO)
         cli_args = list(arguments)
-        _node = PhoneNode(context=_context, namespace=namespace,
-                          cli_args=['--ros-args', *cli_args] if cli_args else [])
+        kwargs = dict(context=_context, namespace=namespace,
+                      cli_args=['--ros-args', *cli_args] if cli_args else [])
+        if hasattr(phone_node, 'create_nodes'):
+            _nodes = list(phone_node.create_nodes(**kwargs))
+        else:
+            _nodes = [phone_node.PhoneNode(**kwargs)]
+        if not 1 <= len(_nodes) <= 16 or any(not isinstance(n, Node) for n in _nodes):
+            raise ValueError('Python project must return 1..16 ROS nodes')
+        _names = [n.get_fully_qualified_name() for n in _nodes]
+        _node = _nodes[0]
         _name = _node.get_fully_qualified_name()
         _host = Node('android_python_host', namespace='/ros2_android', context=_context,
                      enable_rosout=False, start_parameter_services=False)
         _host.create_timer(1.0, heartbeat)
-        _executor = SingleThreadedExecutor(context=_context)
-        _executor.add_node(_node); _executor.add_node(_host)
+        _executor = MultiThreadedExecutor(num_threads=3, context=_context)
+        for node in _nodes:
+            _executor.add_node(node)
+        _executor.add_node(_host)
         _running = True
         _thread = threading.Thread(target=spin, name='ros2-android-python', daemon=True)
         _thread.start()
@@ -63,7 +75,7 @@ def spin():
 
 
 def stop():
-    global _context, _executor, _node, _host, _thread, _running, _name
+    global _context, _executor, _node, _nodes, _names, _host, _thread, _running, _name
     _stop.set()
     if _executor is not None:
         _executor.wake()
@@ -73,9 +85,13 @@ def stop():
             raise RuntimeError('Python callback did not stop; force-stop this runner')
     _running = False
     if _executor is not None:
-        _executor.shutdown(timeout_sec=1)
-    if _node is not None:
-        _node.destroy_node()
+        if not _executor.shutdown(timeout_sec=8):
+            raise RuntimeError('Python workers did not stop; force-stop this runner')
+    for node in reversed(_nodes):
+        destroy = getattr(node, 'destroy_node', None)
+        if callable(destroy):
+            destroy()
+    _nodes = []; _names = []
     if _host is not None:
         _host.destroy_node()
     if _context is not None:
@@ -86,4 +102,4 @@ def stop():
 
 def status():
     return json.dumps({'running': _running, 'heartbeat': _heartbeat, 'node': _name,
-                       'nodes': [_name] if _name else [], 'error': _error, 'runtime': 'python', 'python_version': sys.version.split()[0]})
+                       'nodes': list(_names), 'error': _error, 'runtime': 'python', 'python_version': sys.version.split()[0]})
