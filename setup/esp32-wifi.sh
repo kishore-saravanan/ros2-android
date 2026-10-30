@@ -20,6 +20,10 @@ mkdir -p "$esp_project/src" "$esp_project/include"
 chmod 700 "$esp_project"
 cp "$project_root/examples/esp32_wifi/platformio.ini" "$esp_project/platformio.ini"
 cp "$project_root/examples/esp32_wifi/src/main.cpp" "$esp_project/src/main.cpp"
+cp "$project_root/examples/esp32_wifi/include/"* "$esp_project/include/"
+if [[ "${ROS2_ANDROID_ESP32_ROBOT:-0}" != 0 && "${ROS2_ANDROID_ESP32_ROBOT:-0}" != 1 ]]; then
+    printf 'ROS2_ANDROID_ESP32_ROBOT must be 0 or 1\n' >&2; exit 2
+fi
 if [[ "$esp_transport" == wifi ]]; then
     cp "$project_root/device-logs/esp32-private/wifi_config.h" "$esp_project/include/wifi_config.h"
 else
@@ -29,6 +33,13 @@ else
     fi
     sed -i 's/board_microros_transport = wifi/board_microros_transport = serial/' "$esp_project/platformio.ini"
     printf '\nbuild_flags = -DROS2_ANDROID_USB -DROS_DOMAIN=%d\n' "$((10#$esp_domain))" >> "$esp_project/platformio.ini"
+fi
+if [[ "${ROS2_ANDROID_ESP32_ROBOT:-0}" == 1 ]]; then
+    if [[ "$esp_transport" == serial ]]; then
+        sed -i 's/^build_flags = /build_flags = -DROS2_ANDROID_ROBOT /' "$esp_project/platformio.ini"
+    else
+        printf '\nbuild_flags = -DROS2_ANDROID_ROBOT\n' >> "$esp_project/platformio.ini"
+    fi
 fi
 esp_core="$esp_cache/platformio"
 mkdir -p "$esp_core"

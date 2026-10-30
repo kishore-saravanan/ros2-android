@@ -35,8 +35,8 @@ object CapabilityCatalog {
                     else -> "External"
                 }
                 items += PhoneCapability("camera_$id", "$direction camera · $id", 8,
-                    "sensor_msgs/msg/CompressedImage", "/phone/camera_${direction.lowercase()}_$id/image/compressed", 15.0,
-                    "Continuous camera · JPEG · up to 640×480 · 0.2–30 fps", cameraId = id)
+                    "sensor_msgs/msg/CompressedImage", "/phone/camera_${direction.lowercase()}_$id/image/compressed", 0.0,
+                    "Continuous camera · JPEG · supported resolutions and FPS", cameraId = id)
             }
         }
         return items

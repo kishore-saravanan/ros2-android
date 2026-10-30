@@ -89,7 +89,7 @@ an explicit discovery peer. A combined Wi-Fi interruption and removal of both
 app tasks produced a long data gap and remains unresolved. For current operation,
 keep ROS2 Android visible; unattended/screen-off endurance is not qualified.
 
-See verification/2026-10-26-robot-readiness.md for the current test ledger.
+See STATUS.md for the current test ledger.
 Camera frames/local sent counts, MCU typed replies, actual robot motion and
 hardware stop timing are different evidence. A simulated command/telemetry trial
 cannot qualify a physical motor controller. APT publishing is deferred.

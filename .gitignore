@@ -21,3 +21,13 @@ __pycache__/
 # Python distribution outputs
 dist/
 *.egg-info/
+
+# Local maintainer notes and device-validation journals (not community deliverables)
+/AGENTS.md
+/docs/PROJECT-KNOWLEDGE.md
+/docs/HANDOFF.md
+/docs/UI-UX.md
+/docs/PLATFORM-PLAN.md
+/docs/PRODUCT-REQUIREMENTS.md
+/docs/verification/
+/internal/

@@ -199,6 +199,9 @@ extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_android_NativeRuntime_sta
         setenv("RMW_IMPLEMENTATION", "rmw_cyclonedds_cpp", 1);
         // Advertise a stable phone-local path alongside the robot/PC network.
         // Redundant networking avoids selecting only Wi-Fi for a local Agent.
+        // Pinned Cyclone 0.10 disables multicast globally if ANY selected interface
+        // is non-multicast-capable (q_init.c). Linux/Android loopback supports IP
+        // multicast despite lacking IFF_MULTICAST: explicitly enable it here.
         bool external_available = false;
         ifaddrs* interfaces = nullptr;
         if (getifaddrs(&interfaces) == 0) {
@@ -209,7 +212,7 @@ extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_android_NativeRuntime_sta
             freeifaddrs(interfaces);
         }
         std::string xml = "<CycloneDDS><Domain><General><Interfaces>"
-            "<NetworkInterface address=\"127.0.0.1\" multicast=\"false\" priority=\"10\"/>";
+            "<NetworkInterface address=\"127.0.0.1\" multicast=\"true\" priority=\"10\"/>";
         if (!local_address.empty() && local_address != "127.0.0.1")
             xml += "<NetworkInterface address=\"" + local_address + "\"/>";
         else if (external_available) xml += "<NetworkInterface autodetermine=\"true\"/>";
@@ -335,13 +338,26 @@ bool take_dashboard_string(rcl_subscription_t& handle, std::string& out) {
     }
     return received;
 }
+bool take_dashboard_image(rcl_subscription_t& handle, std::string& out) {
+    auto message = std::unique_ptr<sensor_msgs__msg__CompressedImage, decltype(&sensor_msgs__msg__CompressedImage__destroy)>(
+        sensor_msgs__msg__CompressedImage__create(), sensor_msgs__msg__CompressedImage__destroy);
+    if (!message) throw std::runtime_error("Cannot allocate image subscriber");
+    const auto result = rcl_take(&handle, message.get(), nullptr, nullptr);
+    if (result == RCL_RET_SUBSCRIPTION_TAKE_FAILED) return false;
+    check(result);
+    // Keep binary image data out of UTF-8 conversion. Decoder also bounds dimensions.
+    if (message->data.size > 0 && message->data.size <= 2 * 1024 * 1024)
+        out.assign(reinterpret_cast<const char*>(message->data.data), message->data.size);
+    return true;
+}
+
 }
 extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_android_NativeRuntime_createDashboardSubscription(JNIEnv* env, jobject, jstring id, jstring topic, jint kind) {
     std::lock_guard<std::mutex> lock(gate);
     try {
         require_running(); const auto key = str(env, id);
         if (dashboard_subscriptions.count(key)) throw std::runtime_error("Dashboard subscriber already exists");
-        if (kind != 10 && kind != 11 && kind != 13 && kind != 14 && kind != 15 && kind != 16) throw std::runtime_error("Unsupported dashboard subscriber type");
+        if (kind != 8 && kind != 10 && kind != 11 && kind != 13 && kind != 14 && kind != 15 && kind != 16) throw std::runtime_error("Unsupported dashboard subscriber type");
         auto sub = std::make_unique<DashboardSubscription>(); sub->kind = kind;
         auto options = rcl_subscription_get_default_options(); options.qos = rmw_qos_profile_sensor_data; options.qos.depth = 1;
         check(rcl_subscription_init(&sub->handle, &node, support(kind), str(env, topic).c_str(), &options));
@@ -360,6 +376,7 @@ extern "C" JNIEXPORT jobjectArray JNICALL Java_dev_ros2android_android_NativeRun
         for (auto& item : dashboard_subscriptions) {
             auto& sub = *item.second; std::string value; bool received = false;
             switch (sub.kind) {
+                case 8: received = take_dashboard_image(sub.handle, value); break;
                 case 10: received = take_dashboard_scalar<std_msgs__msg__Bool>(sub.handle, value); value = value == "1" ? "true" : "false"; break;
                 case 11: received = take_dashboard_string(sub.handle, value); break;
                 case 13: received = take_dashboard_scalar<std_msgs__msg__Float64>(sub.handle, value); break;

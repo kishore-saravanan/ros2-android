@@ -79,7 +79,7 @@ is not the rate of the UART behind this bridge.
 
 ## Verification boundary
 
-See [the USB verification record](verification/2026-10-25-esp32-usb.md) for actual
+See [compatibility and validation](STATUS.md) for actual
 checks and pending physical trials. Agent graph-manager integration, arbitrary
 MCU/USB drivers, sustained throughput, command-expiry safeguards and endurance
 remain separate work.
@@ -115,9 +115,7 @@ requested input, not confirmed device state, and does not automatically publish
 on return. A firmware/device restart can reset the actual output independently.
 
 GPIO2 active high is the reference default, not a verified pin mapping for every
-ESP32 board. The user reported an already-flashing blue LED; a 12-second idle
-ROS observation had no LED commands/state changes while heartbeats continued.
-A board's USB/activity LED can be separate from the controllable LED. Identify
+ESP32 board. A board's USB/activity LED can be separate from the controllable LED. Identify
 the PCB or schematic before changing `ROS2_ANDROID_LED_PIN` and
 `ROS2_ANDROID_LED_ACTIVE_HIGH`. Boards without a controllable onboard LED need
 an appropriate external LED/circuit. Physical LED mapping remains unconfirmed.

@@ -3,39 +3,31 @@
 An Android app that uses a smartphone's computing power, sensors, display, and
 audio as the brain and sensory device of a robot.
 
-Status: v0.1 development. Native ROS 2 Jazzy is integrated on Android ARM64.
-Real phone IMU data and PC-to-phone text have been verified over Wi-Fi and USB
-networking. The app has configurable publishers, a display subscriber, editable
-topics, matching-type topic discovery, and capability detection. The 0.1.1
-development build adds continuous camera capture (15 fps default, up to 30),
-stream metrics and foreground-service ownership of robot sessions. A separate
-developer runner now hosts native C++ ROS nodes, including custom messages and on-phone IMU processing. Group launch plans are resolved on the PC. Standard workspace APKs now include
-core ROS CLI commands and native LaunchService, verified with the example and
-Python/XML/YAML launch tests. Phone-hosted Wi-Fi XRCE-DDS Agent communication
-with the reference ESP32 is verified. Broad Linux compatibility, broader MCU USB drivers and
-the micro-ROS graph-manager wrapper remain pending. ABI-2 projects can launch several compiled C++ nodes
-with per-node parameters and remaps using a bounded JSON configuration. A separate
-Python feasibility runner embeds CPython and native rclpy, verified with custom
-messages, parameters, IMU computation and phone-hosted C++ interoperability.
+Status: **0.1.1-dev6 development preview**, Android ARM64, native ROS 2 Jazzy.
+The phone runs ROS locally without Ubuntu, root or a container. A PC is used for
+development and deployment; sensor publishing and the phone-hosted micro-ROS
+Agent can run without a PC connection.
 
-- **v0.1:** PC ↔ phone over Wi-Fi and USB networking.
-- **v0.2:** microcontroller ↔ phone; Wi-Fi round trip with a phone-hosted Agent
-  verified on one ESP32. Reference CP2102 USB serial traffic and software Agent restart also pass; broader USB qualification remains pending.
+- **Sensors:** editable topics, capability detection and native ROS publishers.
+  Camera controls offer supported resolutions, automatic/specified FPS and JPEG quality.
+- **Dashboard:** configurable buttons, switches, joystick controls, scalar
+  subscribers and JPEG/PNG `CompressedImage` subscribers.
+- **Projects:** build supported ROS workspaces on Linux, cross-compile for Android,
+  deploy and start/stop them from the main app. Each workspace currently uses a
+  separate runner APK with no app-drawer entry.
+- **Microcontrollers:** phone-hosted micro-ROS Agent over Wi-Fi/UDP or supported
+  USB serial hardware. Reference ESP32/CP2102 communication has been verified.
+- **Connections:** automatic LAN discovery where multicast is available, with
+  explicit peers as a fallback. Peers must share a ROS domain and compatible QoS.
 
-The 0.1.1-dev4 UI uses Home/Sensors/Dashboard/Projects/Settings navigation, compact sensor
-lists and dedicated controls, collapsed advanced information, and ROS-inspired
-light/dark palettes that follow the device. About is at the bottom of Settings.
-Projects now provides live workspace state, Start/Stop, connection settings and
-collapsed output logs in the main app. Workspace runners have no app-drawer
-entry; open them through Projects. A custom dot/robot logo appears on Home
-and installed app icons. See [project controls](docs/PROJECTS.md) and [UI design](docs/UI-UX.md).
+Main tabs are Home, Sensors, Dashboard, Projects and Settings. The app follows
+Android's light/dark theme. See [Dashboard controls](docs/CONTROLS.md),
+[workspace controls](docs/PROJECTS.md) and [compatibility and validation](docs/STATUS.md).
 
-Installable host tooling now has a **local Debian alpha with a bundled APK**;
-see [Debian installation](docs/DEBIAN-PACKAGE.md). No public APT repository exists yet.
-The reusable wheel is also available; see
-[host package](docs/HOST-PACKAGE.md) for installation, commands and qualification limits.
-The [product requirements](docs/PRODUCT-REQUIREMENTS.md) prioritize independent
-robot operation, recovery and ordinary workspaces. No public package is published.
+Host tooling has a local Debian alpha with a bundled APK and a reusable Python
+wheel. See [Debian installation](docs/DEBIAN-PACKAGE.md) and
+[host package](docs/HOST-PACKAGE.md). **No public APT repository or package release
+is available yet.**
 
 Start here: [first battery-message walkthrough](docs/GETTING-STARTED.md).
 Then follow [Robot operation](docs/ROBOT-OPERATION.md) for workspace/MCU startup,
@@ -51,14 +43,11 @@ For ESP32: [Wi-Fi setup](docs/ESP32-WIFI.md), [direct phone USB setup and LED bu
 or [upload firmware through the phone](docs/ESP32-PROGRAMMING.md).
 For native ROS commands and launch files on the phone: [Android development shell](docs/ANDROID-SHELL.md).
 
-Resuming development? Read the [project knowledge base](docs/PROJECT-KNOWLEDGE.md)
-and the [community release handoff](docs/HANDOFF.md).
-
 Development branch: `develop`. Repository: [ros2-android](https://github.com/kishore-saravanan/ros2-android).
 
-Product direction: use the phone as the robot's main ROS 2 computer, with PC-side
-editing, builds and deployment. See the [platform plan](docs/PLATFORM-PLAN.md) for
-user nodes, launch files, camera performance, UI and reliability milestones.
+Product direction: make the phone the robot's main ROS 2 computer, with PC-side
+editing, builds and deployment. See [architecture](ARCHITECTURE.md) and
+[current limitations](docs/STATUS.md).
 
 Build, install, and test instructions: [Development guide](docs/DEVELOPMENT.md).
 
@@ -73,7 +62,7 @@ diagnostics and project commands. For the camera in RViz: `./tools/view-camera`.
 
 See [Architecture and implementation strategy](ARCHITECTURE.md) for the current
 design, standalone micro-ROS Agent requirement, compatibility policy, and delivery
-gates. It supersedes the provisional implementation choices below.
+gates. The sections below retain the original project phases.
 
 ## Phase 1 — ROS 2 infrastructure and connectivity
 

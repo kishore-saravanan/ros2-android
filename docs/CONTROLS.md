@@ -38,6 +38,7 @@ One read-only value card covers these standard types:
 - `std_msgs/msg/Bool`: On/Off indicator, including a text label.
 - `std_msgs/msg/Int32`, `Int64`, `Float32`, `Float64`: numeric value. Int64 remains
   exact and is not converted through floating point.
+- `sensor_msgs/msg/CompressedImage`: JPEG/PNG image card, preserving aspect ratio.
 
 A card shows **Waiting** until its first sample, **Live** after reception, and
 **Stale** after five seconds without a new sample. A stale value remains visible
@@ -74,3 +75,52 @@ been removed; Dashboard handles all user-configured subscriptions.
 Workflow inspiration: [ROS-Mobile](https://github.com/ROS-Mobile/ROS-Mobile-Android).
 The implementation uses this project's native ROS 2 runtime and Android Views,
 with no ROS 1 master, rosbridge or extra runner APK.
+
+## Camera image widget
+
+On the robot phone, publish a camera from Sensors. On the controller phone,
+open Dashboard → Add widget and choose **Subscribe**, message type
+**sensor_msgs/msg/CompressedImage**, and the camera's compressed topic, for example
+`/phone/camera_back_0/image/compressed`. Give it a label such as Camera, Save,
+and Start dashboard. Both phones need the same ROS domain and a working network
+connection; the controller phone does not need camera permission or a USB Agent.
+A PC or another ROS2 camera publishing the same standard message also works.
+
+The card shows Waiting, Live or Stale; the last valid stale frame stays visible
+with the Stale label. Invalid/unsupported data shows Cannot display image and
+recovers on a valid frame. Stop clears the view. Images are held only in memory,
+never saved to the gallery or storage. Subscriptions remain service-owned across
+navigation; the visible card only observes the latest decoded bitmap.
+
+This first version supports compressed JPEG/PNG, not raw sensor_msgs/msg/Image
+or compressedDepth. Use the full `/compressed` topic. At most four image widgets,
+2 MiB encoded per frame, source dimensions up to8192 per side/16 megapixels;
+large accepted images are downsampled for the viewing device's screen size and
+app memory budget, rather than a fixed1280-pixel ceiling. Each
+widget keeps one latest pending decode; old frames are replaced rather than
+queued. QoS is best-effort/volatile/depth1. No guaranteed30 FPS or network latency
+is implied; cross-phone performance and image/joystick coexistence need measuring.
+
+## Camera performance settings (0.1.1-dev6)
+
+On the publishing phone, open Sensors → camera. Set FPS to **0** for the maximum
+normal capture rate supported at the selected resolution, or enter a positive
+target (including60/120 where supported). There is no app-imposed30 FPS ceiling.
+Existing saved rates are preserved; change an old15/30 setting to0 explicitly.
+The Advanced section offers camera-advertised YUV resolutions and JPEG quality
+0–100. Stop publishing before editing them. Default resolution remains the
+balanced640×480 target; it is a default, not a maximum. Choose720p/1080p/4K only
+if your camera lists it and the app memory budget allows it.
+
+Advanced shows normal FPS ranges and actual capture/publish rates; a120 request
+does not make a30-only camera run at120. Resolution also constrains frame rate.
+Constrained high-speed recording modes require a different encoder/session path
+and are not implied by normal YUV support. See [Android camera modes](https://developer.android.com/reference/android/hardware/camera2/CameraDevice).
+
+Dashboard polling now follows device display refresh instead of a fixed33 ms
+interval. Display frame timing and app heap govern viewer sampling. Published
+JPEG resolution is not reduced by the viewer. The2 MiB compressed-frame limit,
+source dimension/pixel checks, four-image budget, bounded latest-frame queues
+and joystick timeout remain. A high-resolution/high-quality JPEG can exceed the
+viewer frame limit; lower quality/resolution in that case. These guards prevent
+memory/latency failures; they are not a promise of arbitrary-rate streaming.

@@ -32,6 +32,9 @@ static rclc_executor_t executor;
 static std_msgs__msg__Int32 heartbeat;
 static std_msgs__msg__Float64 battery;
 static std_msgs__msg__Bool led_command, led_state;
+#ifdef ROS2_ANDROID_ROBOT
+#include "robot_motors.h"
+#endif
 #ifndef ROS2_ANDROID_LED_PIN
 #define ROS2_ANDROID_LED_PIN 2
 #endif
@@ -63,6 +66,9 @@ void battery_received(const void *message) {
 }
 void heartbeat_tick(rcl_timer_t *, int64_t) {
   ++heartbeat.data;
+#ifdef ROS2_ANDROID_ROBOT
+  publish_robot_state();
+#endif
   const rcl_ret_t result = rcl_publish(&heartbeat_pub, &heartbeat, nullptr);
   (void)result;
 }
@@ -86,12 +92,26 @@ bool create_entities() {
   if (rclc_publisher_init_default(&led_state_pub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Bool), "/esp32/led_state") != RCL_RET_OK) return false;
   if (rclc_subscription_init_default(&led_sub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Bool), "/esp32/led") != RCL_RET_OK) return false;
   if (rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(1000), heartbeat_tick) != RCL_RET_OK) return false;
-  if (rclc_executor_init(&executor, &support.context, 3, &allocator) != RCL_RET_OK) return false;
+#ifdef ROS2_ANDROID_ROBOT
+  if (!create_robot_entities()) return false;
+  constexpr int handles = 6;
+#else
+  constexpr int handles = 3;
+#endif
+  if (rclc_executor_init(&executor, &support.context, handles, &allocator) != RCL_RET_OK) return false;
   if (rclc_executor_add_timer(&executor, &timer) != RCL_RET_OK) return false;
   if (rclc_executor_add_subscription(&executor, &battery_sub, &battery, battery_received, ON_NEW_DATA) != RCL_RET_OK) return false;
-  return rclc_executor_add_subscription(&executor, &led_sub, &led_command, led_received, ON_NEW_DATA) == RCL_RET_OK;
+  if (rclc_executor_add_subscription(&executor, &led_sub, &led_command, led_received, ON_NEW_DATA) != RCL_RET_OK) return false;
+#ifdef ROS2_ANDROID_ROBOT
+  return add_robot_handles();
+#else
+  return true;
+#endif
 }
 void setup() {
+#ifdef ROS2_ANDROID_ROBOT
+  setup_robot_motors();
+#endif
   pinMode(ROS2_ANDROID_LED_PIN, OUTPUT);
   digitalWrite(ROS2_ANDROID_LED_PIN, ROS2_ANDROID_LED_ACTIVE_HIGH ? LOW : HIGH);
   Serial.begin(115200);
@@ -109,6 +129,9 @@ void loop() {
   if (!ready) {
     if (rmw_uros_ping_agent(100, 1) == RMW_RET_OK) {
       ready = create_entities();
+#ifdef ROS2_ANDROID_ROBOT
+      robot_connection(ready);
+#endif
       LOG("%s\n", ready ? "micro-ROS ready" : "micro-ROS creation failed; restarting");
       if (!ready) { delay(1000); ESP.restart(); }
     } else delay(200);
@@ -122,6 +145,9 @@ void loop() {
     disconnected = disconnected || WiFi.status() != WL_CONNECTED;
 #endif
     if (disconnected) {
+#ifdef ROS2_ANDROID_ROBOT
+      robot_connection(false);
+#endif
       LOG("Connection lost; restarting to rejoin\n"); delay(100); ESP.restart();
     }
   }

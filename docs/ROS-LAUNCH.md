@@ -128,7 +128,7 @@ launch workers remains pending. Independent worker isolation, restart policies,
 parameter files, general package workspace builds and full ROS launch support
 need separate implementation and qualification.
 
-See [PROJECT-KNOWLEDGE.md](PROJECT-KNOWLEDGE.md) for the full project status,
+See [compatibility and validation](STATUS.md) for the full project status,
 findings and resume checklist, and [WORKSPACE-LAUNCH.md](WORKSPACE-LAUNCH.md) for
 the underlying runtime/JSON schema.
 

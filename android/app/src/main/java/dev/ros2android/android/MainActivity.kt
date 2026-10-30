@@ -22,6 +22,7 @@ open class MainActivity : Activity() {
     private val main = Handler(Looper.getMainLooper())
     private val prefs by lazy { getSharedPreferences("endpoints_v1", MODE_PRIVATE) }
     private var dashboard: ControlDashboard? = null
+    private var cameraDetails: TextView? = null
     private var session: RobotSessionService? = null
     private var bound = false
     private val offlineErrors = mutableMapOf<String, String>()
@@ -119,7 +120,7 @@ open class MainActivity : Activity() {
     }
     private var group = "All"
     private var pendingCamera: Pair<PhoneCapability, EndpointConfig>? = null
-    private data class Row(val topic: EditText, val rate: EditText?, val button: Button, val state: TextView, val summary: TextView? = null)
+    private data class Row(val topic: EditText, val rate: EditText?, val button: Button, val state: TextView, val summary: TextView? = null, var resolution: Spinner? = null, var quality: EditText? = null)
     private val rows = mutableMapOf<String, Row>()
     private val profileFields = mutableMapOf<String, EditText>()
     private val errors: MutableMap<String, String> get() = session?.errors ?: offlineErrors
@@ -201,7 +202,7 @@ open class MainActivity : Activity() {
     private fun render(keepScroll: Boolean = false) {
         val oldScroll = if (keepScroll) pageScroll?.scrollY ?: 0 else 0
         rows.clear(); profileFields.clear(); capabilityStates.clear(); navButtons.clear()
-        dashboard = null
+        dashboard = null; cameraDetails = null
         programmingStatus = null; programmingStop = null
         preview?.removeCallbacks(previewTicker)
         previewMetrics = null; previewFramesDisplayed = 0; previewWindowCount = 0; previewWindowStart = SystemClock.elapsedRealtime()
@@ -334,14 +335,14 @@ open class MainActivity : Activity() {
             if (!cap.available) box.addView(text("Not available on this phone", 15, muted))
             if (cap.kind == 8) {
                 previewId = cap.id
-                preview = ImageView(this).apply { contentDescription = "Local preview of ${shortName(cap)}"; scaleType = ImageView.ScaleType.FIT_CENTER; setBackgroundColor(getColor(R.color.ros_bg)) }
+                preview = ImageView(this).apply { tag = "camera_preview:${cap.id}"; contentDescription = "Local preview of ${shortName(cap)}"; scaleType = ImageView.ScaleType.FIT_CENTER; setBackgroundColor(getColor(R.color.ros_bg)) }
                 box.addView(preview, LinearLayout.LayoutParams(-1, dp(180)))
                 previewMetrics = text("Preview waiting", 13, muted).apply { tag = "camera_preview_rate" }.also { box.addView(it) }
                 if (resumed) preview?.postOnAnimation(previewTicker)
             }
             box.addView(text("Topic", 13, muted))
             val topic = field(prefs.getString("${cap.id}.topic", cap.defaultTopic)!!, "topic:${cap.id}").apply { contentDescription = "ROS topic for ${shortName(cap)}" }; box.addView(topic)
-            box.addView(text(if (cap.kind == 8) "Publish rate (fps)" else "Publish rate (Hz)", 13, muted))
+            box.addView(text(if (cap.kind == 8) "Publish rate (fps, 0 = auto)" else "Publish rate (Hz)", 13, muted))
             val rate = field(prefs.getString("${cap.id}.rate", cap.defaultRate.toString())!!, "rate:${cap.id}").apply {
                 contentDescription = "Publish rate for ${shortName(cap)}"; inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
             }; box.addView(rate)
@@ -352,7 +353,25 @@ open class MainActivity : Activity() {
                 info.addView(text(cap.messageType, 13, muted)); info.addView(text(cap.detail, 14, muted))
                 info.addView(button("Find matching topics") { chooseTopic(topic, cap.messageType) })
                 info.addView(text("Best effort · volatile QoS", 13, muted))
-                if (cap.kind == 8) info.addView(text("Preview follows the camera rate and drops old frames if rendering falls behind. Capture, preview and ROS delivery rates are separate. Images are not saved.", 13, muted))
+                if (cap.kind == 8) {
+                    info.addView(text("Resolution", 13, muted))
+                    val resolutions = listOf("Default") + runCatching { CameraPublisher.resolutions(this, cap.cameraId!!).map { "${it.width}×${it.height}" } }.getOrDefault(emptyList())
+                    val resolution = Spinner(this).apply {
+                        tag = "resolution:${cap.id}"; contentDescription = "Camera resolution"
+                        adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, resolutions)
+                        setSelection(resolutions.indexOf(prefs.getString("${cap.id}.resolution", "Default")).coerceAtLeast(0))
+                    }
+                    rows.getValue(cap.id).resolution = resolution; info.addView(resolution)
+                    info.addView(text("JPEG quality (0–100)", 13, muted))
+                    val quality = field(prefs.getString("${cap.id}.quality", "65")!!, "quality:${cap.id}").apply {
+                        contentDescription = "JPEG quality"; inputType = android.text.InputType.TYPE_CLASS_NUMBER
+                    }
+                    rows.getValue(cap.id).quality = quality; info.addView(quality)
+                    val fpsRanges = runCatching { CameraPublisher.fpsRanges(this, cap.cameraId!!).joinToString { "${it.first}–${it.second}" } }.getOrDefault("Unavailable")
+                    info.addView(text("Normal capture FPS ranges: $fpsRanges", 13, muted))
+                    cameraDetails = text("Camera stopped", 13, muted).also { it.tag = "camera_details"; info.addView(it) }
+                    info.addView(text("Set FPS to 0 for the maximum supported rate. Higher resolution and quality use more bandwidth and may lower FPS. Preview and ROS delivery rates are separate. Images are not saved.", 13, muted))
+                }
             }
         }
     }
@@ -502,10 +521,12 @@ open class MainActivity : Activity() {
         if (busy) return
         runCatching {
             val row = rows.getValue(cap.id)
-            val config = EndpointConfig(row.topic.text.toString().trim(), row.rate?.text?.toString()?.toDoubleOrNull() ?: 0.0)
+            val dimensions = row.resolution?.selectedItem?.toString()?.split('×').orEmpty()
+            val camera = if (cap.kind == 8) CameraOptions(dimensions.getOrNull(0)?.toIntOrNull() ?: 0,
+                dimensions.getOrNull(1)?.toIntOrNull() ?: 0, row.quality?.text?.toString()?.toIntOrNull() ?: error("Enter JPEG quality from 0 to 100")) else null
+            val config = EndpointConfig(row.topic.text.toString().trim(), row.rate?.text?.toString()?.toDoubleOrNull() ?: Double.NaN, camera)
             require(active.none { prefs.getString("$it.topic", "") == config.topic }) { "Another publisher already uses this topic." }
             require(cap.kind != 9 || config.rateHz <= 1) { "Choose a battery rate between 0.2 and 1 Hz." }
-            require(cap.kind != 8 || config.rateHz <= 30) { "Choose a camera rate between 0.2 and 30 fps." }
             require(cap.kind != 8 || catalog.none { it.kind == 8 && it.id in active }) { "Stop the other camera first." }
             save()
             if (cap.kind == 8 && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -546,6 +567,7 @@ open class MainActivity : Activity() {
             val available = catalog.first { it.id == id }.available
             row.button.isEnabled = !busy && available
             row.topic.isEnabled = available && !enabled && !busy; row.rate?.isEnabled = available && !enabled && !busy
+            row.resolution?.isEnabled = available && !enabled && !busy; row.quality?.isEnabled = available && !enabled && !busy
             val description = "${row.button.text} ${shortName(catalog.first { it.id == id })}"
             if (row.button.contentDescription != description) row.button.contentDescription = description
             row.button.tag = "toggle:$id"
@@ -578,6 +600,7 @@ open class MainActivity : Activity() {
             homeNetworkStamp = SystemClock.elapsedRealtime()
         }
         stopButton?.apply { isEnabled = session != null && !busy && (connected || errors.isNotEmpty()); visibility = if (connected || busy || errors.isNotEmpty()) android.view.View.VISIBLE else android.view.View.GONE }
+        cameraDetails?.show(if (previewId in active) session?.cameraStats?.label() ?: "Starting camera…" else "Camera stopped")
         val previewNow = SystemClock.elapsedRealtime()
         if (previewMetrics != null && previewNow - previewWindowStart >= 1000) {
             val fps = (previewFramesDisplayed - previewWindowCount) * 1000.0 / (previewNow - previewWindowStart)
@@ -587,7 +610,7 @@ open class MainActivity : Activity() {
     }
     private fun save() {
         val edit = prefs.edit()
-        rows.forEach { (id, row) -> edit.putString("$id.topic", row.topic.text.toString().trim()); row.rate?.let { edit.putString("$id.rate", it.text.toString()) } }
+        rows.forEach { (id, row) -> edit.putString("$id.topic", row.topic.text.toString().trim()); row.rate?.let { edit.putString("$id.rate", it.text.toString()) }; row.resolution?.let { edit.putString("$id.resolution", it.selectedItem.toString()) }; row.quality?.let { edit.putString("$id.quality", it.text.toString()) } }
         profileFields.forEach { (key, value) -> edit.putString(key, value.text.toString().trim()) }; edit.apply()
     }
     private fun surface() = GradientDrawable().apply { setColor(getColor(R.color.ros_surface)); cornerRadius = dp(12).toFloat() }

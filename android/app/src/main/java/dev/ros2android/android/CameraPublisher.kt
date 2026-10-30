@@ -28,31 +28,39 @@ class CameraPublisher(context: Context, private val onPreview: (String, ByteArra
         val width: Int, val height: Int, val requestedFps: Double, val sensorFps: Int,
         val captured: Long, val throttled: Long, val dropped: Long, val encoded: Long,
         val published: Long, val failures: Long, val captureFps: Double, val publishFps: Double,
-        val encodeMs: Double, val clock: String
+        val encodeMs: Double, val clock: String, val jpegQuality: Int = 65
     ) {
         fun label(): String = String.format(Locale.US,
-            "%d×%d · requested %.0f fps · capture %.1f · publish %.1f fps\n%d sent · %d pipeline drops · %d rate skips · JPEG %.1f ms\n%s",
-            width, height, requestedFps, captureFps, publishFps, published, dropped, throttled, encodeMs, clock)
+            "%d×%d · requested %s fps · capture %.1f · publish %.1f fps\n%d sent · %d pipeline drops · %d rate skips · JPEG %.1f ms · quality %d\n%s",
+            width, height, if (requestedFps == 0.0) "auto" else "%.1f".format(Locale.US, requestedFps), captureFps, publishFps, published, dropped, throttled, encodeMs, jpegQuality, clock)
     }
     private data class RawFrame(val bytes: ByteArray, val timestamp: Long)
     private data class JpegFrame(val bytes: ByteArray, val timestamp: Long)
 
     @Synchronized
     @SuppressLint("MissingPermission")
-    fun start(capability: PhoneCapability, rateHz: Double) {
-        require(rateHz.isFinite() && rateHz in 0.2..30.0) { "Camera rate must be between 0.2 and 30 fps." }
+    fun start(capability: PhoneCapability, rateHz: Double, options: CameraOptions = CameraOptions()) {
+        require(rateHz.isFinite() && (rateHz == 0.0 || rateHz >= 0.2)) { "Use 0 for automatic camera FPS, or at least 0.2 fps" }
         check(current == null) { "Stop the active camera before starting another." }
         val id = requireNotNull(capability.cameraId)
         val characteristics = manager.getCameraCharacteristics(id)
         val map = requireNotNull(characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP))
         val sizes = map.getOutputSizes(ImageFormat.YUV_420_888).orEmpty().filter { it.width % 2 == 0 && it.height % 2 == 0 }
-        val size = sizes.filter { it.width <= 640 && it.height <= 480 }.maxByOrNull { it.width * it.height }
+        val size = if (options.width > 0) sizes.firstOrNull { it.width == options.width && it.height == options.height }
+            ?: error("Selected camera resolution is not supported")
+        else sizes.filter { it.width <= 640 && it.height <= 480 }.maxByOrNull { it.width * it.height }
             ?: sizes.minByOrNull { it.width * it.height } ?: error("Camera has no supported YUV capture size")
         val ranges = characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES).orEmpty()
-        val fps = ranges.filter { it.upper <= 30 }.maxWithOrNull(compareBy<Range<Int>> { it.upper }.thenBy { it.lower })
-            ?: ranges.minByOrNull { it.upper } ?: Range(15, 30)
+        val minDuration = map.getOutputMinFrameDuration(ImageFormat.YUV_420_888, size)
+        val streamMax = if (minDuration > 0) 1_000_000_000.0 / minDuration else Double.POSITIVE_INFINITY
+        val usable = ranges.filter { it.upper <= streamMax + 0.01 }.ifEmpty { ranges.toList() }
+        val chosen = CameraRatePolicy.select(usable.map { it.lower to it.upper }, rateHz)
+        val fps = Range(chosen.first, chosen.second)
+        require(size.width.toLong() * size.height * 12 <= Runtime.getRuntime().maxMemory() / 2) {
+            "Selected resolution exceeds this app's camera memory budget; choose a lower resolution"
+        }
         val realtime = characteristics.get(CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE) == CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE_REALTIME
-        val stream = Stream(capability.id, size.width, size.height, rateHz, fps, realtime)
+        val stream = Stream(capability.id, size.width, size.height, rateHz, fps, realtime, options.jpegQuality)
         current = stream
         try {
             stream.startWorkers()
@@ -107,9 +115,20 @@ class CameraPublisher(context: Context, private val onPreview: (String, ByteArra
         retiring.clear()
     }
 
+    companion object {
+        fun fpsRanges(context: Context, cameraId: String): List<Pair<Int, Int>> =
+            context.getSystemService(CameraManager::class.java).getCameraCharacteristics(cameraId)
+                .get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES).orEmpty().map { it.lower to it.upper }
+        fun resolutions(context: Context, cameraId: String): List<android.util.Size> =
+            context.getSystemService(CameraManager::class.java).getCameraCharacteristics(cameraId)
+                .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)?.getOutputSizes(ImageFormat.YUV_420_888)
+                .orEmpty().filter { it.width % 2 == 0 && it.height % 2 == 0 }
+                .distinctBy { it.width to it.height }.sortedBy { it.width.toLong() * it.height }
+    }
+
     private inner class Stream(
         val id: String, val width: Int, val height: Int, val rate: Double,
-        val fps: Range<Int>, val realtime: Boolean
+        val fps: Range<Int>, val realtime: Boolean, val quality: Int
     ) {
         val running = AtomicBoolean(true)
         private val errorReported = AtomicBoolean(false)
@@ -129,7 +148,7 @@ class CameraPublisher(context: Context, private val onPreview: (String, ByteArra
         private val failures = AtomicLong()
         private val encodeNanos = AtomicLong()
         private val clock = CameraClock(realtime, System.currentTimeMillis() * 1_000_000L - SystemClock.elapsedRealtimeNanos())
-        private val interval = (1_000_000_000.0 / rate).toLong()
+        private val interval = if (rate == 0.0) 0L else (1_000_000_000.0 / rate).toLong()
         private var nextFrame = 0L
         private var lastTime = SystemClock.elapsedRealtimeNanos()
         private var lastCaptured = 0L
@@ -177,7 +196,7 @@ class CameraPublisher(context: Context, private val onPreview: (String, ByteArra
                         val start = SystemClock.elapsedRealtimeNanos()
                         output.reset()
                         check(YuvImage(frame.bytes, ImageFormat.NV21, width, height, null)
-                            .compressToJpeg(Rect(0, 0, width, height), 65, output)) { "JPEG encoding failed" }
+                            .compressToJpeg(Rect(0, 0, width, height), quality, output)) { "JPEG encoding failed" }
                         val result = JpegFrame(output.toByteArray(), frame.timestamp)
                         encodeNanos.addAndGet(SystemClock.elapsedRealtimeNanos() - start)
                         encoded.incrementAndGet()
@@ -216,7 +235,7 @@ class CameraPublisher(context: Context, private val onPreview: (String, ByteArra
             val e = encoded.get()
             return Stats(width, height, rate, fps.upper, c, throttled.get(), dropped.get(), e, p, failures.get(),
                 captureRate, publishRate, if (e == 0L) 0.0 else encodeNanos.get() / e / 1e6,
-                if (realtime) "Sensor capture timestamps" else "Sensor clock anchored to first arrival (approximate)")
+                if (realtime) "Sensor capture timestamps" else "Sensor clock anchored to first arrival (approximate)", quality)
         }
 
         fun fail(error: Exception) {

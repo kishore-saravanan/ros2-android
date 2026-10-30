@@ -17,6 +17,14 @@ tool = importlib.util.module_from_spec(spec)
 loader.exec_module(tool)
 
 
+class VersionTest(unittest.TestCase):
+    def test_actual_pinned_banner_selects_major_four_not_minor_five(self):
+        self.assertEqual(tool.esptool_version('esptool.py v4.5.1\n4.5.1\n'), ('4', '4.5.1'))
+        self.assertEqual(tool.esptool_version('esptool v5.6.0\n5.6.0\n'), ('5', '5.6.0'))
+        with self.assertRaises(ValueError):
+            tool.esptool_version('esptool v6.5.1')
+
+
 class RelayTest(unittest.TestCase):
     def test_token_and_binary_round_trip(self):
         token = 'ab' * 32

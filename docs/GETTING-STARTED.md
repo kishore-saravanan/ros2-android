@@ -42,6 +42,13 @@ addresses under Settings → Network addresses and the PC's addresses from:
 ip -4 -brief address
 ```
 
+Automatic discovery is the normal mode: keep the optional PC/phone IPv4 fields
+blank. Devices on the reachable same subnet and ROS domain can discover and
+subscribe without registering a particular PC. An old saved manual address is
+not cleared by an app update: Stop all, clear both optional addresses, Save, then
+Publish again to return to automatic mode. The main-app loopback/multicast bug
+was corrected on 2026-10-30; see the automatic-discovery verification ledger.
+
 When discovery needs help, set PC IPv4 and Phone IPv4 to addresses on the chosen
 link, under Advanced connection, then Save. Leave optional addresses blank for automatic selection.
 Use Stop all before changing an active profile. A saved profile is configuration,

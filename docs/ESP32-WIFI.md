@@ -94,7 +94,7 @@ typed micro-ROS client data path; the micro_ros_agent ROS graph-manager wrapper
 is not bundled. ESP32 topics can be visible even when ros2 node list does not
 show the MCU node. Full graph metadata, Android USB transport, persistent board
 provisioning/address discovery, broader board/phone qualification and control
-watchdogs remain separate work. See PROJECT-KNOWLEDGE.md for actual verification.
+watchdogs remain separate work. See STATUS.md for actual verification.
 
 Sources: [micro-ROS PlatformIO](https://github.com/micro-ROS/micro_ros_platformio),
 [XRCE-DDS Agent](https://github.com/eProsima/Micro-XRCE-DDS-Agent).

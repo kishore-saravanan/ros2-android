@@ -32,7 +32,7 @@ class DashboardSubscriberTest {
             while (!passed && SystemClock.elapsedRealtime() < deadline) { activity.scenario.onActivity { passed = check() }; SystemClock.sleep(100) }
             assertTrue(label, passed)
         }
-        val widgets = ControlWidget.SUB_TYPES.keys.map { type ->
+        val widgets = ControlWidget.SUB_TYPES.keys.filter { it.startsWith("std_msgs/") }.map { type ->
             val id = type.substringAfterLast('/').lowercase()
             ControlWidget(id, type, "Subscribed value", "/phone/dashboard_test/$id", messageType = type)
         }

@@ -44,7 +44,7 @@ heartbeat/acknowledgement topics for that.
 Offsets and backup sizes above are examples for the existing ESP32 reference app,
 not universal partition layouts. Use your build's flash layout. Back up every
 sector an upload will touch. read-flash refuses an existing output file. The
-command accepts esptool v5 and positional operation arguments only. It does not
+command accepts esptool 4.x/5.x backends and positional operation arguments only. It does not
 erase the full chip or automatically write bootloader/partition-table images.
 For a complete image, pass the build's required OFFSET FILE pairs to write-flash.
 
@@ -66,7 +66,7 @@ can leave incomplete firmware; retry with the correct images before running ROS.
 
 ## Qualification
 
-See PROJECT-KNOWLEDGE.md for actual physical test results and remaining gates.
+See STATUS.md for actual physical test results and remaining gates.
 Binary relay round trip and cancellation have automated PC coverage. A successful
 build or UART bridge alone does not prove actual ESP32 flashing or micro-ROS
 recovery. Other phones, USB adapters and long-duration transfers are unqualified.
@@ -88,5 +88,71 @@ A coordinated physical test then reflashed the backed-up reference application
 through the phone, verified the flash hash, and confirmed automatic restoration
 of the previous USB Agent with fresh typed MCU acknowledgement and heartbeat
 received in Dashboard subscriptions. The PC never took direct USB ownership of
-the ESP32 during these operations. Detailed evidence is in PROJECT-KNOWLEDGE.md;
+the ESP32 during these operations. Detailed evidence is in STATUS.md;
 temporary captures, firmware backups and device logs remain ignored.
+
+
+## ROM-loader fallback
+
+`tools/esp32-via-phone --no-stub OPERATION ...` skips uploading esptool's RAM
+helper and uses supported ESP32 ROM-loader operations. It retains the phone's
+exclusive USB ownership and fixed115200-baud transport. For example:
+
+```bash
+./tools/esp32-via-phone --serial PHONE_ADB_ID --no-stub flash-id
+```
+
+This is a diagnostic fallback, not a fix for all USB/cable problems. On2026-10-30,
+RAM helper upload/communication failed on the isolated reference board, while
+ROM identification and a4096-byte partition-table backup passed. ROM application
+backup subsequently failed at96 KiB with serial packet corruption. Thus it is
+not a reliable flashing workaround for this observed connection. No firmware
+write was attempted; direct-PC USB backup/programming was requested as a fallback.
+The phone bridge needs further diagnosis before claiming restored flashing
+reliability. Partial backup files must not be used for restoration.
+All existing tool argument validation and programming cleanup remain enabled.
+Preserve a backup of affected flash sectors before write; neither successful
+identification nor a RAM helper upload proves firmware was flashed.
+
+
+## Esptool backend selection after the robot-board retry
+
+The PC relay now prefers the pinned PlatformIO esptool.py when installed under
+the project ESP32 cache. It handles esptool4.x and5.x operation/reset spellings;
+--esptool-script PATH selects an explicit script, otherwise the Python module
+is used when the pinned script is unavailable. No arbitrary esptool global flags
+or baud/reset overrides are forwarded. --no-stub remains an optional diagnostic.
+
+Observed on the isolated board: esptool5.6.0 helper startup failed over direct
+PC USB too, while pinned4.5.1 identification passed. A direct-PC full read at
+460800 then stalled and was cancelled. At115200, a360448-byte affected-sector
+backup passed, followed by a successful357840-byte application write at0x10000
+and an independent digest verification. This supports the conservative direct-PC
+workflow on that board; default4.x phone-tunnel and sustained-transfer qualification
+remain pending until physically repeated. It is not proof of a universal5.x bug.
+
+
+## Verified phone ROM programming path (2026-10-30)
+
+The phone relay now defaults to the ROM loader (`--no-stub`); `--stub` explicitly
+opts into the RAM helper. Corrected version parsing recognizes the complete
+`esptool.py v4.5.1` banner instead of incorrectly selecting the minor `5.1` as
+major5. The pinned4.5.1 ROM path passed application digest verification, firmware
+write and a separate digest verification through phone USB OTG and wireless ADB.
+No APK update or direct ESP32-to-PC connection was needed for this result.
+
+The recovery image was the previously flashed robot application padded with
+0xFF through the final erased sector. Its SHA256 matched the saved flash manifest
+for the application bytes, and the ROM verified all360448 recovery bytes against
+the current device before writing. This is a verified application-region
+recovery artifact, not a newly completed full-flash dump. Preserve bootloader,
+partition/NVS backups separately. Full ROM reads are much slower; one was stopped
+without writing. Never use incomplete read outputs for rollback.
+
+The new358096-byte PWM image was written at0x10000, with both write-time hash
+verification and independent `verify-flash` passing. Stub-mode sustained reads
+still failed around100 KiB; the underlying transport corruption is unresolved.
+The conservative ROM path is qualified for this reference application write,
+not universal board/phone reliability. Keep motor battery physically disconnected
+and teleop closed during programming. No nonzero motion commands are part of
+programming verification.

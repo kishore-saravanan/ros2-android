@@ -169,7 +169,7 @@ namespace settings do not rewrite configured absolute topics.
 
 Each extra package changes APK size. The initial run/pkg-only shell was 21.65 MiB;
 node inspection with NumPy was 32.23 MiB. The current full core CLI with launch and its resources measures **34.09 MiB**.
-See [full-CLI verification](verification/2026-10-25-core-cli-bundle.md).
+See [compatibility and validation](STATUS.md).
 These are debug ARM64 APK file sizes; installed storage is larger. Release size
 has not been measured. The main sensor app remains a separate small APK.
 

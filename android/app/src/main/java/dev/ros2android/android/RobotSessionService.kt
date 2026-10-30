@@ -45,10 +45,12 @@ class RobotSessionService : Service() {
         set(value) { camera.previewEnabled = value; previewDecoder.enabled = value; if (!value) cameraPreview = null }
     var onChange: (() -> Unit)? = null
 
-    data class DashboardReading(val value: String, val receivedAt: Long) {
+    data class DashboardReading(val value: String, val receivedAt: Long, val bitmap: Bitmap? = null) {
         fun state(now: Long): String = if (now - receivedAt > 5000) "Stale" else "Live"
     }
+    private val dashboardImageDecoders = mutableMapOf<String, DashboardImageDecoder>()
     val dashboardReadings = mutableMapOf<String, DashboardReading>() // main-thread observations
+    @Volatile private var dashboardUpdatePending = false
     @Volatile private var dashboardEpoch = 0
     @Volatile var controlsEnabled = false; private set
     val dashboardPublisherCount: Int get() = if (controlsEnabled) controlWidgets.count { !it.subscriber } else 0
@@ -64,8 +66,16 @@ class RobotSessionService : Service() {
         if (busy || controlsRequested || widgets.isEmpty()) return
         require(widgets.size <= 32 && widgets.map { it.id }.distinct().size == widgets.size) { "Use at most 32 unique controls" }
         require(widgets.map { it.topic }.distinct().size == widgets.size) { "Each control needs its own topic" }
+        require(widgets.count { it.image } <= 4) { "Use at most four image widgets" }
         keepRunning(false)
         dashboardEpoch++; dashboardReadings.clear()
+        val imageEpoch = dashboardEpoch
+        widgets.filter { it.image }.forEach { widget ->
+            dashboardImageDecoders[widget.id] = DashboardImageDecoder(maxOf(resources.displayMetrics.widthPixels, resources.displayMetrics.heightPixels)) { receivedAt, bitmap -> main.post {
+                if (!destroyed && controlsEnabled && dashboardEpoch == imageEpoch)
+                    dashboardReadings[widget.id] = DashboardReading(if (bitmap == null) "Cannot display image" else "", receivedAt, bitmap)
+            } }
+        }
         switchValues.keys.retainAll(widgets.filter { it.type == "Switch" }.map { it.id }.toSet())
         controlWidgets = widgets.toList(); controlsRequested = true
         val token = generation
@@ -86,7 +96,7 @@ class RobotSessionService : Service() {
                 if (token != generation || destroyed) return@post
                 busy = false
                 result.onSuccess { if (controlsRequested) controlsEnabled = true }
-                    .onFailure { controlsRequested = false; errors["controls"] = it.message ?: "Control connection failed" }
+                    .onFailure { controlsRequested = false; dashboardImageDecoders.values.forEach { it.close() }; dashboardImageDecoders.clear(); errors["controls"] = it.message ?: "Control connection failed" }
                 changed()
             }
         }
@@ -104,6 +114,7 @@ class RobotSessionService : Service() {
         controlWidgets.filter { !it.subscriber && it.kind == 12 }.forEach { control(it) }
     }
     fun stopControls() {
+        dashboardImageDecoders.values.forEach { it.close() }; dashboardImageDecoders.clear()
         dashboardEpoch++; dashboardReadings.clear()
         controlsRequested = false; controlsEnabled = false
         val widgets = controlWidgets; controlWidgets = emptyList(); controlValues.clear()
@@ -161,22 +172,38 @@ class RobotSessionService : Service() {
             val message = runCatching { NativeRuntime.pollDisplay() }.getOrNull()
             val latestCounts = catalog.associate { it.id to NativeRuntime.publishedCount(it.id) }
             val latestCamera = camera.stats()
-            val epoch = dashboardEpoch
-            val updates = runCatching { NativeRuntime.pollDashboard() }.getOrDefault(emptyArray())
-            val receivedAt = SystemClock.elapsedRealtime()
             main.post {
                 if (token != generation || destroyed || !connected) return@post
                 if (!busy) state = status
                 if (message != null) { received = message; receivedCount++ }
-                if (epoch == dashboardEpoch && controlsEnabled) updates.forEach { bytes ->
-                    val update = bytes.toString(Charsets.UTF_8)
-                    val id = update.substringBefore('\n')
-                    if (controlWidgets.any { it.id == id && it.subscriber })
-                        dashboardReadings[id] = DashboardReading(update.substringAfter('\n'), receivedAt)
-                }
                 counts = latestCounts; cameraStats = latestCamera; changed()
             }
         }, 0, 500, TimeUnit.MILLISECONDS)
+        @Suppress("DEPRECATION")
+        val refreshRate = getSystemService(android.view.WindowManager::class.java).defaultDisplay.refreshRate
+        val dashboardPollMillis = (1000.0 / refreshRate.coerceAtLeast(1f)).toLong().coerceAtLeast(1)
+        worker.scheduleWithFixedDelay({
+            if (!connected || destroyed || !controlsEnabled || dashboardUpdatePending) return@scheduleWithFixedDelay
+            val epoch = dashboardEpoch
+            val updates = runCatching { NativeRuntime.pollDashboard() }.getOrDefault(emptyArray())
+            if (updates.isEmpty()) return@scheduleWithFixedDelay
+            val receivedAt = SystemClock.elapsedRealtime()
+            dashboardUpdatePending = true
+            main.post {
+                try {
+                    if (epoch != dashboardEpoch || !controlsEnabled || destroyed) return@post
+                    updates.forEach { bytes ->
+                        val split = bytes.indexOf(10.toByte())
+                        if (split < 1) return@forEach
+                        val id = bytes.copyOfRange(0, split).toString(Charsets.UTF_8)
+                        val widget = controlWidgets.firstOrNull { it.id == id && it.subscriber } ?: return@forEach
+                        val payload = bytes.copyOfRange(split + 1, bytes.size)
+                        if (widget.image) dashboardImageDecoders[id]?.submit(payload, receivedAt)
+                        else dashboardReadings[id] = DashboardReading(payload.toString(Charsets.UTF_8), receivedAt)
+                    }
+                } finally { dashboardUpdatePending = false }
+            }
+        }, 0, dashboardPollMillis, TimeUnit.MILLISECONDS)
     }
 
     override fun onBind(intent: Intent): IBinder = LocalBinder()
@@ -226,7 +253,7 @@ class RobotSessionService : Service() {
                 result.onSuccess {
                     runCatching {
                         when (cap.kind) {
-                            8 -> camera.start(cap, config.rateHz)
+                            8 -> camera.start(cap, config.rateHz, config.camera ?: CameraOptions())
                             9 -> battery.start(config)
                             else -> sensors.start(cap, config)
                         }

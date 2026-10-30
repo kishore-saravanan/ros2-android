@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run esptool v5 through an authorized phone's CP2102 USB connection.
+"""Run esptool through an authorized phone's CP2102 USB connection.
 
 Examples:
   tools/esp32-via-phone --serial PHONE_ADB_ID status
@@ -60,10 +60,21 @@ def relay(listener, forwarded_port, token, errors, stopped):
             connection.close()
 
 
+def esptool_version(banner):
+    match = re.search(r'(?<![\w.])v?([45])\.\d+(?:\.\d+)?(?![\w.])', banner)
+    if not match:
+        raise ValueError('This command supports esptool 4.x or 5.x')
+    return match[1], match[0].lstrip('v')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--serial', help='Authorized USB or wireless ADB device')
-    parser.add_argument('--python', type=Path, default=Path.home() / '.cache/ros2-android-esp32/toolchain-venv/bin/python', help='Python environment with esptool v5')
+    parser.add_argument('--python', type=Path, default=Path.home() / '.cache/ros2-android-esp32/toolchain-venv/bin/python', help='Python environment with pyserial and esptool')
+    parser.add_argument('--esptool-script', type=Path, help='Explicit esptool script; defaults to the pinned PlatformIO tool when available')
+    loader_options = parser.add_mutually_exclusive_group()
+    loader_options.add_argument('--no-stub', dest='no_stub', action='store_true', default=True, help='Use the ESP32 ROM loader (default for the phone bridge)')
+    loader_options.add_argument('--stub', dest='no_stub', action='store_false', help='Opt into the RAM helper; sustained transfers remain unreliable on the reference phone')
     parser.add_argument('operation', choices=['status', 'flash-id', 'chip-id', 'read-flash', 'write-flash', 'verify-flash'])
     parser.add_argument('arguments', nargs='*', help='Offsets, sizes and files for the selected esptool operation')
     args = parser.parse_args()
@@ -109,9 +120,16 @@ def main():
     python = args.python.expanduser().absolute()  # Preserve venv executable symlink and pyvenv.cfg discovery.
     if not python.is_file():
         parser.error('Prepare the ESP32 toolchain using setup/esp32-usb.sh build, or pass --python')
-    version = subprocess.check_output([str(python), '-m', 'esptool', 'version'], text=True)
-    if not re.search(r'\b5\.\d', version):
-        parser.error('This command requires esptool v5')
+    cache = Path(os.environ.get('ROS2_ANDROID_ESP32_CACHE', str(Path.home() / '.cache/ros2-android-esp32')))
+    pinned = cache / 'platformio/packages/tool-esptoolpy/esptool.py'
+    script = args.esptool_script.expanduser().absolute() if args.esptool_script else (pinned if pinned.is_file() else None)
+    if script and not script.is_file():
+        parser.error('Selected esptool script does not exist')
+    tool = [str(python), str(script)] if script else [str(python), '-m', 'esptool']
+    version = subprocess.check_output([*tool, 'version'], text=True)
+    major, version_text = esptool_version(version)
+    legacy = major == '4'
+    print('Using esptool ' + version_text + (' from the selected SDK script.' if script else ' from the Python environment.'), flush=True)
     if 'showing=true' in device('shell', 'dumpsys window policy'):
         parser.error('Unlock the phone first')
     device('shell', 'am start -W -n ' + PACKAGE + '/.MainActivity')
@@ -140,8 +158,10 @@ def main():
         listener.bind(('127.0.0.1', 0)); listener.listen(1)
         thread = threading.Thread(target=relay, args=(listener, forwarded, token, errors, stopped), daemon=True)
         thread.start()
-        command = [str(python), '-m', 'esptool', '--chip', 'esp32', '--port', f'socket://127.0.0.1:{listener.getsockname()[1]}',
-                   '--before', 'no-reset', '--after', 'no-reset', args.operation, *args.arguments]
+        reset = 'no_reset' if legacy else 'no-reset'
+        operation = args.operation.replace('-', '_') if legacy else args.operation
+        command = [*tool, '--chip', 'esp32', '--port', f'socket://127.0.0.1:{listener.getsockname()[1]}',
+                   '--before', reset, '--after', reset, *(['--no-stub'] if args.no_stub else []), operation, *args.arguments]
         # No --baud: raw sockets cannot negotiate serial baud. Phone sets 115200.
         result = subprocess.run(command, timeout=14 * 60)
         if result.returncode:

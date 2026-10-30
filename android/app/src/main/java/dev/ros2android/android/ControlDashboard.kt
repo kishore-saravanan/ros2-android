@@ -87,6 +87,12 @@ internal class ControlDashboard(context: Context, private val robot: () -> Robot
                 orientation = VERTICAL
                 val value = label("—").apply { textSize = 26f; maxLines = 4; ellipsize = android.text.TextUtils.TruncateAt.END; tag = "reading-value:${w.id}" }
                 val state = label("Stopped").apply { textSize = 12f; tag = "reading-state:${w.id}" }
+                if (w.image) {
+                    value.visibility = GONE
+                    addView(DashboardImageView(context, { robot()?.dashboardReadings?.get(w.id) }, { robot()?.controlsEnabled == true }).apply {
+                        tag = "reading-image:${w.id}"; contentDescription = w.label
+                    }, LayoutParams(-1, dp(200)))
+                }
                 addView(value); addView(state); readings[w.id] = value to state
             } else when (w.type) {
                 "Button · Bool" -> action(w.label) { send(if (w.value == "true") 1.0 else 0.0) }
@@ -124,7 +130,7 @@ internal class ControlDashboard(context: Context, private val robot: () -> Robot
         widgets.filter { it.subscriber }.forEach { widget ->
             val row = readings[widget.id] ?: return@forEach
             val sample = service?.dashboardReadings?.get(widget.id)
-            val state = if (!armed) "Stopped" else sample?.state(android.os.SystemClock.elapsedRealtime()) ?: "Waiting"
+            val state = if (!armed) "Stopped" else if (widget.image && sample != null && sample.bitmap == null) sample.value else sample?.state(android.os.SystemClock.elapsedRealtime()) ?: "Waiting"
             val value = if (!armed || sample == null) "—" else if (widget.kind == 10) {
                 if (sample.value == "true") "● On" else "○ Off"
             } else sample.value.ifEmpty { "(empty)" }
@@ -190,6 +196,7 @@ internal class ControlDashboard(context: Context, private val robot: () -> Robot
                         if (selected == "Slider") max.text.toString().toDouble() else 1.0,
                         if (selected == "Joystick") linear.text.toString().toDouble() else 0.3,
                         if (selected == "Joystick") angular.text.toString().toDouble() else 0.8, messageType.selectedItem.toString())
+                    require(widgets.count { it.id != widget.id && it.image } + (if (widget.image) 1 else 0) <= 4) { "Use at most four image widgets" }
                     require(widgets.none { it.id != widget.id && it.topic == widget.topic }) { "Another widget already uses this topic" }
                     if (old == null) widgets += widget else widgets[widgets.indexOf(old)] = widget
                     save(); drawWidgets(); dialog.dismiss()

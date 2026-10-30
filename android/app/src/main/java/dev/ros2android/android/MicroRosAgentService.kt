@@ -103,6 +103,10 @@ class MicroRosAgentService : Service() {
             }
             fun locator(address: String) = "<locator><udpv4><address>$address</address></udpv4></locator>"
             val locators = addresses.joinToString("") { locator(it) }
+            // Explicit unicast locators suppress Fast DDS default multicast locators.
+            // Likewise an explicit initial-peer list replaces its multicast default.
+            // Keep localhost discovery AND advertise/listen on the standard subnet group.
+            val discoveryMulticast = locator("239.255.0.1") // Port 0 selects the domain's well-known port.
             val profile = File(filesDir, "agent-dds-profile.xml")
             profile.writeText("""<profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
                 <transport_descriptors><transport_descriptor>
@@ -111,7 +115,7 @@ class MicroRosAgentService : Service() {
                 </transport_descriptor></transport_descriptors>
                 <participant profile_name="robot_agent" is_default_profile="true"><rtps>
                 <defaultUnicastLocatorList>$locators</defaultUnicastLocatorList>
-                <builtin><metatrafficUnicastLocatorList>$locators</metatrafficUnicastLocatorList><initialPeersList>${locator("127.0.0.1")}</initialPeersList></builtin>
+                <builtin><metatrafficUnicastLocatorList>$locators</metatrafficUnicastLocatorList><metatrafficMulticastLocatorList>$discoveryMulticast</metatrafficMulticastLocatorList><initialPeersList>${locator("127.0.0.1")}$discoveryMulticast</initialPeersList></builtin>
                 <userTransports><transport_id>robot_udp</transport_id></userTransports><useBuiltinTransports>false</useBuiltinTransports>
                 </rtps></participant></profiles>""")
             builder.environment()["FASTRTPS_DEFAULT_PROFILES_FILE"] = profile.absolutePath

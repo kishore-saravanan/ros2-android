@@ -120,7 +120,7 @@ UI defaults to domain 0, unlike the domain-42 CLI examples above. The main senso
 app's Stop all does not stop workspace nodes. See [project guide](PROJECTS.md).
 
 A subsequent functional PC Wi-Fi-interface probe also passed from UI-started
-nodes on domain 0; see [evidence](verification/2026-10-25-project-browser.md).
+nodes on domain 0; see [compatibility and validation](STATUS.md).
 Long-duration workspace Wi-Fi/device qualification remains pending.
 
 ## Verify the same behavior
@@ -193,6 +193,6 @@ physical PC removal and long-duration/device qualification remain pending.
 The workspace supervisor heartbeat is its own elapsed-time indicator, not proof
 that user callbacks are making progress; use actual ROS traffic probes.
 
-[Physical verification](verification/2026-10-25-colcon-workspace.md) ·
-[Project knowledge base](PROJECT-KNOWLEDGE.md) ·
+[compatibility and validation](STATUS.md) ·
+[compatibility and validation](STATUS.md) ·
 [Android executable-code restrictions](https://developer.android.com/about/versions/10/behavior-changes-10#execute-permission)

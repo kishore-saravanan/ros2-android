@@ -12,8 +12,10 @@ class ControlWidgetTest {
         assertEquals(13, widget("Slider").kind)
     }
     @Test fun subscriberSchemasAreExplicitAndInt64StaysDistinct() {
-        assertEquals(6, ControlWidget.SUB_TYPES.size)
+        assertEquals(7, ControlWidget.SUB_TYPES.size)
         val value = ControlWidget("reading", "Counter", "Subscribed value", "/test/counter", messageType = "std_msgs/msg/Int64")
+        assertTrue(value.copy(messageType = "sensor_msgs/msg/CompressedImage").image)
+        assertEquals(8, value.copy(messageType = "sensor_msgs/msg/CompressedImage").kind)
         assertTrue(value.subscriber); assertEquals(16, value.kind)
         try { value.copy(messageType = "custom_msgs/msg/Anything"); fail("Unsupported schema accepted") } catch (_: IllegalArgumentException) {}
     }

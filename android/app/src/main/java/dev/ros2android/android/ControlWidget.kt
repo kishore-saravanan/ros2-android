@@ -14,6 +14,7 @@ data class ControlWidget(
     val messageType: String = "std_msgs/msg/String"
 ) {
     val subscriber: Boolean get() = type == "Subscribed value"
+    val image: Boolean get() = subscriber && kind == 8
     val kind: Int get() = when (type) { "Button · Bool", "Switch" -> 10; "Button · String" -> 11; "Slider" -> 13; "Joystick" -> 12; "Subscribed value" -> SUB_TYPES.getValue(messageType); else -> error("Unsupported control") }
     init {
         require(id.matches(Regex("[a-zA-Z0-9_-]{1,64}"))) { "Invalid widget ID" }
@@ -31,6 +32,7 @@ data class ControlWidget(
         val TYPES = PUBLISH_TYPES + "Subscribed value"
         val SUB_TYPES = linkedMapOf("std_msgs/msg/String" to 11, "std_msgs/msg/Bool" to 10,
             "std_msgs/msg/Int32" to 14, "std_msgs/msg/Int64" to 16,
-            "std_msgs/msg/Float32" to 15, "std_msgs/msg/Float64" to 13)
+            "std_msgs/msg/Float32" to 15, "std_msgs/msg/Float64" to 13,
+            "sensor_msgs/msg/CompressedImage" to 8)
     }
 }
