@@ -89,6 +89,25 @@ class BallTest(unittest.TestCase):
             self.assertFalse(linear and angular)
             self.assertEqual(linear, 1. if abs(error) <= .08 else 0.)
 
+    def test_adaptive_turn_duration_is_bounded_and_symmetric(self):
+        pulse = TurnPulse(.04, .15, .09)
+        self.assertEqual(pulse.duration_for_error(.2), .04)
+        self.assertAlmostEqual(pulse.duration_for_error(.55), .065)
+        for error in (.8, 1.4, -.8, -1.4):
+            self.assertEqual(pulse.duration_for_error(error), .09)
+        self.assertEqual(pulse.duration_for_error(float('nan')), .04)
+        with self.assertRaises(ValueError):
+            TurnPulse(.04, .15, .03)
+
+    def test_adaptive_turn_does_not_extend_or_ignore_stop(self):
+        pulse = TurnPulse(.04, .15, .09)
+        self.assertEqual(pulse.step(0., .8, 1., 1_000_000_000, 1_000_000_000, .9), (0., .8))
+        self.assertEqual(pulse.step(0., .8, 1.06, 1_050_000_000, 1_060_000_000, .9), (0., .8))
+        self.assertEqual(pulse.step(0., .8, 1.10, 1_090_000_000, 1_100_000_000, .9), (0., 0.))
+        pulse.reset()
+        pulse.step(0., .8, 2., 2_000_000_000, 2_000_000_000, .9)
+        self.assertEqual(pulse.step(0., 0., 2.02, 2_010_000_000, 2_020_000_000, .1), (0., 0.))
+
     def test_calibrated_aim_and_stop_size(self):
         target = dict(found=True, error_x=.2, diameter_fraction=.12)
         forward, turn = command(target, .01, target_center_x=.6)

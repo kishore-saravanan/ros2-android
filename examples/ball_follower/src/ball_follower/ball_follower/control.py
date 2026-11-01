@@ -24,11 +24,20 @@ def command(target, age, *, stop_fraction=.30, max_linear=.12, max_angular=2.5, 
 
 class TurnPulse:
     """Turn, brake, then require an image captured after settling before moving."""
-    def __init__(self, duration=.04, settle=.15):
-        if not all(math.isfinite(v) and v > 0 for v in (duration, settle)):
+    def __init__(self, duration=.04, settle=.15, max_duration=None):
+        max_duration = duration if max_duration is None else max_duration
+        if not all(math.isfinite(v) and v > 0 for v in (duration, settle, max_duration)) or max_duration < duration:
             raise ValueError('Turn pulse and settling time must be positive')
-        self.duration, self.settle = duration, settle
+        self.duration, self.settle, self.max_duration = duration, settle, max_duration
         self.reset()
+
+    def duration_for_error(self, error):
+        # Preserve the proven short pulse near alignment; use a longer pulse
+        # only for large image-space errors. Never change an active deadline.
+        if not math.isfinite(error):
+            return self.duration
+        weight = max(0., min(1., (abs(error)-.30)/.50))
+        return self.duration + weight*(self.max_duration-self.duration)
 
     def reset(self):
         self.phase = 'idle'
@@ -36,7 +45,7 @@ class TurnPulse:
         self.fresh_after = self.last_stamp = 0
         self.turn = 0.
 
-    def step(self, linear, angular, now, stamp_ns, ros_now_ns):
+    def step(self, linear, angular, now, stamp_ns, ros_now_ns, error=0.):
         if self.phase == 'turn':
             if now < self.until and angular*self.turn > 0:
                 return 0., math.copysign(min(abs(angular), abs(self.turn)), angular)
@@ -52,7 +61,7 @@ class TurnPulse:
             if stamp_ns <= self.last_stamp:
                 return 0., 0.
             self.last_stamp, self.turn = stamp_ns, angular
-            self.phase, self.until = 'turn', now+self.duration
+            self.phase, self.until = 'turn', now+self.duration_for_error(error)
             return 0., angular
         return linear, 0.
 

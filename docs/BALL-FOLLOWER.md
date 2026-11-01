@@ -205,7 +205,8 @@ parameter services while running. Available values include `image_topic`, `proce
 `min_saturation` (0.60), `confirmation_frames` (3), `target_center_x` (0.5),
 `stop_diameter_fraction` (0.30),
 `max_linear` (0.12), `linear_gain` (1.2), `max_angular` (2.5),
-`full_pwm` (false), `angular_pwm_limit` (0.8), `turn_pulse_seconds` (0.04), `turn_settle_seconds` (0.15) and `command_topic`.
+`full_pwm` (false), `angular_pwm_limit` (0.8), `turn_pulse_seconds` (0.04), `turn_max_pulse_seconds` (0.09),
+`turn_settle_seconds` (0.15) and `command_topic`.
 
 `full_pwm:=true` selects direct duty-fraction requests for the reference MCU
 firmware built with `ROS2_ANDROID_ESP32_FULL_PWM=1`. These values are mixing/duty
@@ -220,7 +221,11 @@ It never combines forward and angular requests: combining full forward with an
 could stall it under ground load.
 
 Turns use `angular_pwm_limit` (default 0.8, PWM204/255 for a pure turn) immediately,
-in short pulses. Each pulse is followed by zero commands and a settling interval.
+in short pulses. Near alignment (corrected normalized error at most 0.30),
+pulses retain the 0.04 s request. For larger errors, duration increases linearly
+to 0.09 s at error 0.80; positive/negative errors behave symmetrically. The
+duration is chosen once per pulse and cannot be extended by later frames. Each
+pulse is followed by zero commands and a settling interval.
 Movement resumes only after a detection from an image captured after that interval.
 Straight driving remains immediate full duty when aligned; close-enough, lost,
 stale and OFF stops still apply. This replaces the experimental angular ramp,
@@ -235,6 +240,8 @@ IMU feedback would be needed for a measured turn-rate controller.
 
 Adjust duty using `ros2 param set /ball/ball_follower angular_pwm_limit 0.8`.
 Pulse/settling times are startup parameters; keep startup overrides for restart.
+To restore fixed-duration behavior, start with `turn_max_pulse_seconds` equal to
+`turn_pulse_seconds` (both 0.04); retain your other launch/calibration settings.
 
 Approach uses apparent size and requires no metric depth. For an approximate
 range, measure actual ball diameter and calibrate camera intrinsics at the chosen

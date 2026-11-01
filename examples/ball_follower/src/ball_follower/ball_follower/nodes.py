@@ -177,7 +177,8 @@ class FollowerNode(Node):
         if not math.isfinite(self.angular_pwm_limit) or not 0 <= self.angular_pwm_limit <= 1:
             raise ValueError('angular_pwm_limit must be 0..1')
         self.turn_pulse = TurnPulse(self.declare_parameter('turn_pulse_seconds', .04).value,
-                                   self.declare_parameter('turn_settle_seconds', .15).value)
+                                   self.declare_parameter('turn_settle_seconds', .15).value,
+                                   self.declare_parameter('turn_max_pulse_seconds', .09).value)
         topic = self.declare_parameter('command_topic', '/ball_demo/cmd_vel').value
         if not all(math.isfinite(v) for v in (self.stop_fraction, self.max_linear, self.max_angular, self.target_center, self.linear_gain)) or not (
                 0 <= self.linear_gain <= 5 and 0 <= self.target_center <= 1 and 0 < self.stop_fraction <= 1 and 0 <= self.max_linear <= .2 and 0 <= self.max_angular <= 3):
@@ -239,7 +240,8 @@ class FollowerNode(Node):
         if self.tracking and self.full_pwm:
             linear, angular = self.turn_pulse.step(linear, angular, now,
                                                    self.target.get('stamp_ns', 0),
-                                                   self.get_clock().now().nanoseconds)
+                                                   self.get_clock().now().nanoseconds,
+                                                   (self.target['error_x']-(2*self.get_parameter('target_center_x').value-1)) if angular else 0.)
         elif not self.tracking:
             self.turn_pulse.reset()
         output = Twist()
