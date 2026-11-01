@@ -30,6 +30,22 @@ The service requests zero if UI renewals stop for over 300 ms. A receiving robot
 still needs its own command timeout: phone/process/network failure can prevent a
 final stop message. Keyboard arrows drive while held; release/click stops.
 
+### Switch request status
+
+A Switch shows **queued**, **written locally**, or **write failed** for its last
+request. After Dashboard stops it shows the previous request as inactive.
+**Written locally is not confirmation from the robot.** The position remains
+local input; it does not follow another publisher or a remote node's state.
+Navigation retains input without republishing it. Stop/restart cancels pending
+requests and never automatically replays ON.
+
+For observed application state, add a separate Subscribe widget on the state
+that the application publishes, rather than its request topic. For the ball
+example, subscribe to Bool `/ball/tracking`. Waiting/Stale feedback means there
+is no fresh confirmation; a switch's OFF position alone does not prove a stop.
+Automatic retry, retained ON publication and automatic reconnect replay are not
+added by this change.
+
 ## Subscribe
 
 One read-only value card covers these standard types:

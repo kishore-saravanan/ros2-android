@@ -55,12 +55,11 @@ class RobotSessionService : Service() {
     @Volatile var controlsEnabled = false; private set
     val dashboardPublisherCount: Int get() = if (controlsEnabled) controlWidgets.count { !it.subscriber } else 0
     val dashboardSubscriberCount: Int get() = if (controlsEnabled) controlWidgets.count { it.subscriber } else 0
-    private val switchValues = mutableMapOf<String, Boolean>() // Last requested input, not remote state.
-    fun switchValue(id: String): Boolean = switchValues[id] ?: false
+    private val controlCommands = DashboardCommandQueue()
+    fun switchValue(id: String): Boolean = controlCommands.status(id)?.command?.takeIf { it.switchInput }?.first?.let { it != 0.0 } ?: false
+    fun switchDescription(id: String): String = controlCommands.switchDescription(id)
     private var controlsRequested = false
     @Volatile private var controlWidgets = emptyList<ControlWidget>()
-    private data class Command(val values: DoubleArray, val text: String, val stamp: Long)
-    private val controlValues = java.util.concurrent.ConcurrentHashMap<String, Command>()
     private val motionActive = mutableSetOf<String>() // worker-owned
     fun startControls(widgets: List<ControlWidget>, profile: Profile) {
         if (busy || controlsRequested || widgets.isEmpty()) return
@@ -76,7 +75,7 @@ class RobotSessionService : Service() {
                     dashboardReadings[widget.id] = DashboardReading(if (bitmap == null) "Cannot display image" else "", receivedAt, bitmap)
             } }
         }
-        switchValues.keys.retainAll(widgets.filter { it.type == "Switch" }.map { it.id }.toSet())
+        controlCommands.retain(widgets.filter { !it.subscriber }.map { it.id }.toSet())
         controlWidgets = widgets.toList(); controlsRequested = true
         val token = generation
         busy = true; errors.remove("controls"); changed()
@@ -106,8 +105,7 @@ class RobotSessionService : Service() {
         require(first.isFinite() && second.isFinite() && text.length <= 1024)
         val a = when (widget.kind) { 12 -> first.coerceIn(-widget.linear, widget.linear); 13 -> first.coerceIn(widget.minimum, widget.maximum); else -> first }
         val b = if (widget.kind == 12) second.coerceIn(-widget.angular, widget.angular) else 0.0
-        if (widget.type == "Switch") switchValues[widget.id] = a != 0.0
-        controlValues[widget.id] = Command(doubleArrayOf(a, b), text, SystemClock.elapsedRealtime())
+        controlCommands.submit(widget.id, a, b, text, SystemClock.elapsedRealtime(), widget.kind == 12, switchInput = widget.type == "Switch")
     }
     /** End motion input without tearing down dashboard endpoints or readings. */
     fun stopDashboardMotion() {
@@ -117,7 +115,7 @@ class RobotSessionService : Service() {
         dashboardImageDecoders.values.forEach { it.close() }; dashboardImageDecoders.clear()
         dashboardEpoch++; dashboardReadings.clear()
         controlsRequested = false; controlsEnabled = false
-        val widgets = controlWidgets; controlWidgets = emptyList(); controlValues.clear()
+        val widgets = controlWidgets; controlWidgets = emptyList(); controlCommands.cancel()
         worker.execute {
             widgets.forEach { widget ->
                 runCatching {
@@ -152,17 +150,24 @@ class RobotSessionService : Service() {
             NotificationChannel(CHANNEL, "Robot runtime", NotificationManager.IMPORTANCE_LOW))
         worker.scheduleWithFixedDelay({
             if (!connected || destroyed) return@scheduleWithFixedDelay
-            controlValues.entries.toList().forEach { (id, command) ->
-                if (!controlsEnabled) return@forEach
+            val epoch = dashboardEpoch
+            controlCommands.snapshot().forEach { command ->
+                val id = command.id
+                if (!controlsEnabled || epoch != dashboardEpoch || !controlCommands.isCurrent(command)) return@forEach
                 val widget = controlWidgets.firstOrNull { it.id == id } ?: return@forEach
                 val stale = SystemClock.elapsedRealtime() - command.stamp > 300
                 if (widget.kind == 12 && stale && id !in motionActive) return@forEach
-                val values = if (widget.kind == 12 && stale) doubleArrayOf(0.0, 0.0) else command.values
+                val values = if (widget.kind == 12 && stale) doubleArrayOf(0.0, 0.0) else doubleArrayOf(command.first, command.second)
                 val result = runCatching { check(NativeRuntime.publishControl("control:$id", values, command.text)) { "Control write failed" } }
+                val current = controlCommands.complete(command, result.isSuccess)
                 if (widget.kind == 12) {
                     if (!stale && values.any { it != 0.0 }) motionActive += id else motionActive -= id
-                } else controlValues.remove(id, command)
-                result.onFailure { error -> main.post { errors["controls"] = error.message ?: "Control failed"; stopControls() } }
+                }
+                result.onFailure { error -> main.post {
+                    if (current && epoch == dashboardEpoch && controlsEnabled) {
+                        errors["controls"] = error.message ?: "Control failed"; stopControls()
+                    }
+                } }
             }
         }, 0, 50, TimeUnit.MILLISECONDS)
         worker.scheduleWithFixedDelay({

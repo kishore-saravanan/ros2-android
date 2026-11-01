@@ -19,6 +19,7 @@ internal class ControlDashboard(context: Context, private val robot: () -> Robot
     private val widgets = mutableListOf<ControlWidget>()
     private val interactive = mutableListOf<View>()
     private var syncingSwitches = false
+    private val switchStatuses = mutableMapOf<String, TextView>()
     private val readings = mutableMapOf<String, Pair<TextView, TextView>>()
     private val status = label("")
     private val enable = action("Start dashboard") {}
@@ -49,7 +50,7 @@ internal class ControlDashboard(context: Context, private val robot: () -> Robot
     private fun drawWidgets() {
         (enable.parent as? ViewGroup)?.removeView(enable)
         (add.parent as? ViewGroup)?.removeView(add)
-        removeAllViews(); interactive.clear(); readings.clear(); addView(status)
+        removeAllViews(); interactive.clear(); readings.clear(); switchStatuses.clear(); addView(status)
         enable.setOnClickListener {
             runCatching {
                 val service = robot() ?: error("Connecting to phone runtime…")
@@ -116,6 +117,9 @@ internal class ControlDashboard(context: Context, private val robot: () -> Robot
                 else -> JoystickView(context) { x, y -> send(y * w.linear, -x * w.angular) }
             }
             control.tag = "control:${w.id}"; if (!w.subscriber) interactive += control; box.addView(control, LayoutParams(-1, if (!w.subscriber && w.kind == 12) dp(if (resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE) 120 else 220) else -2))
+            if (w.type == "Switch") box.addView(label("").apply {
+                textSize = 12f; tag = "control-status:${w.id}"; switchStatuses[w.id] = this
+            })
             addView(box, LayoutParams(-1, -2).apply { topMargin = dp(12) })
         }
         refresh()
@@ -137,6 +141,10 @@ internal class ControlDashboard(context: Context, private val robot: () -> Robot
             if (row.first.text.toString() != value) row.first.text = value
             if (row.second.text.toString() != state) row.second.text = state
             row.first.setTextColor(context.getColor(if (state == "Stale" || state == "Stopped") R.color.ros_muted else R.color.ros_text))
+        }
+        switchStatuses.forEach { (id, label) ->
+            val message = service?.switchDescription(id) ?: "Phone runtime unavailable · remote state unknown"
+            if (label.text.toString() != message) label.text = message
         }
         fun enabled(view: View) { view.isEnabled = armed; if (view is ViewGroup) for (i in 0 until view.childCount) enabled(view.getChildAt(i)) }
         interactive.forEach { view ->
