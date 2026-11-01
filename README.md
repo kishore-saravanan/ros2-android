@@ -29,6 +29,9 @@ wheel. See [Debian installation](docs/DEBIAN-PACKAGE.md) and
 [host package](docs/HOST-PACKAGE.md). **No public APT repository or package release
 is available yet.**
 
+For contributors: [current architecture](ARCHITECTURE.md) and
+[proposed platform design and maintenance plan](docs/design/HIGH-LEVEL-DESIGN.md).
+
 Start here: [first battery-message walkthrough](docs/GETTING-STARTED.md).
 Then follow [Robot operation](docs/ROBOT-OPERATION.md) for workspace/MCU startup,
 verification, stop scopes and recovery. APT publication is deferred while robot

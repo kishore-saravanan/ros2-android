@@ -1,5 +1,10 @@
 # Architecture
 
+This page describes the current implementation. For the proposed maintainable
+platform boundaries, see the [high-level design](docs/design/HIGH-LEVEL-DESIGN.md),
+[low-level design](docs/design/LOW-LEVEL-DESIGN.md) and
+[staged maintenance plan](docs/design/MAINTENANCE-PLAN.md).
+
 ROS2 Android runs native ROS 2 on Android. Kotlin provides the Android user
 interface and hardware integration; C/C++ provides the ROS runtime. There is no
 Ubuntu container, root requirement or mandatory PC-side ROS bridge.
