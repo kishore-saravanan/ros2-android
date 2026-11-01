@@ -8,8 +8,8 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 
-def detect(data, processing_width=320, hue_degrees=24.0, min_saturation=.45,
-           min_value=.15):
+def detect(data, processing_width=320, hue_degrees=14.0, min_saturation=.60,
+           min_value=.15, include_mask=True):
     if not 64 <= processing_width <= 1280:
         raise ValueError('processing_width must be 64..1280')
     if not all(math.isfinite(v) for v in (hue_degrees, min_saturation, min_value)) or not (
@@ -44,7 +44,7 @@ def detect(data, processing_width=320, hue_degrees=24.0, min_saturation=.45,
                   radius_px=0., diameter_fraction=0., error_x=0.,
                   decode_ms=(decoded-started)*1000, mask_ms=(masked_at-decoded)*1000,
                   circle_ms=(fitted-masked_at)*1000)
-    masked = Image.new('RGB', image.size)
+    masked = Image.new('RGB', image.size) if include_mask else None
     if circle is not None:
         cx, cy, radius, support = circle
         sx, sy = width / image.width, height / image.height
@@ -52,9 +52,10 @@ def detect(data, processing_width=320, hue_degrees=24.0, min_saturation=.45,
         result.update(found=True, center_x=x, center_y=y, radius_px=radius_px,
                       diameter_fraction=2 * radius_px / width, error_x=2 * x / width - 1,
                       circle_support=support)
-        gy, gx = np.ogrid[:image.height, :image.width]
-        selected = mask & ((gx-cx)**2+(gy-cy)**2 <= radius**2)
-        masked.paste(image, mask=Image.fromarray(selected.astype(np.uint8)*255))
+        if include_mask:
+            gy, gx = np.ogrid[:image.height, :image.width]
+            selected = mask & ((gx-cx)**2+(gy-cy)**2 <= radius**2)
+            masked.paste(image, mask=Image.fromarray(selected.astype(np.uint8)*255))
         draw = ImageDraw.Draw(image)
         draw.ellipse((cx-radius, cy-radius, cx+radius, cy+radius), outline=(0, 255, 0), width=2)
         draw.line((cx - 6, cy, cx + 6, cy), fill=(0, 255, 0), width=2)
@@ -86,12 +87,12 @@ def _circle(mask):
     if len(xx) < 20:
         return None
     rng = np.random.default_rng(42)
-    if len(xx) > 1500:
-        indices = rng.choice(len(xx), 1500, replace=False)
+    if len(xx) > 512:
+        indices = rng.choice(len(xx), 512, replace=False)
         xx, yy = xx[indices], yy[indices]
     xx, yy = xx.astype(np.float32), yy.astype(np.float32)
     points = np.stack((xx, yy), axis=1)
-    triangles = points[rng.integers(0, len(points), (768, 3))]
+    triangles = points[rng.integers(0, len(points), (256, 3))]
     a, b, c = triangles[:, 0], triangles[:, 1], triangles[:, 2]
     determinant = 2 * (a[:, 0]*(b[:, 1]-c[:, 1]) + b[:, 0]*(c[:, 1]-a[:, 1]) + c[:, 0]*(a[:, 1]-b[:, 1]))
     valid = np.abs(determinant) > 1
@@ -106,7 +107,7 @@ def _circle(mask):
     if not len(radii):
         return None
     scores = np.zeros(len(radii), dtype=np.float32)
-    # Small batches bound temporary arrays to 64 x 1500 samples.
+    # Small batches bound temporary arrays to 64 x 512 samples.
     for start in range(0, len(radii), 64):
         x, y, r = cx[start:start+64], cy[start:start+64], radii[start:start+64]
         squared = (xx[None, :]-x[:, None])**2 + (yy[None, :]-y[:, None])**2
@@ -114,7 +115,7 @@ def _circle(mask):
         scores[start:start+64] = hits.sum(axis=1) / (2*np.pi*r)
     best = None
     best_score = .30
-    for index in np.argsort(scores)[-24:]:
+    for index in np.argsort(scores)[-8:]:
         x, y, r = cx[index], cy[index], radii[index]
         squared = (xx-x)**2 + (yy-y)**2
         inlier = (squared >= (r-1.7)**2) & (squared <= (r+1.7)**2)
@@ -127,6 +128,17 @@ def _circle(mask):
         gy, gx = np.ogrid[y0:y1, x0:x1]
         inside = (gx-x)**2 + (gy-y)**2 < (r*.8)**2
         if not inside.any() or mask[y0:y1, x0:x1][inside].mean() <= .40:
+            continue
+        # A ball must have a red interior and a contrasting surround. Wood grain
+        # can form partial circles inside a large brown/red panel.
+        ox0, ox1 = max(0, int(x-r*1.35)), min(w, int(x+r*1.35+1))
+        oy0, oy1 = max(0, int(y-r*1.35)), min(h, int(y+r*1.35+1))
+        oy, ox = np.ogrid[oy0:oy1, ox0:ox1]
+        distance = (ox-x)**2+(oy-y)**2
+        ring = (distance > (r*1.10)**2) & (distance < (r*1.35)**2)
+        outside = mask[oy0:oy1, ox0:ox1][ring].mean() if ring.any() else 1.
+        inside_fill = mask[y0:y1, x0:x1][inside].mean()
+        if outside > .40 or inside_fill-outside < .25:
             continue
         score = float(scores[index] * coverage)
         if score > best_score:

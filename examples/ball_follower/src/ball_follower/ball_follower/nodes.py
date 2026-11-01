@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Two independent rclpy nodes; the Android runner hosts both in one process."""
 from collections import deque
+from array import array
 import json
 import math
 import threading
@@ -15,7 +16,7 @@ from std_msgs.msg import String, Bool
 from geometry_msgs.msg import Twist
 from rcl_interfaces.msg import SetParametersResult
 from .vision import detect, jpeg
-from .control import command
+from .control import command, DetectionGate, TurnPulse
 
 QOS = QoSProfile(depth=1, reliability=ReliabilityPolicy.BEST_EFFORT,
                  durability=DurabilityPolicy.VOLATILE)
@@ -25,9 +26,13 @@ class VisionNode(Node):
     def __init__(self, **kwargs):
         super().__init__('ball_vision', enable_rosout=False, **kwargs)
         self.width = self.declare_parameter('processing_width', 320).value
+        self.hue = self.declare_parameter('hue_degrees', 14.).value
+        self.saturation = self.declare_parameter('min_saturation', .60).value
+        self.gate = DetectionGate(self.declare_parameter('confirmation_frames', 3).value)
         hz = self.declare_parameter('processing_hz', 15.).value
         self.annotated_hz = self.declare_parameter('annotated_hz', 5.).value
-        self.raw_hz = self.declare_parameter('raw_image_hz', 2.).value
+        self.raw_hz = self.declare_parameter('raw_image_hz', 0.).value
+        self.include_mask = self.declare_parameter('publish_mask', False).value
         self.raw_last = 0.
         self.fov = self.declare_parameter('horizontal_fov_degrees', 0.).value
         self.diameter = self.declare_parameter('ball_diameter_m', .066).value
@@ -43,27 +48,40 @@ class VisionNode(Node):
         self.started = time.monotonic()
         self.timings = deque(maxlen=120)
         self.latest = {}
+        self.enabled = False
         self.targets = self.create_publisher(String, 'target', QOS)
         self.found = self.create_publisher(Bool, 'detected', QOS)
         self.images = self.create_publisher(CompressedImage, 'image/compressed', QOS)
-        self.masks = self.create_publisher(CompressedImage, 'mask/compressed', QOS)
-        self.raw_images = self.create_publisher(Image, 'image', QOS)
-        self.raw_masks = self.create_publisher(Image, 'mask', QOS)
+        self.masks = self.create_publisher(CompressedImage, 'mask/compressed', QOS) if self.include_mask else None
+        self.raw_images = self.create_publisher(Image, 'image', QOS) if self.raw_hz else None
+        self.raw_masks = self.create_publisher(Image, 'mask', QOS) if self.raw_hz and self.include_mask else None
         self.metrics = self.create_publisher(String, 'metrics', QOS)
         self.create_subscription(CompressedImage, topic, self.receive, QOS)
+        self.create_subscription(Bool, 'track_ball', self.toggle_processing, 1)
         self.create_timer(1 / hz, self.process)
         self.create_timer(1., self.report)
         if self.annotated_hz:
             self.create_timer(1/self.annotated_hz, self.publish_images, callback_group=self.output_group)
 
     def receive(self, message):
+        if not self.enabled:
+            return
         self.received += 1
         if self.pending is not None:
             self.dropped += 1
         self.pending = (message, time.monotonic())
 
+    def toggle_processing(self, message):
+        self.enabled = bool(message.data)
+        if not self.enabled:
+            self.pending = self.output_slot = None
+            self.gate.accept(dict(found=False))
+            self.latest = dict(found=False, stamp_ns=self.get_clock().now().nanoseconds)
+            self.targets.publish(String(data=json.dumps(self.latest)))
+            self.found.publish(Bool(data=False))
+
     def process(self):
-        if self.pending is None:
+        if not self.enabled or self.pending is None:
             return
         message, arrived = self.pending
         self.pending = None
@@ -75,11 +93,16 @@ class VisionNode(Node):
             self.dropped += 1
             return
         try:
-            target, image, masked = detect(bytes(message.data), self.width)
+            target, image, masked = detect(bytes(message.data), self.width, hue_degrees=self.hue, min_saturation=self.saturation, include_mask=self.include_mask)
         except (ValueError, OSError, SyntaxError) as error:
             self.errors += 1
             target = dict(found=False, reason=str(error))
             image = None
+        candidate = bool(target.get('found'))
+        target['found'] = self.gate.accept(target)
+        target['candidate_found'] = candidate
+        if candidate and not target['found']:
+            target['reason'] = 'Confirming consistent detections'
         compute_ms = (time.perf_counter() - begin) * 1000
         self.timings.append(compute_ms)
         self.processed += 1
@@ -107,20 +130,24 @@ class VisionNode(Node):
             self.raw_last = now
         for publisher, raw, frame in ((self.images, self.raw_images, image),
                                       (self.masks, self.raw_masks, masked)):
-            if publish_raw and raw.get_subscription_count():
+            if frame is None:
+                continue
+            if publish_raw and raw is not None and raw.get_subscription_count():
                 output_raw = Image()
                 output_raw.header = header
                 output_raw.height, output_raw.width = frame.height, frame.width
                 output_raw.encoding = 'rgb8'
                 output_raw.is_bigendian = 0
                 output_raw.step = frame.width * 3
-                output_raw.data = frame.tobytes()
+                # Typed buffers avoid generated ROS setters checking every pixel
+                # in Python while holding the GIL needed by the control timer.
+                output_raw.data = array('B', frame.tobytes())
                 raw.publish(output_raw)
-            if publisher.get_subscription_count():
+            if publisher is not None and publisher.get_subscription_count():
                 output = CompressedImage()
                 output.header = header
                 output.format = 'jpeg'
-                output.data = jpeg(frame)
+                output.data = array('B', jpeg(frame))
                 publisher.publish(output)
 
     def report(self):
@@ -143,10 +170,17 @@ class FollowerNode(Node):
         self.target_center = self.declare_parameter('target_center_x', .5).value
         self.stop_fraction = self.declare_parameter('stop_diameter_fraction', .30).value
         self.max_linear = self.declare_parameter('max_linear', .12).value
+        self.linear_gain = self.declare_parameter('linear_gain', 1.2).value
         self.max_angular = self.declare_parameter('max_angular', 2.5).value
+        self.full_pwm = self.declare_parameter('full_pwm', False).value
+        self.angular_pwm_limit = self.declare_parameter('angular_pwm_limit', .8).value
+        if not math.isfinite(self.angular_pwm_limit) or not 0 <= self.angular_pwm_limit <= 1:
+            raise ValueError('angular_pwm_limit must be 0..1')
+        self.turn_pulse = TurnPulse(self.declare_parameter('turn_pulse_seconds', .04).value,
+                                   self.declare_parameter('turn_settle_seconds', .15).value)
         topic = self.declare_parameter('command_topic', '/ball_demo/cmd_vel').value
-        if not all(math.isfinite(v) for v in (self.stop_fraction, self.max_linear, self.max_angular, self.target_center)) or not (
-                0 <= self.target_center <= 1 and 0 < self.stop_fraction <= 1 and 0 <= self.max_linear <= .2 and 0 <= self.max_angular <= 3):
+        if not all(math.isfinite(v) for v in (self.stop_fraction, self.max_linear, self.max_angular, self.target_center, self.linear_gain)) or not (
+                0 <= self.linear_gain <= 5 and 0 <= self.target_center <= 1 and 0 < self.stop_fraction <= 1 and 0 <= self.max_linear <= .2 and 0 <= self.max_angular <= 3):
             raise ValueError('Invalid follower limits')
         self.add_on_set_parameters_callback(self.validate_parameters)
         self.target = {}
@@ -161,7 +195,7 @@ class FollowerNode(Node):
 
     def validate_parameters(self, parameters):
         ranges = {'target_center_x': (0., 1.), 'stop_diameter_fraction': (.01, 1.),
-                  'max_linear': (0., .2), 'max_angular': (0., 3.)}
+                  'max_linear': (0., .2), 'max_angular': (0., 3.), 'linear_gain': (0., 5.), 'angular_pwm_limit': (0., 1.)}
         for parameter in parameters:
             if parameter.name == 'command_topic':
                 return SetParametersResult(successful=False, reason='Restart to change command_topic')
@@ -188,15 +222,26 @@ class FollowerNode(Node):
         self.tracking = bool(message.data)
         self.tracking_state.publish(Bool(data=self.tracking))
         if not self.tracking:
+            self.turn_pulse.reset()
             self.commands.publish(Twist())
 
     def tick(self):
+        now = time.monotonic()
         age = (self.get_clock().now().nanoseconds-self.target.get('stamp_ns', 0))/1e9
         linear, angular = command(self.target, age,
                                   stop_fraction=self.get_parameter('stop_diameter_fraction').value,
                                   max_linear=self.get_parameter('max_linear').value,
                                   max_angular=self.get_parameter('max_angular').value,
-                                  target_center_x=self.get_parameter('target_center_x').value)
+                                  target_center_x=self.get_parameter('target_center_x').value,
+                                  linear_gain=self.get_parameter('linear_gain').value,
+                                  full_pwm=self.full_pwm,
+                                  angular_pwm_limit=self.get_parameter('angular_pwm_limit').value)
+        if self.tracking and self.full_pwm:
+            linear, angular = self.turn_pulse.step(linear, angular, now,
+                                                   self.target.get('stamp_ns', 0),
+                                                   self.get_clock().now().nanoseconds)
+        elif not self.tracking:
+            self.turn_pulse.reset()
         output = Twist()
         output.linear.x, output.angular.z = (linear, angular) if self.tracking else (0., 0.)
         self.commands.publish(output)

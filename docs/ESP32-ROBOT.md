@@ -195,3 +195,24 @@ angular1.0 command. Teleop must request the higher angular value (`turn:=2.5`)
 to obtain the higher duty. Standard differential-drive mixing and ratio-preserving
 PWM saturation remain; geometry has not been changed to force a stronger turn.
 The300 ms expiry applies equally to the higher angular commands.
+
+## Optional direct-duty reference mode
+
+Build using the following single command:
+
+```bash
+ROS2_ANDROID_ESP32_ROBOT=1 ROS2_ANDROID_ESP32_FULL_PWM=1 ./setup/esp32-usb.sh build
+```
+
+This bypasses the proportional Twist ceilings and interprets linear/turn requests
+as signed duty fractions: left = linear − turn, right = linear + turn. Normalize
+only if the largest magnitude exceeds 1.0. Small requests stay small, allowing
+smooth proportional steering; magnitude 1.0 reaches PWM 255 by default. Mixed
+steering preserves wheel ratios. This replaces the earlier experimental mode
+that forced every nonzero turn to full PWM.
+
+Explicit zero, invalid input, disconnection and the 300 ms watchdog still stop
+output. These are open-loop duty requests, not calibrated vehicle velocities.
+The default build keeps the earlier proportional mapping. Use matching follower
+`full_pwm:=true` mode. Disconnect the motor battery before programming and test
+with wheels clear first. Preserve the previously verified firmware for rollback.

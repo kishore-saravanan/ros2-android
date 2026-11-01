@@ -19,6 +19,23 @@ int main() {
   auto stopped = [](robot::Wheels w) { return w.left == 0 && w.right == 0; };
   assert(g.pwm_limit() == 255);
   assert(g.angular_limit() == 3);
+  robot::DriveGuard full(true);
+  full.connection(true);
+  for (float v : {.01f, .2f, .8f, 1.f, 3.f}) {
+    const int duty = int(std::round(std::min(v, 1.f) * 255));
+    full.command(v, 0, 100, .16f);
+    assert(robot::DriveGuard::duty(full.output(100).left, 255) == duty);
+    assert(robot::DriveGuard::duty(full.output(100).right, 255) == duty);
+    full.command(0, v, 100, .16f);
+    assert(robot::DriveGuard::duty(full.output(100).left, 255) == -duty);
+    assert(robot::DriveGuard::duty(full.output(100).right, 255) == duty);
+  }
+  assert(stopped(full.output(400)));
+  full.command(0, 0, 500, .16f); assert(stopped(full.output(500)));
+  full.command(std::numeric_limits<float>::infinity(), 0, 600, .16f);
+  assert(stopped(full.output(600)));
+  full.command(.1f, 0, 700, .16f); full.connection(false);
+  assert(stopped(full.output(700)));
   assert(!g.set_angular_limit(-1, 0) && !g.set_angular_limit(7, 0));
   assert(!g.set_angular_limit(std::numeric_limits<float>::quiet_NaN(), 0));
   assert(!g.set_angular_limit(std::numeric_limits<float>::infinity(), 0));

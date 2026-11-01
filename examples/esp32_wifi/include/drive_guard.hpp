@@ -11,6 +11,7 @@ struct Wheels {
 // Open-loop command scaling, not measured vehicle speed or odometry.
 class DriveGuard {
  public:
+  explicit DriveGuard(bool full_pwm = false) : full_pwm_(full_pwm) {}
   static constexpr uint32_t deadline_ms = 300;
   bool connected = false;
   bool set_pwm_limit(int32_t value, uint32_t now) {
@@ -35,11 +36,16 @@ class DriveGuard {
       valid = false; return;
     }
     if (!connected) { valid = false; return; }
-    linear = std::max(-.2f, std::min(.2f, linear));
-    angular = std::max(-angular_limit_, std::min(angular_limit_, angular));
-    desired = {linear - angular * track_m * .5f, linear + angular * track_m * .5f};
-    const float scale = std::max(.25f, std::max(std::abs(desired.left), std::abs(desired.right)));
-    desired.left /= scale; desired.right /= scale;
+    if (!full_pwm_) {
+      linear = std::max(-.2f, std::min(.2f, linear));
+      angular = std::max(-angular_limit_, std::min(angular_limit_, angular));
+    }
+    const float turn = full_pwm_ ? angular : angular * track_m * .5f;
+    desired = {linear - turn, linear + turn};
+    const float peak = std::max(std::abs(desired.left), std::abs(desired.right));
+    if (!std::isfinite(peak)) { valid = false; return; }
+    const float scale = std::max(full_pwm_ ? 1.f : .25f, peak);
+    if (scale > 0) { desired.left /= scale; desired.right /= scale; }
     received = now; valid = true;
   }
   Wheels output(uint32_t now) const {
@@ -47,6 +53,7 @@ class DriveGuard {
     return desired;
   }
  private:
+  bool full_pwm_;
   float angular_limit_ = 3.f; // Command ceiling, not measured yaw speed.
   int pwm_limit_ = 255; // Full 8-bit range; command scaling still applies.
   bool valid = false;

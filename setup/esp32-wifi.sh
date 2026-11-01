@@ -40,6 +40,11 @@ if [[ "${ROS2_ANDROID_ESP32_ROBOT:-0}" == 1 ]]; then
     else
         printf '\nbuild_flags = -DROS2_ANDROID_ROBOT\n' >> "$esp_project/platformio.ini"
     fi
+    case "${ROS2_ANDROID_ESP32_FULL_PWM:-0}" in
+        0) ;;
+        1) sed -i 's/^build_flags = /build_flags = -DROS2_ANDROID_FULL_PWM=1 /' "$esp_project/platformio.ini" ;;
+        *) printf 'ROS2_ANDROID_ESP32_FULL_PWM must be 0 or 1\n' >&2; exit 2 ;;
+    esac
 fi
 esp_core="$esp_cache/platformio"
 mkdir -p "$esp_core"

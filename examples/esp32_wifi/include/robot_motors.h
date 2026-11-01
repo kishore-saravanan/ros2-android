@@ -14,7 +14,10 @@
 // Inputs are PWM-controlled with ENA/ENB jumpers fitted. No enable-pin wiring assumed.
 static constexpr int motor_pins[] = {25, 26, 27, 14};
 static portMUX_TYPE drive_lock = portMUX_INITIALIZER_UNLOCKED;
-static robot::DriveGuard drive;
+#ifndef ROS2_ANDROID_FULL_PWM
+#define ROS2_ANDROID_FULL_PWM 0
+#endif
+static robot::DriveGuard drive{bool(ROS2_ANDROID_FULL_PWM)};
 static rcl_subscription_t drive_sub, pwm_sub, angular_sub;
 static rcl_publisher_t pwm_pub, angular_pub;
 static std_msgs__msg__Int32 pwm_command, pwm_state;

@@ -21,12 +21,14 @@ Phone Sensors camera → JPEG CompressedImage
 
 `/ball/detected` is Bool; `/ball/metrics` is a JSON String containing input and
 processing rates, drops/errors and recent mean/p95 processing time.
-`/ball/image` is the standard raw `sensor_msgs/Image` annotated view;
-`/ball/mask` is the raw masked view. Both use rgb8.
-`/ball/image/compressed` is a downsampled JPEG with the fitted green circle.
-`/ball/mask/compressed` keeps the selected ball region inside the fitted circle, with
-other pixels black. No detection produces a black mask.
-Both image outputs are encoded only while subscribed, at 5 Hz by default; raw debug outputs default to 2 Hz.
+`/ball/image/compressed` is the default image output: a downsampled JPEG with
+ the fitted green circle, encoded only while subscribed at 5 Hz by default.
+Mask generation/publication is off (`publish_mask:=false`), and raw image output
+is off (`raw_image_hz:=0.0`) to keep the control path responsive.
+Optional debug outputs are `/ball/image` (raw rgb8), `/ball/mask` (raw rgb8) and
+`/ball/mask/compressed` (selected ball on black). Enable raw output with a positive
+`raw_image_hz` and masks with `publish_mask:=true` at startup. Additional image
+streams add CPU/network load; verify command continuity under the intended load.
 Images are processed in memory, not saved. Test images and user-supplied photos
 are not shipped as project assets.
 
@@ -66,13 +68,13 @@ Projects, or adjust observer topics to the saved namespace.
 4. View `/ball/image/compressed` with a Dashboard CompressedImage subscriber or
    an image_transport-compatible ROS viewer. Confirm the circle surrounds the
    ball and that the image orientation matches the robot's forward-facing view.
-5. View the standard raw Image output directly using ROS tools:
+5. For optional PC debugging, restart with `-- -p raw_image_hz:=1.0`, then view the standard raw output:
 
 ```bash
 ros2 run image_tools showimage --ros-args -r image:=/ball/image -p reliability:=best_effort
 ```
 
-In another terminal, view the mask:
+If you also started with `-p publish_mask:=true`, view the optional mask:
 
 ```bash
 ros2 run image_tools showimage --ros-args -r image:=/ball/mask -p reliability:=best_effort
@@ -115,13 +117,15 @@ Add these widgets under Dashboard:
 
 | Label | Direction / widget | Message type | Topic |
 | --- | --- | --- | --- |
-| Ball mask | Subscribe / Image | sensor_msgs/msg/CompressedImage | /ball/mask/compressed |
+| Ball view | Subscribe / Image | sensor_msgs/msg/CompressedImage | /ball/image/compressed |
 | Track ball | Publish / Switch | std_msgs/msg/Bool | /ball/track_ball |
 | Tracking state (optional) | Subscribe / Bool | std_msgs/msg/Bool | /ball/tracking |
-| Ball view (optional) | Subscribe / Image | sensor_msgs/msg/CompressedImage | /ball/image/compressed |
 
-Start Dashboard. Switch ON sends true, permitting following; OFF sends false
-and immediately requests zero velocity. The follower also stops on missing/stale
+Start Dashboard. Switch ON sends true, enabling image processing and following.
+OFF sends false, immediately requests zero velocity, clears pending detection
+frames and pauses JPEG decoding, detection and annotated output. The last image
+may remain visible in Dashboard while paused; the camera publisher is controlled
+separately in Sensors. The follower also stops on missing/stale
 detections while ON, and resumes when fresh detections return. `/ball/tracking`
 reports whether tracking is enabled, not whether motors are currently moving.
 Switch position is the controller phone's last requested input; after a runner
@@ -197,9 +201,40 @@ Set parameters at start with `-- -p NAME:=VALUE`, then rebuild/deploy only when
 source changes. Most vision/output parameters are read at startup; restart to apply them.
 Follower aim/stop/speed parameters can also be changed through standard ROS
 parameter services while running. Available values include `image_topic`, `processing_width` (320),
-`processing_hz` (15.0), `annotated_hz` (5.0), `raw_image_hz` (2.0), `target_center_x` (0.5),
+`processing_hz` (15.0), `annotated_hz` (5.0), `raw_image_hz` (0.0), `publish_mask` (false), `hue_degrees` (14.0),
+`min_saturation` (0.60), `confirmation_frames` (3), `target_center_x` (0.5),
 `stop_diameter_fraction` (0.30),
-`max_linear` (0.12), `max_angular` (2.5) and `command_topic`.
+`max_linear` (0.12), `linear_gain` (1.2), `max_angular` (2.5),
+`full_pwm` (false), `angular_pwm_limit` (0.8), `turn_pulse_seconds` (0.04), `turn_settle_seconds` (0.15) and `command_topic`.
+
+`full_pwm:=true` selects direct duty-fraction requests for the reference MCU
+firmware built with `ROS2_ANDROID_ESP32_FULL_PWM=1`. These values are mixing/duty
+requests, not measured m/s or rad/s. The current firmware preserves fractional
+requests; it does not turn every small request into full PWM. Full duty 255 remains
+available at request magnitude 1.0. The default MCU build retains proportional
+Twist scaling; use matching APK/firmware versions.
+
+In full-duty mode, the reference controller turns first, then drives straight.
+It never combines forward and angular requests: combining full forward with an
+80% turn made the inner wheel receive only about 11% duty in the mixer, which
+could stall it under ground load.
+
+Turns use `angular_pwm_limit` (default 0.8, PWM204/255 for a pure turn) immediately,
+in short pulses. Each pulse is followed by zero commands and a settling interval.
+Movement resumes only after a detection from an image captured after that interval.
+Straight driving remains immediate full duty when aligned; close-enough, lost,
+stale and OFF stops still apply. This replaces the experimental angular ramp,
+which spent time below the motors' starting duty.
+
+The pulse duration is a software request, not a hard real-time motor deadline.
+The 20 Hz ROS timer nominally makes the 0.04 s request about one control tick;
+Android scheduling and transport delays can extend it. The MCU's independent
+300 ms watchdog remains the fallback. Physical turn size/overshoot must be tested;
+this approach makes controlled steps, not continuous smooth steering. Encoders or
+IMU feedback would be needed for a measured turn-rate controller.
+
+Adjust duty using `ros2 param set /ball/ball_follower angular_pwm_limit 0.8`.
+Pulse/settling times are startup parameters; keep startup overrides for restart.
 
 Approach uses apparent size and requires no metric depth. For an approximate
 range, measure actual ball diameter and calibrate camera intrinsics at the chosen
@@ -232,13 +267,19 @@ topic and leave motor power off:
 ./tools/ros2android --project examples/ball_follower stop
 ./tools/ros2android --project examples/ball_follower start --namespace /ball --domain 0 \
   -- -p image_topic:=/ball_test/image/compressed
-./tools/pc-ros.sh -- /usr/bin/python3 tools/pc-ball-follower-probe.py
+./tools/pc-ros.sh -- /usr/bin/python3 tools/pc-ball-follower-probe.py --annotated-only
 ```
 
 The PC sends generated JPEGs, observes phone-produced detections/annotations,
-and checks disabled-by-default, forward, both turns, near, lost, malformed,
-stale-image and switch-OFF behavior, plus both image outputs.
+and checks disabled-by-default, forward, both turns, near, wood-background rejection, lost, malformed,
+stale-image and switch-OFF behavior, plus the annotated image. To test optional
+mask/raw outputs, enable them explicitly and run the probe without `--annotated-only`.
 It subscribes to `/ball_demo/cmd_vel`; it never publishes motor commands. Revert
 `image_topic` by restarting without that parameter before using the phone camera.
 A passing generated-image test does not prove live-camera rate, robot motion,
 metric depth or hard real-time deadlines. See [current validation](STATUS.md).
+
+For the direct-duty turn/brake controller, start the test runner with
+`-p full_pwm:=true` and add `--turn-pulses` to the probe. Turn phases then require
+both correctly directed motion samples and zero/braking samples; their success
+fraction does not mean continuous turning.
