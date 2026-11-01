@@ -1,6 +1,6 @@
 # Compatibility, validation and remaining work
 
-Development preview: **0.1.1-dev6**, 2026-10-30. Apache-2.0.
+Development preview: **0.1.1-dev6**, status updated 2026-11-01. Apache-2.0.
 This is a source/development preview, not a broadly qualified robot appliance.
 No public APT repository or stable package release is available yet.
 
@@ -15,8 +15,7 @@ No public APT repository or stable package release is available yet.
 | Python and launch | Separate Python/rclpy examples and supported launch paths passed reference tests. Arbitrary mixed workspaces and Linux dependencies are not guaranteed. |
 | Dashboard | Scalar subscriptions, joystick release/focus-loss zero commands and JPEG/PNG image receipt/recovery passed physical tests. Two-phone camera viewing and reference robot control were also confirmed by the operator. |
 | Camera options | Supported 1280×720, quality 80, automatic FPS produced about 29.9 capture/publish FPS in a reference sample; a PC received 20 valid JPEGs. This is not an endurance or latency measurement. |
-| Python onboard vision | Two rclpy nodes process phone camera JPEGs and compute following commands locally. Short live run: 161/161 ball detections, 8.05 results/sec, 61.95 ms mean / 92.39 ms p95 processing. Annotated Dashboard JPEG output verified. Default mask/raw streams are off. Ten-phase annotated-only Android control probe passed (98–100% command checks); combined raw/mask load still causes freshness stops. The operator confirmed successful ground following with the turn/brake/observe controller. Quantified path error, endurance and metric depth remain unverified. |
-| Latest regression | Build, lint and 16 unit tests passed; camera-options and Dashboard-image device tests each passed with zero skips. |
+| Latest platform regression | Build/lint and 23 JVM unit tests passed. Independent phone/PC Switch ON/OFF, navigation/no restart replay and joystick release/focus-loss tests passed. 38 host tests passed with Jazzy available. Baseline JVM/lint tasks also passed from a clean source export without native-deps. Hosted CI execution is pending. |
 | ESP32 programming through phone | ROM-loader application writes passed hash verification and micro-ROS recovery checks. Sustained stub transfers remain unreliable; see the programming guide. |
 
 The reference phone advertises normal capture modes up to 30 FPS. Higher FPS
@@ -37,14 +36,28 @@ support through this YUV/JPEG publishing path.
 - Reference MCU firmware includes a 300 ms stale-command timeout. Physical stop
   timing and behavior must be qualified for each robot.
 
-## Next after the ball-following test
+## Optional application evidence
+
+The ball follower is an onboard Python/ROS proof of concept, not the platform's
+primary goal. Its operator-confirmed ground demonstration and synthetic/control
+probe results are documented in the [example guide](BALL-FOLLOWER.md). The later
+adaptive-pulse experiment is not physically qualified. Robot calibration/tuning
+must not determine generic platform APIs or readiness.
+
+## Feature backlog
 
 - Add Dashboard subscription/display for standard `sensor_msgs/msg/Image`
-  (raw images), alongside current `CompressedImage`. Requested after completing
-  this test; not implemented yet. Define supported encodings, bounded decode and
-  payload handling, stale/recovery behavior and physical interoperability tests.
+  (raw images), alongside current `CompressedImage`. Not implemented yet.
+  Define supported encodings, bounded decode and payload handling, stale/recovery behavior and physical interoperability tests.
 
 ## Community-readiness priorities
+
+See the [platform roadmap](ROADMAP.md), [test scope](TESTING.md) and
+[release checklist](RELEASING.md). Matching-signature runner control currently
+blocks an official main APK plus independently signed user workspaces; the
+pairing/trust design is an explicit release gate. Dashboard local request status
+is implemented, but the earlier intermittent missed OFF has no confirmed root
+cause; network-loss/late-subscriber fault tests remain open.
 
 1. Reliable USB attach/reconnect and clearer permission/recovery flows.
 2. Long-duration, thermal, screen-off and vendor battery-management qualification.

@@ -2,7 +2,9 @@
 
 ## First build
 
-The reference SDK is installed outside the repository at `~/Android/Sdk`.
+Install the Android SDK outside the repository (the default is `~/Android/Sdk`).
+For contribution and test boundaries, start with [Contributing](../CONTRIBUTING.md)
+and [Testing](TESTING.md).
 The project uses Java 21 to run Gradle and emits Java/Kotlin 17 bytecode.
 
 Pinned build dependencies:
@@ -32,8 +34,8 @@ Set `ANDROID_HOME` to that SDK directory, or create a local, ignored
 Android Studio is optional for command-line builds.
 
 The native ROS dependencies must be built before the first Android build.
-The current PC already has the colcon tool environment. For another Ubuntu
-machine with the ROS Python build dependencies installed, prepare one with:
+On an Ubuntu machine with ROS 2 Jazzy and its Python build dependencies installed,
+prepare the colcon tool environment with:
 
 ```bash
 python3 -m venv --system-site-packages "$HOME/.local/share/ros2-android-tools/build-venv"
@@ -138,13 +140,14 @@ All probe processes are temporary and do not change global ROS middleware
 settings. Camera verification uses `tools/pc-camera-probe.py`, which validates
 message bytes without retaining camera images.
 
-The phone-hosted micro-ROS Agent is a separate v0.2 milestone. Native Jazzy
-topic exchange does not establish Agent portability or MCU USB support.
+Phone-hosted micro-ROS Agent and reference ESP32 UDP/USB exchange have separate
+verification paths; see [Status](STATUS.md). Native Jazzy topic exchange alone
+does not establish Agent or MCU interoperability.
 
 ## Git
 
 The working branch is `develop`. The repository is
-`https://github.com/kishore-saravanan/ros2-android` (private). Git author details
+`https://github.com/kishore-saravanan/ros2-android`. Git author details
 are local user configuration. On a new checkout, configure an author and review
 before committing:
 

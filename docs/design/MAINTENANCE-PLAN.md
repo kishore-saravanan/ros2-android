@@ -15,9 +15,10 @@ The next work is operational reliability and developer independence. Current
 couplings include RobotSessionService handling hardware plus Dashboard state,
 MainActivity handling several product areas, host CLI dispatching cached scripts,
 duplicated runner packaging/lifecycle concerns and robot-specific firmware/demo
-code living beside platform code. No GitHub Actions workflow was found in this
-checkout. Existing unit, tooling and physical tests should be organized, not
-replaced by a new test framework for its own sake.
+code living beside platform code. The initial review found no GitHub Actions
+workflow; baseline host/documentation and Android JVM/lint jobs have since been
+added, with their first hosted execution pending. Existing unit, tooling and
+physical tests are retained rather than replaced by a new framework.
 
 ## Ordered work and exit gates
 
