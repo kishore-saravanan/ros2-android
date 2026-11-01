@@ -126,21 +126,22 @@ Every build records source revision/hash, ROS distro, SDK identity, Android ABI/
 Python ABI if used, runner protocol/runtime versions, dependencies and signing
 certificate fingerprint. Validate this manifest before deployment or start.
 
-### Release-blocking signing decision
+### Runner signing and release gate
 
-Today ProjectControlService and its permission require main app and runner to
-share a signing identity. An official prebuilt main APK and arbitrary user-built
-runners cannot share the maintainer's private release key. Never ship that key.
-Android signature permissions are designed around certificate identity; see
+The original signature-protected control service requires a shared signing
+identity. A prebuilt main APK and arbitrary user-built runners must never share
+the maintainer's private key. The current opt-in preview instead embeds the
+controller APK's public certificate in a separate paired service, with explicit
+local approval of the runner package/current certificate and request/reply UID
+checks. Legacy same-signature controls remain available.
+
+See [ADR 0002](../decisions/0002-runner-certificate-authorization.md) and
+[usage/evidence](../RUNNER-AUTHORIZATION.md). Reference-device independent signing,
+approval/revocation and unauthorized UID rejection passed; this is not an audit.
+Rotation/reinstall/upgrade, multiple authors, API coverage and adversarial review
+remain release gates. Unknown signers must not receive an unauthenticated command
+API. Android signature permissions still follow certificate identity; see
 [Android custom permissions](https://developer.android.com/guide/topics/permissions/defining).
-
-Short-term developer builds can retain a locally generated key for both apps,
-with explicit key backup and upgrade instructions. Before distributing an official
-APK for user-built workspaces, design and review explicit project/signer pairing
-with scoped caller verification. Unknown signers must not get a general command
-service. Do not weaken the permission to an unguarded exported service.
-Certificate rotation, runner upgrades, revocation and two independently signed
-workspace authors must be tested. This trust design is a release gate.
 
 ## Communication and compatibility
 

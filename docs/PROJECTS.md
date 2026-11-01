@@ -46,12 +46,13 @@ From the repository root on your Linux PC, with DEVELOPMENT.md prerequisites:
 Discovery queries only the explicit OPEN_PROJECT action, validates the expected
 runner namespace, Activity class and version-1 project metadata, and does not
 request QUERY_ALL_PACKAGES or enumerate personal apps. Control uses an explicit
-bound Messenger service with signature permission
-`dev.ros2android.android.MANAGE_PROJECTS`. The main app checks runner signing
-certificates; the runner also checks each message's sender UID belongs to the
-main package and has a matching certificate. Production app/runners therefore
-need the same signing identity. Standard local debug builds use the same key.
-This trusts developer-signed workspace code; it does not sandbox untrusted code.
+bound Messenger protocol. Existing runners use the signature permission
+`dev.ros2android.android.MANAGE_PROJECTS`. Opted-in independent runners use a
+separate certificate-pinned entry and explicit per-runner approval in Details.
+Both verify each sender UID/package; the main app checks approved identity on
+replies. See [runner authorization](RUNNER-AUTHORIZATION.md) for building with
+`--controller-apk`, approval, revocation and preview qualification limits.
+Approval trusts workspace code; it does not sandbox untrusted code.
 
 Commands are status, start packaged launch, stop supervised group and save a
 validated connection profile. No arbitrary shell command or filesystem endpoint

@@ -18,9 +18,11 @@ Current boundaries and limitations:
 
 - Android permissions and app isolation remain in effect. Only explicitly
   authorized device deployment/programming is supported.
-- Main-app/runner management currently requires matching signing identity.
-  Independent runner trust is an open release gate. Do not share the maintainer's
-  signing key or remove authentication to bypass this limitation.
+- Same-signature runner management remains supported. The opt-in independent
+  signer path pins the controller certificate and requires local runner approval;
+  see [authorization](docs/RUNNER-AUTHORIZATION.md). Review/update/rotation and
+  broader device qualification remain release gates. Never share signing keys
+  or bypass the per-request UID/certificate checks.
 - Ordinary DDS topics are not an authenticated remote administration channel.
   Current network operation assumes a trusted ROS network; do not expose the
   development controls or DDS traffic directly to the Internet. A domain ID is

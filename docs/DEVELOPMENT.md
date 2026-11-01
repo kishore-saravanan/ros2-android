@@ -48,11 +48,11 @@ python3 setup/fetch-native-ros.py
 If the OS lacks `python3-venv`, install that prerequisite locally or bootstrap
 pip into a `--without-pip` venv; do not change the system Python environment.
 The native build sources the PC's Jazzy environment for build-time generators.
-It cross-compiles 68 packages with the NDK, selects Cyclone DDS introspection
+It cross-compiles the pinned ROS dependencies with the NDK, selects Cyclone DDS introspection
 typesupport, uses no-op file logging and disables desktop tracing/security
 dependencies. Host pkg-config libraries are excluded from the cross-build.
 
-`native/ros-sources.lock.json` pins 23 upstream repositories. The fetch helper
+`native/ros-sources.lock.json` pins the upstream repositories. The fetch helper
 applies the checked-in Android patches idempotently. Source/build output lives
 in an ignored `native-deps` link to a cache directory without spaces, because
 upstream generators do not consistently handle spaces in their workspace path.

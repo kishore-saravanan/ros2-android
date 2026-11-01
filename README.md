@@ -58,8 +58,10 @@ The direction is a modular application with isolated runners, not microservices.
 
 This preview does not promise arbitrary Linux package compatibility, every phone,
 boot-time autonomy or hard real-time deadlines. Mixed Python/C++ workspace
-coverage, independently signed runner authorization, long-duration operation and
-broader device qualification remain release gates. Dashboard raw `sensor_msgs/msg/Image`
+coverage, long-duration operation and broader device qualification remain release
+gates. [Independent runner authorization](docs/RUNNER-AUTHORIZATION.md) now has an
+opt-in certificate-pinned preview; security review and broader signing/device
+qualification remain pending. Dashboard raw `sensor_msgs/msg/Image`
 viewing is pending. A local write or Running label is not remote acknowledgement.
 
 ## Examples and development

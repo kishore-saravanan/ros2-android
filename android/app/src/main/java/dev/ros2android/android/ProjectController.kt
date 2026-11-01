@@ -6,7 +6,9 @@ import android.os.*
 import org.json.JSONObject
 
 /** Bound only while the operator UI is resumed. Runtime survives unbinding. */
-class ProjectController(private val context: Context, val project: InstalledProjects.Project, private val changed: () -> Unit) {
+class ProjectController(context: Context, val project: InstalledProjects.Project, private val changed: () -> Unit) {
+    private val context = context.applicationContext
+    val trust = ProjectTrust(this.context, project)
     var status: JSONObject? = null; private set
     var error: String? = null; private set
     var commandError: String? = null; private set
@@ -16,6 +18,7 @@ class ProjectController(private val context: Context, val project: InstalledProj
     private var pending = false
     private val reply = Messenger(object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
+            if (!trust.accepts(msg.sendingUid)) return
             pending = false; lastReply = SystemClock.elapsedRealtime()
             if (msg.what == 1) error = msg.data.getString("error")
             else commandError = msg.data.getString("error")
@@ -31,10 +34,13 @@ class ProjectController(private val context: Context, val project: InstalledProj
     }
     fun connect() {
         if (bound) return
-        if (context.packageManager.checkSignatures(context.packageName, project.packageName) != PackageManager.SIGNATURE_MATCH) {
-            error = "Runner signature does not match this app"; changed(); return
+        if (!trust.authorized()) {
+            status = null
+            error = if (!trust.compatible()) "Rebuild runner for this controller APK" else "Authorize this runner in Details"
+            changed(); return
         }
-        runCatching { context.bindService(Intent().setComponent(ComponentName(project.packageName, "dev.ros2android.runner.ProjectControlService")), connection, Context.BIND_AUTO_CREATE) }
+        val service = if (trust.paired) "PairedProjectControlService" else "ProjectControlService"
+        runCatching { context.bindService(Intent().setComponent(ComponentName(project.packageName, "dev.ros2android.runner.$service")), connection, Context.BIND_AUTO_CREATE) }
             .onSuccess { bound = it; if (!it) { error = "Rebuild this runner to enable app controls"; changed() } }
             .onFailure { error = it.message; changed() }
     }
@@ -45,10 +51,11 @@ class ProjectController(private val context: Context, val project: InstalledProj
     }
     fun send(command: Int, config: Bundle = Bundle()) {
         val target = remote ?: return
+        if (!trust.authorized()) { close(); status = null; error = "Runner authorization changed. Refresh."; changed(); return }
         if (command != 1) commandError = null
         runCatching { target.send(Message.obtain(null, command).apply { replyTo = reply; data = config }) }
             .onSuccess { pending = true; lastReply = SystemClock.elapsedRealtime() }
             .onFailure { status = null; error = "Runner disconnected. Tap Refresh."; changed() }
     }
-    fun close() { if (bound) context.unbindService(connection); bound = false; remote = null }
+    fun close() { if (bound) context.unbindService(connection); bound = false; remote = null; pending = false; status = null }
 }

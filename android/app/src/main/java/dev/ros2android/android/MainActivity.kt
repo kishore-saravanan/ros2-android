@@ -281,6 +281,7 @@ open class MainActivity : Activity() {
         val packages = installed.map { it.packageName }.toSet()
         projectControllers.keys.filter { it !in packages }.forEach { projectControllers.remove(it)?.close() }
         installed.forEach { project ->
+            if (projectControllers[project.packageName]?.project != project) projectControllers.remove(project.packageName)?.close()
             projectControllers.getOrPut(project.packageName) {
                 ProjectController(this, project) { updateProjects(); refreshHomeActivity() }
             }.connect()
@@ -420,7 +421,9 @@ open class MainActivity : Activity() {
         val packages = projects.map { it.packageName }.toSet()
         projectControllers.keys.filter { it !in packages }.forEach { projectControllers.remove(it)?.close() }
         if (projects.isEmpty()) card("No projects yet") { box -> box.addView(text("Deploy a runner from your PC.", 14, muted)) }
-        projects.forEach { project -> card(project.id.replace('_', ' ')) { box ->
+        projects.forEach { project ->
+            if (projectControllers[project.packageName]?.project != project) projectControllers.remove(project.packageName)?.close()
+            card(project.id.replace('_', ' ')) { box ->
             val control = projectControllers.getOrPut(project.packageName) { ProjectController(this, project) { updateProjects() } }
             val state = text("Connecting…", 15).apply { tag = "project_state:${project.id}" }; box.addView(state)
             val nodes = text("", 13, muted); box.addView(nodes)
@@ -436,6 +439,22 @@ open class MainActivity : Activity() {
             }
             disclosure(box, "project:${project.id}", "Details") { info ->
                 info.addView(text("${project.runtimeLabel}\n${project.packageName}\nSource ${project.sourceId}", 12, muted))
+                if (control.trust.paired) {
+                    val fingerprint = control.trust.fingerprint()
+                    info.addView(text("Runner certificate SHA-256\n${fingerprint ?: "Unavailable"}", 12, muted).apply { setTextIsSelectable(true) })
+                    info.addView(button(if (control.trust.authorized()) "Revoke authorization" else "Authorize runner") {
+                        if (control.trust.authorized()) {
+                            control.trust.revoke(); control.close(); render()
+                        } else if (fingerprint != null && control.trust.compatible()) {
+                            AlertDialog.Builder(this).setTitle("Authorize ${project.id}?")
+                                .setMessage("Allow this app to start, stop and configure this runner. Only approve code you trust.\n\n${project.packageName}\nSHA-256: $fingerprint")
+                                .setNegativeButton("Cancel", null).setPositiveButton("Authorize") { _, _ ->
+                                    runCatching { control.trust.approve(fingerprint); control.close(); render() }.onFailure { announce(it.message) }
+                                }.show()
+                        } else announce("Rebuild the runner using this controller APK")
+                    }.apply { tag = "authorize_project:${project.id}" })
+                    info.addView(text("Revoking disconnects app controls; it does not stop a running project. Stop the project first.", 12, muted))
+                }
                 info.addView(button("Open runner") { runCatching { save(); startActivity(project.openIntent()) }.onFailure { announce("Could not open project. Refresh and try again.") } }.apply { tag = "open_project:${project.id}" })
             }
             projectRows[project.packageName] = ProjectRow(state, nodes, toggle, settings, logs)

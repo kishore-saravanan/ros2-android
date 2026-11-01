@@ -25,3 +25,9 @@ runtime and onboarding gates. APT and Play Store publication remain deferred.
 Baseline CI cannot establish physical reliability. Keep the current evidence and
 remaining limitations in [Status](STATUS.md). Detailed work sequencing and design
 rationale are in the [maintenance plan](design/MAINTENANCE-PLAN.md).
+
+Current progress (2026-11-01): contributor docs/CI are committed; the independent
+runner authorization preview and installed-client external C++ workspace path
+have reference-device evidence. Review/update/rotation/multiple-author/API gates
+remain open. Next implement versioned manifest/management compatibility checks
+and improve dependency/failure diagnostics before extracting robot examples.

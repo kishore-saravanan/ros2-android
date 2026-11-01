@@ -6,6 +6,13 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Add opt-in independently signed runner controls: pin the verified controller
+  APK public certificate at build time and approve/revoke each runner locally.
+  Keep legacy signature controls; authenticate requests/replies by actual UID
+  and current certificate. This remains a preview pending security/device gates.
+- Verify an installed client building/deploying an external C++ workspace using
+  the prepared SDK cache; fix controller binding lifetime across Activity recreation.
+
 - Document platform architecture, ownership boundaries and staged maintenance.
 - Make the README, contributor guides and roadmap platform-focused; keep robot
   applications as optional proof-of-concept examples pending external extraction.

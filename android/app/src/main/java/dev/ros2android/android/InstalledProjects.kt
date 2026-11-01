@@ -8,7 +8,7 @@ import android.content.pm.PackageManager
 /** Queries only activities explicitly advertising the project-runner protocol. */
 object InstalledProjects {
     const val ACTION = "dev.ros2android.android.OPEN_PROJECT"
-    data class Project(val id: String, val packageName: String, val activity: String, val runtime: String, val sourceId: String) {
+    data class Project(val id: String, val packageName: String, val activity: String, val runtime: String, val sourceId: String, val controllerCertificate: String = "") {
         val runtimeLabel get() = when (runtime) { "cpp" -> "C++ runner"; "python" -> "Python runner"; else -> "Colcon workspace" }
         fun openIntent() = Intent(ACTION).setComponent(ComponentName(packageName, activity))
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -27,7 +27,9 @@ object InstalledProjects {
             val source = meta.getString("dev.ros2android.PROJECT_SOURCE")?.removePrefix("sha256:") ?: return@mapNotNull null
             if (meta.getInt("dev.ros2android.PROJECT_PROTOCOL") != 1 || !id.matches(Regex("[a-z][a-z0-9_]{0,63}")) ||
                 runtime !in setOf("cpp", "python", "workspace") || !source.matches(Regex("[a-f0-9]{12}"))) return@mapNotNull null
-            Project(id, info.packageName, info.name, runtime, source)
+            val controller = meta.getString("dev.ros2android.PROJECT_CONTROLLER_CERTIFICATE")?.removePrefix("sha256:") ?: ""
+            if (controller.isNotEmpty() && !dev.ros2android.security.SigningIdentity.valid(controller)) return@mapNotNull null
+            Project(id, info.packageName, info.name, runtime, source, controller)
         }.distinctBy { it.packageName }.sortedWith(compareBy({ it.id }, { it.packageName }))
     }
 }

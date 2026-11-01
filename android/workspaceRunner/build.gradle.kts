@@ -21,10 +21,17 @@ if (active) robotProject.walkTopDown().filter { it.isFile }.sortedBy { it.relati
     digest.update(byteArrayOf(0)); digest.update(it.readBytes()); digest.update(byteArrayOf(0))
 }
 val sourceId = digest.digest().joinToString("") { "%02x".format(it) }.take(12)
+val controllerCertificate = providers.gradleProperty("controllerCertificateSha256").getOrElse("")
+require(controllerCertificate.isEmpty() || controllerCertificate.matches(Regex("[a-f0-9]{64}"))) {
+    "controllerCertificateSha256 must be a lowercase SHA-256 certificate fingerprint"
+}
 android {
     namespace = "dev.ros2android.runner"
     compileSdk = 35; buildToolsVersion = "35.0.0"; ndkVersion = "27.2.12479018"
     defaultConfig {
+        manifestPlaceholders += mapOf("pairedControlEnabled" to controllerCertificate.isNotEmpty().toString(),
+            "runnerControllerCertificate" to "sha256:$controllerCertificate")
+        buildConfigField("String", "CONTROLLER_CERTIFICATE_SHA256", JsonOutput.toJson(controllerCertificate))
         manifestPlaceholders += mapOf("runnerProjectId" to projectId, "runnerRuntime" to "workspace", "runnerSourceId" to sourceId)
         applicationId = runnerApplicationId
         minSdk = 26; targetSdk = 35; versionCode = 1; versionName = "0.1.0-workspace-dev1"
@@ -39,6 +46,7 @@ android {
     // AAPT's default directory ignore rule drops Python packages such as _utils.
     androidResources { ignoreAssetsPattern = "!.git:!.svn:!CVS:!*.scc:.*:!*~" }
     sourceSets["main"].res.srcDir("../branding/res")
+    sourceSets["main"].java.srcDir("../security/src/main/java")
     buildFeatures.buildConfig = true
     sourceSets["main"].apply {
         manifest.srcFile("../runner/src/main/AndroidManifest.xml")

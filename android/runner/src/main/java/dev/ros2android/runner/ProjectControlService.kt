@@ -7,13 +7,14 @@ import android.os.*
 import org.json.JSONObject
 
 /** Narrow, signature-protected operator protocol; never accepts shell commands. */
-class ProjectControlService : Service() {
+open class ProjectControlService : Service() {
+    protected open fun authorized(uid: Int): Boolean =
+        dev.ros2android.security.SigningIdentity.ownsUid(packageManager, "dev.ros2android.android", uid) &&
+            packageManager.checkSignatures(uid, applicationInfo.uid) == PackageManager.SIGNATURE_MATCH
     private val messenger = Messenger(object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(message: Message) {
             val uid = message.sendingUid
-            val packages = packageManager.getPackagesForUid(uid).orEmpty()
-            if ("dev.ros2android.android" !in packages ||
-                packageManager.checkSignatures(uid, applicationInfo.uid) != PackageManager.SIGNATURE_MATCH) return
+            if (!authorized(uid)) return
             val result = runCatching {
                 when (message.what) {
                     1 -> Unit

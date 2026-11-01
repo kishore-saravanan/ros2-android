@@ -12,6 +12,7 @@ import sys
 import time
 import tempfile
 from robot_launch import validate_launch
+from controller_identity import controller_certificate
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_PATTERN = r'dev\.ros2android\.android\.runner\.[a-z][a-z0-9_]*'
@@ -40,6 +41,7 @@ def main():
     ros.add_argument('ros_command', nargs=argparse.REMAINDER)
     build = commands.add_parser('build', help='Cross-build project into a debug runner APK')
     build.add_argument('--launch-arg', action='append', default=[], metavar='NAME:=VALUE')
+    build.add_argument('--controller-apk', type=Path, help='Pin the public certificate of this verified main APK')
     plan = commands.add_parser('launch-plan', help='Resolve and print a launch configuration without starting nodes')
     plan.add_argument('--launch', type=Path)
     plan.add_argument('--launch-arg', action='append', default=[], metavar='NAME:=VALUE')
@@ -165,6 +167,8 @@ def main():
             plan_path.parent.mkdir(parents=True, exist_ok=True)
             plan_path.write_text(json.dumps(launch, ensure_ascii=False, indent=2) + '\n')
             build_options = ['-ProbotLaunchPlan=' + str(plan_path)]
+        if args.controller_apk:
+            build_options += ['-PcontrollerCertificateSha256=' + controller_certificate(args.controller_apk)]
         subprocess.run([str(ROOT / 'setup/build.sh'), f':{module}:assembleDebug', f':{module}:lintDebug',
                         '-ProbotProjectDir=' + str(project), *build_options], cwd=ROOT, check=True)
         print(json.dumps({'apk': str(apk), 'sourceId': source_id(project), 'sha256': hashlib.sha256(apk.read_bytes()).hexdigest()}))

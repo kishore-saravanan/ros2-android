@@ -74,8 +74,11 @@ Bionic C library; copying Linux ARM binaries onto Android is insufficient.
 The build packages executable code, dependencies, interfaces and resources into
 a workspace runner APK. Currently there is **one runner APK per workspace**, in
 addition to the main app. Runners have no app-drawer entry. The main app discovers
-compatible runners and controls them through an explicit, signature-protected
-Android service. Main app and runners must use matching signing identities.
+compatible runners and controls them through explicit Binder services. Legacy
+controls retain signature permission. Opted-in independently signed runners pin
+the main APK certificate and require local runner approval, with per-request and
+reply UID/certificate checks. See [runner authorization](docs/RUNNER-AUTHORIZATION.md)
+for the preview trust model and remaining qualification gates.
 
 The ordinary C++ workspace backend supervises native child processes. The shell
 bundle provides ROS CLI commands and native LaunchService. Python/rclpy and

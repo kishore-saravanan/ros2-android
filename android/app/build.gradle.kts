@@ -37,6 +37,7 @@ android {
         release { isMinifyEnabled = false }
     }
     sourceSets["main"].res.srcDir("../branding/res")
+    sourceSets["main"].java.srcDir("../security/src/main/java")
     sourceSets["main"].jniLibs.srcDir("../../native-deps/apk-libs")
     sourceSets["main"].jniLibs.srcDir("../../native-deps/agent-apk-libs")
     sourceSets["main"].assets.srcDir("../../native-deps/agent-assets")

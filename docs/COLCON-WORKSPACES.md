@@ -11,6 +11,26 @@ Mixed ament_python workspaces, arbitrary dependencies and full ROS launch
 semantics still require integration. Standalone Python rclpy feasibility is
 already verified separately in [PYTHON-PROJECTS.md](PYTHON-PROJECTS.md).
 
+## Your own workspace and controller APK
+
+The installed client accepts an absolute external workspace path; source does
+not need to live in this repository. With the supported SDK prepared:
+
+```bash
+ros2-android workspace --workspace /absolute/path/to/my_ws inspect
+ros2-android workspace --workspace /absolute/path/to/my_ws build \
+  --controller-apk /absolute/path/to/ros2-android.apk
+ros2-android workspace --workspace /absolute/path/to/my_ws deploy
+```
+
+The APK is the main app installed on the phone; only its public certificate is
+used. In Projects → Details, authorize the runner before starting it. See
+[runner authorization](RUNNER-AUTHORIZATION.md) for the trust boundary and
+remaining preview gates. Omit the flag for the existing same-signature workflow.
+The external smoke test used `build --without-shell`; it reuses prepared SDK
+artifacts and is not fresh-machine qualification. Shell-enabled builds retain
+their additional Python SDK prerequisites.
+
 ## Example contents
 
 ```text

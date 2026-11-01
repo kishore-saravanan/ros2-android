@@ -36,12 +36,19 @@ robotProject.walkTopDown().onEnter { it.name !in setOf("build", ".git", ".cxx", 
     }
 val sourceId = sourceDigest.digest().joinToString("") { "%02x".format(it) }.take(12)
 
+val controllerCertificate = providers.gradleProperty("controllerCertificateSha256").getOrElse("")
+require(controllerCertificate.isEmpty() || controllerCertificate.matches(Regex("[a-f0-9]{64}"))) {
+    "controllerCertificateSha256 must be a lowercase SHA-256 certificate fingerprint"
+}
 android {
     namespace = "dev.ros2android.runner"
     compileSdk = 35
     buildToolsVersion = "35.0.0"
     ndkVersion = "27.2.12479018"
     defaultConfig {
+        manifestPlaceholders += mapOf("pairedControlEnabled" to controllerCertificate.isNotEmpty().toString(),
+            "runnerControllerCertificate" to "sha256:$controllerCertificate")
+        buildConfigField("String", "CONTROLLER_CERTIFICATE_SHA256", JsonOutput.toJson(controllerCertificate))
         manifestPlaceholders += mapOf("runnerProjectId" to projectId, "runnerRuntime" to "cpp", "runnerSourceId" to sourceId)
         applicationId = runnerApplicationId
         minSdk = 26
@@ -61,6 +68,7 @@ android {
         }
     }
     sourceSets["main"].res.srcDir("../branding/res")
+    sourceSets["main"].java.srcDir("../security/src/main/java")
     buildFeatures.buildConfig = true
     externalNativeBuild.cmake {
         path = file("../../native/runner/CMakeLists.txt")

@@ -11,11 +11,12 @@ No public APT repository or stable package release is available yet.
 | Native ROS 2 | Android ARM64 Jazzy publishers/subscribers exchanged real typed data with Linux Jazzy over Wi-Fi and USB networking. |
 | Automatic discovery | Real phone and USB-Agent traffic reached Linux ROS peers without explicit discovery peers on the reference LAN. Network multicast policy still matters. |
 | Phone-hosted micro-ROS | ESP32 exchanged typed topics through the phone Agent over UDP and CP2102 USB serial. Broader boards/drivers remain unqualified. |
+| Independent runner authorization | Opt-in certificate pinning and local approval/revocation passed on the reference phone using a separate runner key; unauthorized isolated UID got no response. Installed wheel built/deployed an external C++ workspace against the prepared SDK cache. Security/update/rotation/multiple-author and broader device gates remain open. |
 | Workspace execution | Example ordinary C++ workspace cross-built, deployed and ran native processes on Android, with custom messages, parameters and stop/restart checks. |
 | Python and launch | Separate Python/rclpy examples and supported launch paths passed reference tests. Arbitrary mixed workspaces and Linux dependencies are not guaranteed. |
 | Dashboard | Scalar subscriptions, joystick release/focus-loss zero commands and JPEG/PNG image receipt/recovery passed physical tests. Two-phone camera viewing and reference robot control were also confirmed by the operator. |
 | Camera options | Supported 1280×720, quality 80, automatic FPS produced about 29.9 capture/publish FPS in a reference sample; a PC received 20 valid JPEGs. This is not an endurance or latency measurement. |
-| Latest platform regression | Build/lint and 23 JVM unit tests passed. Independent phone/PC Switch ON/OFF, navigation/no restart replay and joystick release/focus-loss tests passed. 38 host tests passed with Jazzy available. Baseline JVM/lint tasks also passed from a clean source export without native-deps. Hosted CI execution is pending. |
+| Latest platform regression | Build/lint and 25 JVM unit tests passed. Independent phone/PC Switch ON/OFF, navigation/no restart replay and joystick release/focus-loss tests passed. 41 host tests passed with Jazzy available. Baseline JVM/lint tasks also passed from a clean source export without native-deps. Hosted CI execution is pending. |
 | ESP32 programming through phone | ROM-loader application writes passed hash verification and micro-ROS recovery checks. Sustained stub transfers remain unreliable; see the programming guide. |
 
 The reference phone advertises normal capture modes up to 30 FPS. Higher FPS
@@ -53,9 +54,8 @@ must not determine generic platform APIs or readiness.
 ## Community-readiness priorities
 
 See the [platform roadmap](ROADMAP.md), [test scope](TESTING.md) and
-[release checklist](RELEASING.md). Matching-signature runner control currently
-blocks an official main APK plus independently signed user workspaces; the
-pairing/trust design is an explicit release gate. Dashboard local request status
+[release checklist](RELEASING.md). [Independent runner authorization](RUNNER-AUTHORIZATION.md)
+is an opt-in preview; broader signing/device review is still a release gate. Dashboard local request status
 is implemented, but the earlier intermittent missed OFF has no confirmed root
 cause; network-loss/late-subscriber fault tests remain open.
 

@@ -17,8 +17,8 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 Host tests need Python 3.10+ and a C++ compiler for the command-guard fixture.
 Most use synthetic files/processes. The ROS launch-adapter and Python lifecycle suites are
 explicitly skipped when ROS Python packages are absent. To run it, source Jazzy
-and repeat the host suite; the recorded local run has all 38 host tests passing.
-The ROS-independent run has 23 executed tests and 15 explicitly skipped
+and repeat the host suite; the recorded local run has all 41 host tests passing.
+The ROS-independent run has 26 executed tests and 15 explicitly skipped
 ROS-dependent tests.
 
 Android JVM tests/lint need Java 21 and Android platform/build tools 35 as
@@ -78,3 +78,26 @@ PYTHONPATH=examples/ball_follower/src/ball_follower \
 Passing its synthetic images/controller tests does not qualify a motor driver,
 physical timing or autonomous following. Avoid coupling generic runtime changes
 to application tuning. See [example boundaries](../examples/README.md).
+
+## Independent runner authorization regression
+
+`RunnerTrustTest` is opt-in and restricted to the disposable fixture package
+`dev.ros2android.android.runner.ws_auth_workspace`. Copy the small
+`examples/android_test_ws` outside the checkout, use `--id auth_workspace`, build
+with `--controller-apk` and `--without-shell`, and sign the runner with a separate
+throwaway key using Android's signing tools before deployment. Keep test keys
+and screenshots ignored; do not use a release key. The normal debug key may be
+the same as the locally built main app, which would not prove signer independence.
+
+```bash
+./setup/build.sh :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=dev.ros2android.android.RunnerTrustTest \
+  -Pandroid.testInstrumentationRunnerArguments.trustTestPackage=dev.ros2android.android.runner.ws_auth_workspace
+```
+
+The fixture is configured to ROS domain87, started and stopped, and its local
+approval is revoked at completion. It must contain only the talker/processor
+example, never robot actuator nodes. The test checks an isolated caller via a
+private debug-only probe, as well as approval/identity/revocation. No camera or
+personal apps/data are accessed. Use a separate Linux ROS subscriber to verify
+`/android_test/result`; runner status alone is not traffic evidence.

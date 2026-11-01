@@ -100,3 +100,11 @@ OFF root cause, network-loss/late-subscriber checks and integrated observed-stat
 binding remain open. Stage 1 is partially implemented, not qualified complete.
 Resolve these reliability gaps and the runner signing path before an official
 installable community release.
+
+Independent runner slice (2026-11-01): optional controller APK certificate pinning,
+local runner approval/revocation and per-message UID checks are implemented.
+Reference tests cover a separate signing key and unauthorized isolated UID; an
+installed wheel built/deployed an external C++ workspace using the prepared SDK
+cache. See [authorization](../RUNNER-AUTHORIZATION.md). Stage2 remains a preview
+pending review, update/rotation/multiple-author and broader API/device tests.
+No robot application migration or fresh-machine qualification is implied.
