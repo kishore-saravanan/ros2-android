@@ -45,10 +45,38 @@ robot mark, not an official ROS or Android logo. See [branding](../BRANDING.md).
 
 ## Demo videos
 
-The maintainer plans to provide the ball-tracker robot recordings later. No video
-or invented preview is included yet. When supplied, add a selected preview/link
-to the README's demo section, describe the actual phone/MCU computation path and
-link the example guide. Review visible personal material, screen contents and
-private addresses before publishing; avoid committing large raw recordings.
+The maintainer supplied two recordings of the November 1, 2026 ball-following
+experiment and requested their good opening sections for the community demo.
+Only the selected, compressed showcase and a reviewed cover enter the repository:
+
+- `demo/ros2-android-demo.mp4`: 70 seconds, H.264, 1280×720, 30 fps, muted,
+  fast-start MP4. It concatenates source 1 at 00:00–00:40 and source 2 at
+  00:00–00:30, with a brief identifying caption at each section's beginning.
+- `demo/cover.jpg`: real frames showing the remote Dashboard and onboard vision,
+  arranged on a ROS-inspired title card. No generated robot imagery.
+
+Source recordings: `2026-11-01 20-25-41.mp4` (1920×1080/60 fps) and
+`20261101_203553.mp4` (3840×2160, variable frame rate). Raw files remain outside
+Git, unchanged. Separate uncaptioned 40-second/30-second 1080p clips and a 1080p
+showcase are local sharing exports, not duplicate repository assets.
+
+Action plays at its original speed. Exports convert to 30 fps without motion
+interpolation, time compression, synthetic frames or artificial stabilization.
+Room audio and source metadata are removed. Full 16:9 composition is retained.
+The selected footage and cover were visually reviewed for personal screen
+contents/addresses; later settings footage from source 2 is excluded. This is
+supplied recorded media, not a new phone screen capture or camera access.
+
+The onboard phone runs camera capture and Python ROS 2 vision/control nodes. A
+phone-hosted micro-ROS Agent connects by USB to the ESP32 motor controller. A
+second phone provides Dashboard control and subscribed annotated images. The
+footage shows the then-current app UI, which can differ from later development.
+It demonstrates one application; it is not a latency, hard-real-time, endurance,
+calibrated-motion or general robot-controller benchmark.
+
+All four local MP4 exports were fully decoded without reported errors. Dimensions,
+frame counts/durations, 30 fps, absence of audio and fast-start atom order were
+checked; title visibility and the section cut were visually inspected. Raw review
+frames, encoding logs and export hashes remain ignored, not in public media.
 
 Original project media follows the repository's [Apache-2.0 license](../../LICENSE).

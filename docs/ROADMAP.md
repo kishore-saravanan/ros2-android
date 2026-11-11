@@ -83,7 +83,8 @@ or large rewrite solely for architectural patterns.
 - [ ] Move ball following and robot-specific firmware/configuration with history,
       licensing, citation and a recoverable working baseline.
 - [ ] Keep minimal compatibility fixtures in this platform repository.
-- [ ] Add the maintainer-provided demo videos and a reproducible example walkthrough.
+- [x] Add reviewed, compressed maintainer-provided robot demo media.
+- [ ] Validate a reproducible companion-example walkthrough.
 
 **Exit gate:** a separate examples checkout builds/deploys against a pinned platform
 package/SDK without editing the platform checkout. No mandatory submodule.
