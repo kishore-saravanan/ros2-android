@@ -101,3 +101,16 @@ example, never robot actuator nodes. The test checks an isolated caller via a
 private debug-only probe, as well as approval/identity/revocation. No camera or
 personal apps/data are accessed. Use a separate Linux ROS subscriber to verify
 `/android_test/result`; runner status alone is not traffic evidence.
+
+## Protocol and documentation captures
+
+`ProjectProtocolTest` exercises strict version types, supported command subsets,
+legacy v1 compatibility and malformed capability rejection. Runner service
+authorization still precedes envelope parsing. Unit tests do not prove actual
+Binder request rejection, installed metadata presentation or update/reconnect
+races; those remain dedicated device-qualification gates.
+
+The README's intentionally curated media is separate from private device evidence.
+[Media provenance](assets/README.md) documents the opt-in content-only capture,
+address redaction and temporary inactive Dashboard layout. That test does not
+start ROS sessions, user projects, camera publishing or motor commands.

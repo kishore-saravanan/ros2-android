@@ -6,6 +6,10 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Refresh the community README with the custom logo, real app screenshots,
+  a system overview and a staged roadmap with explicit acceptance gates.
+  Document media provenance and leave room for maintainer-provided demo videos.
+
 - Add an additive runner-control version/capability envelope with strict rejection
   before state changes, legacy v1 compatibility and capability-gated controls.
   Show incompatible protocol metadata and binding timeouts instead of silently

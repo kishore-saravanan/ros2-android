@@ -17,7 +17,9 @@ class DocumentationTest(unittest.TestCase):
             text = path.read_text()
             # Ignore examples inside fenced code, which are not navigation links.
             text = re.sub(r'^```[^\n]*\n.*?^```\s*$', '', text, flags=re.M | re.S)
-            for target in re.findall(r'\]\(([^)]+)\)', text):
+            targets = re.findall(r'\]\(([^)]+)\)', text)
+            targets += re.findall(r'(?:src|href)="([^"]+)"', text)
+            for target in targets:
                 if '://' in target or target.startswith(('#', 'mailto:')):
                     continue
                 target = unquote(target.split('#', 1)[0].strip('<>'))

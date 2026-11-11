@@ -1,4 +1,10 @@
+<p align="center">
+  <img src="docs/assets/ros2-android.svg" width="112" alt="ROS2 Android robot logo">
+</p>
+
 # ROS2 Android
+
+**Your phone. Your ROS nodes. Your robot.**
 
 Use an Android phone as a robot's onboard ROS 2 computer: run supported nodes
 locally, publish phone sensors, connect microcontrollers and configure a control
@@ -12,6 +18,21 @@ proof-of-concept application, not the product's primary purpose.
 There is no stable release or public APT repository yet. Android API 26 is the
 build minimum; supported hardware and runtime evidence are described in
 [compatibility and validation](docs/STATUS.md), not implied by that minimum.
+
+## The app
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/assets/screenshots/home.png" width="210" alt="ROS2 Android Home with runtime and connection status"><br><b>Home</b></td>
+    <td align="center"><img src="docs/assets/screenshots/sensors.png" width="210" alt="Phone sensors available for ROS publishing"><br><b>Sensors</b></td>
+    <td align="center"><img src="docs/assets/screenshots/dashboard.png" width="210" alt="Configurable ROS control Dashboard"><br><b>Dashboard</b></td>
+    <td align="center"><img src="docs/assets/screenshots/projects.png" width="210" alt="Installed workspace controls in Projects"><br><b>Projects</b></td>
+  </tr>
+</table>
+
+Actual app captures from the reference phone in dark mode. Network addresses are
+hidden. Dashboard shows an inactive example layout; no commands were published.
+[Capture details](docs/assets/README.md).
 
 ## Start here
 
@@ -52,6 +73,21 @@ Kotlin owns Android UI, permissions and hardware. JNI connects to native Jazzy
 `rcl` and Cyclone DDS. Workspace runners host native ROS processes or the supported
 embedded Python runtime; the micro-ROS Agent connects MCU nodes to the ROS graph.
 
+```mermaid
+flowchart LR
+    DEV[Linux development PC] -->|Cross-build and deploy| RUN
+    subgraph PHONE[Android onboard computer]
+        APP[ROS2 Android app · sensors and Dashboard]
+        RUN[Workspace runner · ROS nodes]
+        AGENT[micro-ROS Agent]
+    end
+    APP <-->|DDS| RUN
+    RUN <-->|DDS| AGENT
+    AGENT <-->|USB serial or UDP| MCU[Microcontroller]
+    PEER[Other ROS 2 devices] <-->|DDS over the network| APP
+    PEER <-->|DDS over the network| RUN
+```
+
 See [current architecture](ARCHITECTURE.md), [target high-level design](docs/design/HIGH-LEVEL-DESIGN.md),
 [low-level design](docs/design/LOW-LEVEL-DESIGN.md) and [roadmap](docs/ROADMAP.md).
 The direction is a modular application with isolated runners, not microservices.
@@ -64,13 +100,42 @@ opt-in certificate-pinned preview; security review and broader signing/device
 qualification remain pending. Dashboard raw `sensor_msgs/msg/Image`
 viewing is pending. A local write or Running label is not remote acknowledgement.
 
-## Examples and development
+## Roadmap
+
+The next milestone is a dependable **community alpha**, with clear setup steps,
+qualified recovery behavior and support boundaries that contributors can reproduce.
+
+| Stage | What we are building | Status |
+| --- | --- | --- |
+| Native foundation | Sensors, Dashboard, workspace runners and phone-hosted micro-ROS | Available in the development preview |
+| Reliable operation | Offline startup, network/USB recovery, runtime state and runner trust | Current focus; qualification in progress |
+| External developer journey | Dependency diagnostics, compatibility matrix and clean-machine build/deploy | In progress |
+| Maintainable platform | Focused controllers, shared contracts and packaged host backends | Incremental work ahead |
+| Standalone examples | Companion examples repo, ball-tracker walkthrough and demo videos | Planned; extraction gated on SDK usability |
+| Community alpha | Broader device tests, sustained-operation measurements and signed artifacts | Release gate |
+
+[Full roadmap and acceptance gates →](docs/ROADMAP.md)
+
+Raw-image Dashboard viewing, broader messages/services/actions, mixed workspaces
+and public APT distribution follow the core platform gates. Play Store work is
+deferred. There is no promised release date.
+
+## See it in action
 
 Minimal [example workspaces](examples/README.md) exercise platform compatibility.
 The [ball follower](docs/BALL-FOLLOWER.md) demonstrates onboard Python vision and
 ROS control; it is not a calibrated or generally supported robot controller.
+Demo videos will be added here when provided.
+
 Robot-specific examples will move to a companion repository after the external
 build/deploy journey is proven. No migration has occurred yet.
+
+## Build with us
+
+Contributions are welcome in runtime reliability, Android UX, workspace support,
+tests and documentation. Start with [Contributing](CONTRIBUTING.md); a useful
+first contribution is reproducing a supported journey on another phone and
+reporting the result with private details removed.
 
 Contributor entry points: [build and test](docs/DEVELOPMENT.md),
 [CI and test scope](docs/TESTING.md), [architecture decisions](docs/decisions/0001-platform-and-examples.md),
