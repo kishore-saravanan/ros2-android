@@ -140,11 +140,14 @@ private debug-only probe, as well as approval/identity/revocation. No camera or
 personal apps/data are accessed. Use a separate Linux ROS subscriber to verify
 `/android_test/result`; runner status alone is not traffic evidence.
 
-## Runner protocol fixture (prepared, physical execution pending)
+## Runner protocol fixture
 
 `RunnerProtocolTest` is opt-in and restricted to the stopped disposable
-`ws_auth_workspace` talker fixture described above. Rebuild it with the current
-SDK and deploy it before testing. Leave the main app unlocked and visible; no
+`ws_protocol_workspace` talker fixture. Build the small
+`examples/android_test_ws` workspace with `--id protocol_workspace` and
+`--without-shell`, then deploy it before testing. The independently signed
+`ws_auth_workspace` fixture is also accepted; preserve an older copy when testing
+legacy compatibility. Leave the main app unlocked and visible; no
 robot hardware is required. The test temporarily grants local approval if needed
 and restores its prior approval state. It requires a versioned service response
 before sending any malformed command, so an old service cannot execute a request
@@ -153,21 +156,56 @@ that it would otherwise ignore version fields on.
 ```bash
 ./setup/build.sh :app:connectedDebugAndroidTest \
   -Pandroid.testInstrumentationRunnerArguments.class=dev.ros2android.android.RunnerProtocolTest \
-  -Pandroid.testInstrumentationRunnerArguments.protocolTestPackage=dev.ros2android.android.runner.ws_auth_workspace
+  -Pandroid.testInstrumentationRunnerArguments.protocolTestPackage=dev.ros2android.android.runner.ws_protocol_workspace
 ```
 
 It checks authenticated legacy and versioned status requests, then unsupported,
 string and null protocol versions for all four commands and an unknown command.
 Each rejection must leave the stopped state and saved configuration unchanged.
-It never sends a valid start/stop/configure request. Compilation has passed;
-Binder execution has not been performed for this new test. This checks a new
-service accepting legacy requests, not an old runner APK or an APK upgrade.
+It never sends a valid start/stop/configure request. The current-service fixture
+passed on the reference Android device. This checks a new service accepting
+legacy requests, not an old runner APK or an APK upgrade.
 
 Remaining fixture matrix: new controller/old runner, old controller/new runner,
 incompatible installed metadata, reply delay beyond deadline, service death,
 runner update while bound and revoked/replaced signing identity. Verify clear
 errors, no stale status or command replay and preserved configuration. Use only
 isolated talker fixtures and qualify each case before marking it complete.
+
+## Phone-local workspace traffic
+
+`WorkspaceLocalLifecycleTest` is opt-in and restricted to the disposable
+`ws_protocol_workspace` fixture. Use the two-node `android_test_ws` example,
+with `--id protocol_workspace` and `--without-shell`. Stop the fixture and main
+sensor/Dashboard session first. Turn Wi-Fi off before the test and leave the
+main app open and unlocked. No MCU, camera or motor commands are used.
+
+```bash
+./setup/build.sh :app:connectedDebugAndroidTest \
+  '-Pandroid.testInstrumentationRunnerArguments.class=dev.ros2android.android.WorkspaceLocalLifecycleTest#offlineResultsRecoverAfterRestart' \
+  -Pandroid.testInstrumentationRunnerArguments.workspaceLocalTestPackage=dev.ros2android.android.runner.ws_protocol_workspace
+```
+
+The foreground method passed on the reference device with Wi-Fi off.
+It receives `/android_test/result` through the main app's Dashboard service,
+checks advancing sequence numbers and processor calculations, stops the fixture,
+checks Stale, then restarts it and checks fresh results. It uses an isolated ROS
+domain, restores the fixture profile and leaves it stopped. Saved Dashboard
+widgets and main connection preferences are not changed.
+
+The separate `offlineResultsContinueInBackgroundAndRecoverAfterRestart` method
+adds ten seconds with the Activity stopped and the controller unbound. It requires
+fresh results with gaps below two seconds. A reference-device trial exceeded that
+gap in automatic and explicit loopback-only profiles; background continuity
+remains a known qualification failure. Add `workspaceLocalOnly=true` as an
+instrumentation argument to select the isolated loopback diagnostic, or
+`workspaceKeepControllerBound=true` to compare a retained management binding.
+The test also sends an isolated String self-probe to distinguish main-app
+reception from workspace results. In the reference failure, the self-probe remained
+fresh while workspace results stalled; retaining the management binding did not
+prevent the gap. The underlying cause is not established. This is an
+explicit diagnostic test, not part of unattended CI. Screen-off, task removal,
+process death and USB coexistence are separate cases.
 
 ## Offline network policy
 

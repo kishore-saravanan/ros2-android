@@ -26,16 +26,20 @@ a PC or an external network.
 
 - [ ] Qualify fresh startup without Wi-Fi across runner backends and USB Agent.
       Battery/Dashboard and workspace Live/Stale checks have operator confirmation;
-      instrumented coverage and USB coexistence remain open.
+      a physical C++ workspace result/stop/restart test also passes. Other backends
+      and USB coexistence remain open.
 - [x] Share phone-local Cyclone startup settings across app, runners and shell; reject stale pins with recovery guidance.
 - [ ] Qualify network changes and reconnects consistently on devices.
 - [ ] Qualify USB detach/reconnect, permission denial and app-update recovery.
 - [ ] Exercise screen-off, task removal, process death and vendor power management.
+      Short Activity-background result freshness failed on the reference phone in
+      automatic and loopback-only modes; investigate before qualification.
 - [ ] Test Dashboard lost-link/late-subscriber behavior and distinguish local writes
       from remote acknowledgement.
 - [x] Isolate control requests and reject stale replies; unit-test timeout/reconnect rules.
 - [x] Prepare an opt-in stopped-fixture test for legacy requests and version rejection without state changes.
-- [ ] Qualify protocol envelopes and request recovery against updated, legacy and incompatible runners.
+- [x] Qualify current-service legacy/versioned status and invalid request rejection without state changes.
+- [ ] Complete old-runner, delayed-reply, service-death and update/reconnect qualification.
 - [ ] Review independent signing, update/reinstall, revocation and key rotation.
 
 **Exit gate:** repeatable fault/recovery matrix with independent ROS traffic

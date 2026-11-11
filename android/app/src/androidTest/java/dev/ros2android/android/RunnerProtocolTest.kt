@@ -33,7 +33,8 @@ class RunnerProtocolTest {
     @Test fun legacyAndVersionedStatusWorkAndIncompatibleRequestsHaveNoSideEffects() {
         val target = InstrumentationRegistry.getArguments().getString("protocolTestPackage")
         assumeTrue("Requires the disposable protocol fixture", target != null)
-        require(target == "dev.ros2android.android.runner.ws_auth_workspace")
+        require(target in setOf("dev.ros2android.android.runner.ws_auth_workspace",
+            "dev.ros2android.android.runner.ws_protocol_workspace"))
         lateinit var app: Context
         lateinit var trust: ProjectTrust
         var originallyApproved = false
