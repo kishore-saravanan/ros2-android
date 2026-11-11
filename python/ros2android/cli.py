@@ -12,6 +12,7 @@ import tempfile
 import zipfile
 
 from . import __version__
+from .diagnostics import PROFILES, compatibility, diagnose
 
 
 def sdk_root():
@@ -46,21 +47,35 @@ def sdk_root():
     return target
 
 
-def doctor():
-    sdk = Path(os.environ.get('ANDROID_HOME', os.environ.get('ANDROID_SDK_ROOT', str(Path.home() / 'Android/Sdk'))))
-    checks = {name: shutil.which(name) for name in ('java', 'cmake', 'ninja', 'colcon', 'ros2')}
-    checks['adb'] = str(sdk / 'platform-tools/adb') if (sdk / 'platform-tools/adb').is_file() else shutil.which('adb')
-    checks['android_platform_35'] = (sdk / 'platforms/android-35').is_dir()
-    checks['android_ndk_27'] = (sdk / 'ndk/27.2.12479018').is_dir()
-    print(json.dumps({'version': __version__, 'checks': checks,
-                      'note': 'Presence checks only; source ROS and consult the setup guide for versions and runtime qualification.'}, indent=2))
-    return 0 if all(checks.values()) else 1
+def existing_tooling_root():
+    """Locate prepared inputs without extracting the SDK or changing caches."""
+    source = Path(__file__).resolve().parents[2]
+    if (source / 'native/ros-sources.lock.json').is_file():
+        return source
+    archive = files('ros2android').joinpath('sdk.zip')
+    if archive.is_file():
+        digest = hashlib.sha256(archive.read_bytes()).hexdigest()[:16]
+        cache = Path(os.environ.get('XDG_CACHE_HOME', Path.home() / '.cache')) / 'ros2-android/tooling' / digest
+        if (cache / '.complete').is_file():
+            return cache
+    return None
+
+
+def doctor(arguments):
+    parser = argparse.ArgumentParser(prog='ros2-android doctor', description='Check prerequisites without installation or phone access.')
+    parser.add_argument('--profile', choices=PROFILES, default='android', help='host Linux build; android C++ workspace; shell workspace with ROS CLI; app main APK')
+    parser.add_argument('--tooling-root', type=Path, help='Matching source checkout or extracted SDK (otherwise auto-detect existing inputs)')
+    args = parser.parse_args(arguments)
+    root = args.tooling_root.expanduser().resolve() if args.tooling_root else existing_tooling_root()
+    report = diagnose(args.profile, root)
+    print(json.dumps(report, indent=2))
+    return 0 if report['prerequisitesPresent'] else 1
 
 
 def main():
     parser = argparse.ArgumentParser(description='Build, deploy and operate native ROS 2 workspaces on Android.')
     parser.add_argument('--version', action='version', version=__version__)
-    parser.add_argument('command', choices=['doctor', 'workspace', 'project', 'esp32', 'shell', 'setup', 'device'])
+    parser.add_argument('command', choices=['doctor', 'compatibility', 'workspace', 'project', 'esp32', 'shell', 'setup', 'device'])
     # Preserve backend flags and ROS arguments verbatim; --help belongs to the selected command.
     if len(sys.argv) <= 1 or sys.argv[1] in ('-h', '--help', '--version'):
         parser.parse_args()
@@ -68,9 +83,11 @@ def main():
     args = parser.parse_args(sys.argv[1:2])
     remaining = sys.argv[2:]
     if args.command == 'doctor':
-        if remaining:
-            parser.error('doctor takes no arguments')
-        return doctor()
+        return doctor(remaining)
+    if args.command == 'compatibility':
+        argparse.ArgumentParser(prog='ros2-android compatibility', description='Print the bundled preview compatibility matrix.').parse_args(remaining)
+        print(json.dumps(compatibility(), indent=2))
+        return 0
     root = sdk_root()
     if args.command == 'device':
         device_parser = argparse.ArgumentParser(prog='ros2-android device')

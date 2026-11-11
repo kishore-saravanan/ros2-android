@@ -44,7 +44,8 @@ platform source or relying on this maintainer's prepared PC.
 
 - [x] Inspect declared dependency providers and unsupported package types.
 - [ ] Resolve dependency/version conditions and report unsupported launch features.
-- [ ] Publish a compatibility matrix tying CLI, APK, protocol, ABI and SDK revisions.
+- [x] Define a bundled compatibility matrix tying CLI, APK, protocol, ABI and SDK locks.
+- [x] Add task-scoped preflight checks and document clean-machine setup order.
 - [ ] Validate the installed-client journey on a clean Linux machine.
 - [ ] Refine inspect → build → deploy → start → observe → stop errors and guides.
 - [ ] Document signed runner upgrades, rollback and development-key ownership.

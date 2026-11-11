@@ -16,13 +16,16 @@ With pipx available, install the supplied artifact:
 ```bash
 pipx install /absolute/path/ros2_android-0.1.0a1-py3-none-any.whl
 ros2-android --version
-ros2-android doctor
+ros2-android compatibility
+ros2-android doctor --profile host
 ros2-android workspace --workspace /absolute/path/android_test_ws inspect
 ```
 
-`doctor` reports prerequisite presence as JSON and returns 1 if something is
-missing. It does not install anything, verify tool versions or test a phone.
-Source ROS Jazzy in the terminal for commands that need PC ROS/colcon.
+`doctor` provides task-scoped JSON checks, pinned version checks and next actions;
+it returns 1 for missing/incompatible prerequisites without installing anything
+or contacting a phone. Use `host`, `android`, `shell` or `app` profiles. See the
+[compatibility matrix](COMPATIBILITY.md) and [clean-machine setup order](CLEAN-MACHINE-SETUP.md).
+Source ROS Jazzy in the terminal for commands that need PC ROS.
 
 Once the documented native/Python SDK and Android build prerequisites are ready:
 

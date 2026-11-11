@@ -1,5 +1,10 @@
 # Development
 
+For the installed-client journey on another machine, follow
+[clean-machine setup order](CLEAN-MACHINE-SETUP.md) and inspect the
+[compatibility matrix](COMPATIBILITY.md). That full fresh-machine journey still
+needs qualification.
+
 ## First build
 
 Install the Android SDK outside the repository (the default is `~/Android/Sdk`).

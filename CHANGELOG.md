@@ -6,6 +6,11 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Bundle a compatibility matrix tied to source/build contracts and pinned input
+  locks; stamp built wheels with their tooling snapshot hash. Add task-scoped
+  `doctor` profiles with version checks and next actions, and document the setup
+  order for another Linux machine. Full clean-machine build/deploy remains pending.
+
 - Add read-only workspace inspection of declared dependency providers across
   workspace sources, selected Android SDK indexes and Linux ROS indexes. Report
   unsupported package types, unresolved groups, conditions and version constraints

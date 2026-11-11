@@ -21,4 +21,4 @@ ros2-android = "ros2android.cli:main"
 where = ["python"]
 
 [tool.setuptools.package-data]
-ros2android = ["sdk.zip"]
+ros2android = ["sdk.zip", "compatibility.json"]

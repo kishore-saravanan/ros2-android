@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "status": "development-preview",
+  "hostClientVersion": "0.1.0a1",
+  "app": {
+    "versionName": "0.1.1-dev6",
+    "versionCode": 8
+  },
+  "host": {
+    "system": "Linux",
+    "architecture": "x86_64",
+    "referenceDistribution": "Ubuntu 24.04",
+    "clientPythonMinimum": [
+      3,
+      10
+    ],
+    "rosPython": [
+      3,
+      12
+    ],
+    "javaMajor": 21
+  },
+  "android": {
+    "abi": "arm64-v8a",
+    "minApi": 26,
+    "compileApi": 35,
+    "targetApi": 35,
+    "buildTools": "35.0.0",
+    "ndk": "27.2.12479018",
+    "cmake": "3.22.1"
+  },
+  "ros": {
+    "distribution": "jazzy",
+    "pythonRuntime": "3.12.15",
+    "middleware": "rmw_cyclonedds_cpp",
+    "sourceLock": "native/ros-sources.lock.json",
+    "sourceLockSha256": "18ce04f24d39b3deb005204dc64445a79a6701651e9ff1f53cb5ea48e7094f9b",
+    "pythonRuntimeLockSha256": "383fe5bd9d74f48278a3522f38c35326564149c21b3400e8e22f4b73199a3686"
+  },
+  "contracts": {
+    "manifestSchema": 1,
+    "managementProtocol": 1,
+    "runtimeAbis": {
+      "cpp": [
+        1,
+        2
+      ],
+      "python": [
+        1
+      ],
+      "workspace": [
+        2
+      ]
+    }
+  },
+  "qualification": "Reference-device preview. This matrix specifies expected inputs, not universal package/device support or measured real-time guarantees.",
+  "build": {
+    "gradle": "8.9",
+    "androidGradlePlugin": "8.7.3",
+    "kotlin": "2.2.21",
+    "javaBytecodeTarget": 17
+  },
+  "sourceLocks": {
+    "native/pc-cyclone-packages.lock.json": "f49ef298133aea919e96b6a97aafb369b7c9d8035c27cf3e1f98da03b35092e6",
+    "native/python-runtime.lock.json": "383fe5bd9d74f48278a3522f38c35326564149c21b3400e8e22f4b73199a3686",
+    "native/ros-shell-packages.lock.json": "37733023e30c8d7ad284000bcec857e572dbb16e8e925858aeba22e9347ee246",
+    "native/ros-sources.lock.json": "18ce04f24d39b3deb005204dc64445a79a6701651e9ff1f53cb5ea48e7094f9b"
+  }
+}

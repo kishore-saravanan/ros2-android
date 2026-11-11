@@ -17,8 +17,8 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 Host tests need Python 3.10+ and a C++ compiler for the command-guard fixture.
 Most use synthetic files/processes. The ROS launch-adapter and Python lifecycle suites are
 explicitly skipped when ROS Python packages are absent. To run it, source Jazzy
-and repeat the host suite; the recorded local run has all 56 host tests passing.
-The ROS-independent run has 41 executed tests and 15 explicitly skipped
+and repeat the host suite; the recorded local run has all 66 host tests passing.
+The ROS-independent run has 51 executed tests and 15 explicitly skipped
 ROS-dependent tests.
 
 Android JVM tests/lint need Java 21 and Android platform/build tools 35 as
@@ -122,3 +122,10 @@ precedence, missing SDKs, conditions/versions/groups, unsupported package types,
 malformed manifests, ignored/generated paths and shell-profile isolation. Its
 external-path CLI check verifies inspection does not write a cache or execute
 workspace CMake. These tests do not cross-build the dependencies they inspect.
+
+`HostDiagnosticsTest` checks task-scoped prerequisites with synthetic SDK/tool
+inputs, version mismatches, managed colcon selection, missing roots, bounded
+version probes and no SDK extraction/device access. Its matrix regression ties
+client/app/build/contract versions and source-lock hashes to the current source.
+An installed wheel includes its tooling snapshot hash; preflight success is not
+a clean-machine build or native-runtime qualification.

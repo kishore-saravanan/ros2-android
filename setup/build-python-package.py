@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Maintainer: build a wheel with a tracked-source SDK snapshot; never ship local state."""
 import argparse
+import hashlib
+import json
 from pathlib import Path
 import shutil
 import subprocess
@@ -32,6 +34,10 @@ def main():
                     if source.is_symlink():
                         raise ValueError('Refusing SDK symlink: ' + name)
                     archive.write(source, name)
+        matrix_path = stage / 'python/ros2android/compatibility.json'
+        matrix = json.loads(matrix_path.read_text())
+        matrix['artifact'] = {'sdkSnapshotSha256': hashlib.sha256((stage / 'python/ros2android/sdk.zip').read_bytes()).hexdigest()}
+        matrix_path.write_text(json.dumps(matrix, indent=2) + '\n')
         subprocess.run([sys.executable, '-m', 'pip', 'wheel', '--no-deps', '--no-build-isolation',
                         '--wheel-dir', str(output), str(stage)], check=True)
     print('Built local alpha wheel; public publication and licensing review remain pending.')

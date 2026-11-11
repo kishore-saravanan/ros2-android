@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Install a built wheel into a disposable environment and exercise it outside the checkout."""
 import argparse
+import hashlib
 import io
 import json
 import os
@@ -19,7 +20,10 @@ def main():
     with zipfile.ZipFile(wheel) as archive:
         for legal in ('LICENSE', 'NOTICE'):
             assert any('.dist-info/' in name and name.endswith('/' + legal) for name in archive.namelist()), legal
-        with zipfile.ZipFile(io.BytesIO(archive.read('ros2android/sdk.zip'))) as sdk:
+        sdk_bytes = archive.read('ros2android/sdk.zip')
+        matrix = json.loads(archive.read('ros2android/compatibility.json'))
+        assert matrix['artifact']['sdkSnapshotSha256'] == hashlib.sha256(sdk_bytes).hexdigest()
+        with zipfile.ZipFile(io.BytesIO(sdk_bytes)) as sdk:
             forbidden = {'device-logs', '.git', 'local.properties', 'native-deps', '.gradle', '.cxx', '.pio', '__pycache__', 'build'}
             assert not any(forbidden.intersection(Path(name).parts) for name in sdk.namelist())
             assert {'gradlew', 'LICENSE', 'NOTICE', 'CITATION.cff'}.issubset(sdk.namelist())
@@ -37,6 +41,9 @@ def main():
         diagnosis = subprocess.run([str(cli), 'doctor'], cwd=root, env=env, capture_output=True, text=True)
         assert diagnosis.returncode in (0, 1)
         assert 'checks' in json.loads(diagnosis.stdout)
+        matrix = json.loads(run('compatibility'))
+        assert matrix['hostClientVersion'] == run('--version').strip()
+        assert not (root / 'cache').exists(), 'Doctor/compatibility must not extract the SDK'
         for command in ('workspace', 'project', 'shell', 'esp32', 'setup'):
             assert 'usage:' in run(command, '--help')
         package = root / 'example_ws/src/demo'

@@ -39,6 +39,7 @@ hidden. Dashboard shows an inactive example layout; no commands were published.
 | Your goal | Guide |
 | --- | --- |
 | Install the preview and publish a first topic | [Getting started](docs/GETTING-STARTED.md) |
+| Prepare another development PC | [Setup order](docs/CLEAN-MACHINE-SETUP.md) · [Compatibility matrix](docs/COMPATIBILITY.md) |
 | Run your own ROS workspace on the phone | [Workspace build and deployment](docs/COLCON-WORKSPACES.md) |
 | Configure buttons, joystick and subscribed values/images | [Dashboard](docs/CONTROLS.md) |
 | Connect an MCU and operate without the PC | [Robot operation](docs/ROBOT-OPERATION.md) |
