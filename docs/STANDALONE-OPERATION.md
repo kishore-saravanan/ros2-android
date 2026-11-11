@@ -50,6 +50,27 @@ one. Restart the Agent if its external network locators need refreshing. Do not
 expect an existing shell's environment to rewrite itself. A network change between
 selection and node creation can still fail; retry with the current profile.
 
+## First check: phone-local sensor and Dashboard
+
+This check needs only the phone, with no robot or motor commands. Use the current
+app build. Stop existing sessions first and leave the app visible during this
+check so background restrictions are tested separately.
+
+1. In Settings → Connection, leave PC IPv4 and Phone IPv4 blank and Save.
+2. Turn Wi-Fi off before starting any publisher or Dashboard. Disconnect the PC.
+3. In Sensors → Battery, publish `/phone/battery_percent`.
+4. In Dashboard, add a Subscribe widget with type `std_msgs/msg/Float64` and
+   topic `/phone/battery_percent`, then Start dashboard.
+5. Observe it for one minute. Expect **Live** and a plausible battery percentage;
+   the percentage itself need not change during the test.
+6. Stop Battery publishing. After more than five seconds, expect **Stale**.
+   Publish Battery again and expect **Live** to return.
+
+Report any error text, Waiting/Stale result, or failure to recover. A pass checks
+fresh offline startup and recovery of the main app’s local publisher/subscriber.
+It does not qualify workspace runners, USB Agent or background execution; run
+those cases separately below. Stop the test widget/publisher when finished.
+
 ## Start without a PC
 
 1. Disconnect the PC. For a fresh offline trial, turn Wi-Fi off **before** starting

@@ -10,14 +10,27 @@ Use an Android phone as a robot's onboard ROS 2 computer: run supported nodes
 locally, publish phone sensors, connect microcontrollers and configure a control
 Dashboard. Develop on Linux and deploy to the phone over USB or Wi-Fi.
 
-The phone runs native ROS 2 without Ubuntu, root, a container or a mandatory PC
-relay. This project is a reusable platform; ball following is an optional
-proof-of-concept application, not the product's primary purpose.
+The phone runs native ROS 2 without Ubuntu, root or a container. Once deployed,
+supported nodes run locally without a PC relay.
 
-**Development preview: 0.1.1-dev6 · ROS 2 Jazzy · Android ARM64 · Apache-2.0.**
-There is no stable release or public APT repository yet. Android API 26 is the
-build minimum; supported hardware and runtime evidence are described in
-[compatibility and validation](docs/STATUS.md), not implied by that minimum.
+## Onboard vision and robot control
+
+A robot follows a red ball using camera capture, Python ROS 2 perception and
+motion control running on its onboard Android phone.
+
+https://github.com/user-attachments/assets/bcb325b3-a472-4b71-82ee-de90b0352fcb
+
+A **remote Android phone** starts/stops tracking and displays annotated images.
+The **onboard Android phone** computes motion commands and hosts the USB micro-ROS
+Agent. The **ESP32** executes motor commands.
+
+[Try the ball-tracking example](docs/BALL-FOLLOWER.md) ·
+[Download video](docs/assets/demo/ros2-android-demo.mp4?raw=true)
+
+**Development preview · ROS 2 Jazzy · Android ARM64 · Apache-2.0.**
+The demo is one application of the platform. See [supported capabilities and
+validation](docs/STATUS.md) before choosing a phone or workspace. Stable releases
+and public APT distribution are still ahead.
 
 ## The app
 
@@ -30,9 +43,8 @@ build minimum; supported hardware and runtime evidence are described in
   </tr>
 </table>
 
-Actual app captures from the reference phone in dark mode. Network addresses are
-hidden. Dashboard shows an inactive example layout; no commands were published.
-[Capture details](docs/assets/README.md).
+Publish sensors, create a Dashboard and manage deployed projects from one app.
+The interface follows the device’s light or dark theme.
 
 ## Start here
 
@@ -63,10 +75,8 @@ of installing the Linux package.
 - **ROS networking:** direct DDS communication, LAN discovery where multicast
   works and explicit peers where needed. Peers need matching domains and QoS.
 
-The Android app has Home, Sensors, Dashboard, Projects and Settings tabs and
-follows the device's light/dark theme. Services own active resources independently
-of screen navigation. Projects, sensor/Dashboard sessions and the Agent have
-explicit, separate stop scopes.
+Active sessions continue across screen navigation. Projects, sensors/Dashboard
+and the micro-ROS Agent have separate start/stop controls.
 
 ## Architecture and limits
 
@@ -91,7 +101,6 @@ flowchart LR
 
 See [current architecture](ARCHITECTURE.md), [target high-level design](docs/design/HIGH-LEVEL-DESIGN.md),
 [low-level design](docs/design/LOW-LEVEL-DESIGN.md) and [roadmap](docs/ROADMAP.md).
-The direction is a modular application with isolated runners, not microservices.
 
 This preview does not promise arbitrary Linux package compatibility, every phone,
 boot-time autonomy or hard real-time deadlines. Mixed Python/C++ workspace
@@ -99,7 +108,7 @@ coverage, long-duration operation and broader device qualification remain releas
 gates. [Independent runner authorization](docs/RUNNER-AUTHORIZATION.md) now has an
 opt-in certificate-pinned preview; security review and broader signing/device
 qualification remain pending. Dashboard raw `sensor_msgs/msg/Image`
-viewing is pending. A local write or Running label is not remote acknowledgement.
+viewing is pending.
 
 ## Roadmap
 
@@ -112,7 +121,7 @@ qualified recovery behavior and support boundaries that contributors can reprodu
 | Reliable operation | Offline startup, network/USB recovery, runtime state and runner trust | Current focus; qualification in progress |
 | External developer journey | Dependency diagnostics, compatibility matrix and clean-machine build/deploy | In progress |
 | Maintainable platform | Focused controllers, shared contracts and packaged host backends | Incremental work ahead |
-| Standalone examples | Companion examples repo, ball-tracker walkthrough and demo videos | Planned; extraction gated on SDK usability |
+| Standalone examples | Companion examples repository consuming the public SDK | Planned; extraction gated on SDK usability |
 | Community alpha | Broader device tests, sustained-operation measurements and signed artifacts | Release gate |
 
 [Full roadmap and acceptance gates →](docs/ROADMAP.md)
@@ -120,30 +129,6 @@ qualified recovery behavior and support boundaries that contributors can reprodu
 Raw-image Dashboard viewing, broader messages/services/actions, mixed workspaces
 and public APT distribution follow the core platform gates. Play Store work is
 deferred. There is no promised release date.
-
-## See it in action
-
-Minimal [example workspaces](examples/README.md) exercise platform compatibility.
-The [ball follower](docs/BALL-FOLLOWER.md) demonstrates onboard Python vision and
-ROS control; it is not a calibrated or generally supported robot controller.
-
-### Phone-powered ball following
-
-https://github.com/user-attachments/assets/bcb325b3-a472-4b71-82ee-de90b0352fcb
-
-**Remote Android phone:** starts/stops tracking and monitors annotated images.
-
-**Onboard Android phone:** runs camera capture, Python ROS 2 perception and motion
-control, and the USB micro-ROS Agent. **ESP32:** executes motor commands.
-
-[Download the 67-second video](docs/assets/demo/ros2-android-demo.mp4?raw=true) ·
-[View the demo cover](docs/assets/demo/cover.jpg) ·
-[Recording and edit details](docs/assets/README.md#demo-videos)
-
-Normal-speed, muted footage from the November 1 experiment.
-
-Robot-specific examples will move to a companion repository after the external
-build/deploy journey is proven. No migration has occurred yet.
 
 ## Build with us
 
