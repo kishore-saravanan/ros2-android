@@ -72,6 +72,19 @@ This assembles the debug app and runs JVM tests/lint. Native build success alone
 does not establish interoperability. Follow [Development](DEVELOPMENT.md) for
 native SDK preparation and [Status](STATUS.md) for qualification boundaries.
 
+## Runner request regression without hardware
+
+`ProjectRequestsTest` uses controlled elapsed times to cover deadline boundaries,
+status-poll replacement by operator commands, no command queue/replay, duplicate
+and wrong-command replies, and invalidation across close/reconnect. The controller
+assigns a distinct Messenger reply endpoint per ticket, authenticates the sender
+before reading the envelope, and rejects endpoints that no longer match.
+
+These JVM tests exercise request-state logic, not Android Binder delivery, UID
+checks or a running project. Physical tests still need delayed replies, service
+restart/update, legacy runners and configuration preservation. A timeout means the
+outcome is unknown; it does not prove a command failed or a project stopped.
+
 ## Physical and independent-peer checks
 
 Install through `setup/run-device.sh`. With an authorized, unlocked project

@@ -119,6 +119,15 @@ without hiding these differences. Terminal-started jobs need explicit registrati
 before claiming the supervisor can stop them; never kill by broad process-name
 matching. One failed runner should not destroy the main app's camera/Agent session.
 
+Runner management requests use a small pure request tracker and per-request
+Messenger reply endpoints. The controller authenticates sender identity before
+accepting a matching ticket/command; closed connections and superseded polls
+cannot restore stale status. One operator command is outstanding at a time,
+with a four-second elapsed-time deadline and no automatic retry. A lost reply
+leaves its outcome unknown. Timeout clears controls and unbinds for explicit
+Refresh; the runner service continues independently. See the
+[management contract](../PROJECT-CONTRACT.md) for legacy compatibility and limits.
+
 ## SOLID used pragmatically
 
 | Principle | Concrete use |

@@ -6,6 +6,11 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Isolate runner replies by request and connection, including legacy services.
+  Prevent polling from postponing command deadlines or overwriting command state.
+  Disconnect on timeout/invalid reply and require Refresh without command replay.
+  Six pure request-state regressions pass; physical recovery tests remain pending.
+
 - Add isolated installed-wheel CI definitions for Python 3.10/3.12. Verify offline
   installation in a fresh venv without pip, masked SDK/ROS inputs, diagnostics,
   command help and read-only external inspection. Check wheel/SDK legal, version,

@@ -13,41 +13,44 @@ class ProjectController(context: Context, val project: InstalledProjects.Project
     var error: String? = null; private set
     var commandError: String? = null; private set
     private var remote: Messenger? = null
-    private var bound = false
-    private var lastReply = 0L
-    private var pending = false
+    private var connection: ServiceConnection? = null
     private var boundAt = 0L
     private var capabilities: Set<Int>? = null
+    private val requests = ProjectRequests()
     fun supports(command: Int): Boolean = capabilities?.contains(command) == true
-    private val reply = Messenger(object : Handler(Looper.getMainLooper()) {
+
+    // A distinct reply endpoint captures each ticket. Old services already reply to
+    // replyTo, so even their unversioned replies can be correlated without wire changes.
+    private fun replyFor(ticket: ProjectRequests.Ticket) = Messenger(object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
-            if (!bound || remote == null || !trust.accepts(msg.sendingUid)) return
-            val compatibility = runCatching {
+            if (connection == null || remote == null || !trust.accepts(msg.sendingUid)) return
+            if (!requests.accepts(ticket, msg.what)) return
+            if (requests.expired(SystemClock.elapsedRealtime())) { failConnection("Runner is not responding. Tap Refresh."); return }
+            val response = runCatching {
                 @Suppress("DEPRECATION")
-                ProjectProtocol.negotiate(msg.data.containsKey(ProjectProtocol.VERSION_KEY),
+                val commands = ProjectProtocol.negotiate(msg.data.containsKey(ProjectProtocol.VERSION_KEY),
                     msg.data.get(ProjectProtocol.VERSION_KEY), msg.data.get(ProjectProtocol.COMMANDS_KEY))
+                val reportedError = msg.data.getString("error")
+                val snapshot = msg.data.getString("status")?.let { JSONObject(it) }
+                require(snapshot != null || !reportedError.isNullOrBlank()) { "Invalid runner response" }
+                Triple(commands, reportedError, snapshot)
             }
-            if (compatibility.isFailure) {
-                pending = false; status = null; capabilities = null
-                error = compatibility.exceptionOrNull()?.message ?: "Incompatible runner"
-                changed(); return
+            if (response.isFailure) {
+                failConnection(response.exceptionOrNull()?.message ?: "Invalid runner response"); return
             }
-            capabilities = compatibility.getOrThrow()
-            pending = false; lastReply = SystemClock.elapsedRealtime()
-            if (msg.what == 1) error = msg.data.getString("error")
-            else commandError = msg.data.getString("error")
-            msg.data.getString("status")?.let { raw -> runCatching { JSONObject(raw) }.onSuccess { status = it }.onFailure { error = "Invalid runner response" } }
+            val (commands, reportedError, snapshot) = response.getOrThrow()
+            requests.finish(ticket)
+            capabilities = commands
+            if (msg.what == ProjectProtocol.STATUS) error = reportedError else commandError = reportedError
+            status = snapshot
             changed()
         }
     })
-    private val connection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName, binder: IBinder) { remote = Messenger(binder); capabilities = null; poll() }
-        override fun onServiceDisconnected(name: ComponentName) { remote = null; capabilities = null; status = null; error = "Runner disconnected"; changed() }
-        override fun onNullBinding(name: ComponentName) { error = "Rebuild this runner to enable app controls"; changed() }
-        override fun onBindingDied(name: ComponentName) { close(); error = "Runner updated. Tap Refresh."; changed() }
-    }
+
+    private fun failConnection(reason: String) { close(); error = reason; changed() }
+
     fun connect() {
-        if (bound) return
+        if (connection != null) return
         if (!ProjectProtocol.compatible(project.protocolVersion)) {
             status = null; capabilities = null
             error = "Runner protocol ${project.protocolVersion} is incompatible. Rebuild with a compatible SDK."
@@ -58,20 +61,38 @@ class ProjectController(context: Context, val project: InstalledProjects.Project
             error = if (!trust.compatible()) "Rebuild runner for this controller APK" else "Authorize this runner in Details"
             changed(); return
         }
-        error = null
+        error = null; commandError = null; requests.reset()
+        val candidate = object : ServiceConnection {
+            override fun onServiceConnected(name: ComponentName, binder: IBinder) {
+                if (connection !== this) return
+                remote = Messenger(binder); capabilities = null; poll()
+            }
+            override fun onServiceDisconnected(name: ComponentName) {
+                if (connection !== this) return
+                remote = null; capabilities = null; status = null; requests.reset()
+                boundAt = SystemClock.elapsedRealtime(); error = "Runner disconnected"; changed()
+            }
+            override fun onNullBinding(name: ComponentName) {
+                if (connection === this) failConnection("Rebuild this runner to enable app controls")
+            }
+            override fun onBindingDied(name: ComponentName) {
+                if (connection === this) failConnection("Runner updated. Tap Refresh.")
+            }
+        }
+        connection = candidate; boundAt = SystemClock.elapsedRealtime()
         val service = if (trust.paired) "PairedProjectControlService" else "ProjectControlService"
-        runCatching { context.bindService(Intent().setComponent(ComponentName(project.packageName, "dev.ros2android.runner.$service")), connection, Context.BIND_AUTO_CREATE) }
-            .onSuccess { bound = it; boundAt = SystemClock.elapsedRealtime(); if (!it) { error = "Rebuild this runner to enable app controls"; changed() } }
-            .onFailure { error = it.message; changed() }
+        runCatching { context.bindService(Intent().setComponent(ComponentName(project.packageName, "dev.ros2android.runner.$service")), candidate, Context.BIND_AUTO_CREATE) }
+            .onSuccess { if (!it) failConnection("Rebuild this runner to enable app controls") }
+            .onFailure { failConnection(it.message ?: "Cannot connect to runner") }
     }
     fun poll() {
-        if (bound && remote == null && SystemClock.elapsedRealtime() - boundAt >= 4000) {
-            if (error == null) { error = "Runner connection timed out. Tap Refresh."; changed() }
-            return
+        if (connection == null) return
+        val now = SystemClock.elapsedRealtime()
+        if (remote == null && now - boundAt >= ProjectRequests.TIMEOUT_MS) {
+            failConnection("Runner connection timed out. Tap Refresh."); return
         }
-        if (pending && SystemClock.elapsedRealtime() - lastReply < 4000) return
-        if (pending) { status = null; error = "Runner is not responding"; changed() }
-        send(1)
+        if (requests.expired(now)) { failConnection("Runner is not responding. Tap Refresh."); return }
+        send(ProjectProtocol.STATUS)
     }
     fun send(command: Int, config: Bundle = Bundle()) {
         val target = remote ?: return
@@ -79,12 +100,23 @@ class ProjectController(context: Context, val project: InstalledProjects.Project
             commandError = "Runner does not support this command or has not connected yet"
             changed(); return
         }
-        if (!trust.authorized()) { close(); status = null; error = "Runner authorization changed. Refresh."; changed(); return }
-        if (command != 1) commandError = null
-        runCatching { target.send(Message.obtain(null, command).apply { replyTo = reply
+        if (!trust.authorized()) { failConnection("Runner authorization changed. Refresh."); return }
+        val now = SystemClock.elapsedRealtime()
+        if (requests.expired(now)) { failConnection("Runner is not responding. Tap Refresh."); return }
+        val ticket = requests.begin(command, now)
+        if (ticket == null) {
+            if (command != ProjectProtocol.STATUS) { commandError = "Waiting for the previous runner command"; changed() }
+            return
+        }
+        if (command != ProjectProtocol.STATUS) commandError = null
+        runCatching { target.send(Message.obtain(null, command).apply { replyTo = replyFor(ticket)
             data = Bundle(config).apply { putInt(ProjectProtocol.VERSION_KEY, ProjectProtocol.VERSION) } }) }
-            .onSuccess { pending = true; lastReply = SystemClock.elapsedRealtime() }
-            .onFailure { status = null; error = "Runner disconnected. Tap Refresh."; changed() }
+            .onFailure { failConnection("Runner disconnected. Tap Refresh.") }
     }
-    fun close() { if (bound) context.unbindService(connection); bound = false; remote = null; pending = false; status = null; capabilities = null }
+    fun close() {
+        val previous = connection
+        connection = null; remote = null; requests.reset(); status = null; capabilities = null
+        // Android also requires unbinding after a failed or null binding.
+        if (previous != null) runCatching { context.unbindService(previous) }
+    }
 }

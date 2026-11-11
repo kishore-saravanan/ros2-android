@@ -30,7 +30,8 @@ a PC or an external network.
 - [ ] Exercise screen-off, task removal, process death and vendor power management.
 - [ ] Test Dashboard lost-link/late-subscriber behavior and distinguish local writes
       from remote acknowledgement.
-- [ ] Qualify protocol envelopes against updated, legacy and incompatible runners.
+- [x] Isolate control requests and reject stale replies; unit-test timeout/reconnect rules.
+- [ ] Qualify protocol envelopes and request recovery against updated, legacy and incompatible runners.
 - [ ] Review independent signing, update/reinstall, revocation and key rotation.
 
 **Exit gate:** repeatable fault/recovery matrix with independent ROS traffic

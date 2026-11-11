@@ -73,8 +73,9 @@ still run at their respective boundaries.
 ## Management protocol
 
 Installed runners currently advertise `dev.ros2android.PROJECT_PROTOCOL = 1`.
-The main app discovers only version-1 compatible metadata. Its authenticated
-Messenger interface offers status, start, stop and configure. See
+The main app lists otherwise valid incompatible runners with a rebuild message,
+and binds only to version-1 compatible metadata. Its authenticated Messenger
+interface offers status, start, stop and configure. See
 [authorization](RUNNER-AUTHORIZATION.md) and [project controls](PROJECTS.md).
 
 Updated services and controllers use an additive version-1 Messenger envelope:
@@ -102,7 +103,21 @@ A bind that never completes now reports a timeout. Refresh closes old connection
 before retrying. Invalid identities or malformed discovery metadata are still
 excluded. Compatibility failures do not stop a running project automatically.
 
-Pure contract tests and compilation cover this envelope. Physical updated/legacy
+Each request uses its own local reply endpoint and ticket. Only the matching
+command on the current connection can update status or capabilities. This also
+works with legacy runners because their existing replies use `replyTo`; no new
+wire field, protocol version or runner rebuild is required for correlation.
+
+Only one request is outstanding. An operator command can supersede a status poll;
+a poll cannot supersede a command, and a second operator command is rejected with
+a waiting message rather than queued. Requests expire after four seconds of
+elapsed time. On timeout, malformed response or send failure, the controller
+unbinds, clears status/capabilities and asks for Refresh. It does not replay a
+start/stop/configure request: the runner may have acted before its reply was lost.
+Unbinding never stops the project. Binding callbacks from a closed connection and
+replies from superseded requests cannot restore controls.
+
+Pure contract/request-state tests and compilation cover these rules. Physical updated/legacy
 Binder interoperability and incompatible-runner presentation still need dedicated
 qualification; existing DDS tests do not establish these new checks.
 
