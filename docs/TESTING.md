@@ -17,9 +17,8 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 Host tests need Python 3.10+ and a C++ compiler for the command-guard fixture.
 Most use synthetic files/processes. The ROS launch-adapter and Python lifecycle suites are
 explicitly skipped when ROS Python packages are absent. To run it, source Jazzy
-and repeat the host suite; the recorded local run has all 80 host tests passing.
-The ROS-independent run has 54 executed tests and 15 explicitly skipped
-ROS-dependent tests.
+and repeat the host suite. Review executed and skipped counts in the test
+output; the current validation summary is in [Status](STATUS.md).
 
 Android JVM tests/lint need Java 21 and Android platform/build tools 35 as
 specified in [Development](DEVELOPMENT.md). These selected tasks work without

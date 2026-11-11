@@ -58,25 +58,17 @@ examples/esp32_wifi/include/robot_motors.h and drive_guard.hpp. Supply appropria
 hardware stop facilities; GPIO pull-downs/driver enables are needed to control
 behaviour before firmware starts or after a processor fault.
 
-## Power-routing findings and precautions
+## Programming isolation
 
-On2026-10-30, the owner reported a wheel rotating from the phone/ESP32 USB
-connection with motor battery reportedly absent/off. Motor firmware was not yet
-installed. The photos do not establish the complete supply/back-feed path. The original back-feed path was not conclusively traced; the L298N5V-to-ESP32 VIN/5V lead is a
-suspected path, not a confirmed diagnosis. A switched-off battery alone did not
-establish electrical isolation in this observation.
+A switched-off motor battery does not establish electrical isolation when USB
+and other power paths remain connected. Verify the complete supply arrangement
+before powering the driver; firmware cannot correct a hardware back-feed path.
 
-For programming, unplug USB AND physically disconnect the motor battery first.
-Then disconnect all jumper leads between ESP32 and L298N (power, ground and
-four input leads), keeping the driver isolated. Connect only ESP32 to USB for
-identification, backup and flashing. Reconnect only after verifying the power arrangement. A firmware change cannot correct an unidentified hardware supply path.
-
-Subsequently the owner confirmed the regulator jumper removed, common ground,
-battery through switch to motor VS and USB-fed board V5 to logic5V. Owner measured
-5.9 V motor VS and4.88 V logic at idle and observed stationary powered idle, then
-motion with default teleop. This permits continued controlled raised-wheel trials;
-it is not an electrical/current/back-feed certification. Motor power remains
-physically disconnected during programming.
+Before programming, unplug USB and physically disconnect the motor battery.
+Disconnect the ESP32-to-driver leads, then connect only the ESP32 to USB for
+identification, backup and flashing. Reconnect the driver after verifying its
+power arrangement. The example does not certify a particular wiring layout,
+supply capacity or motor-driver installation.
 
 ## Build and deploy
 

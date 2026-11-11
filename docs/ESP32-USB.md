@@ -99,7 +99,7 @@ The current reference firmware subscribes to `/esp32/led` (`std_msgs/msg/Bool`).
 `true` drives the configured LED output on until a `false` command turns it off.
 There is no one-second timer. Boot/reset starts with the output off.
 `/esp32/led_state` publishes Bool on/off changes; it reports commanded GPIO state,
-not an optical measurement. This supersedes the earlier /esp32/led_flash pulse.
+not an optical measurement.
 
 In Dashboard add:
 
