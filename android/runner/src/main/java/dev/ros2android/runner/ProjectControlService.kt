@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.*
 import org.json.JSONObject
+import dev.ros2android.protocol.ProjectProtocol
 
 /** Narrow, signature-protected operator protocol; never accepts shell commands. */
 open class ProjectControlService : Service() {
@@ -16,6 +17,10 @@ open class ProjectControlService : Service() {
             val uid = message.sendingUid
             if (!authorized(uid)) return
             val result = runCatching {
+                val envelope = message.data
+                @Suppress("DEPRECATION")
+                val version = envelope.get(ProjectProtocol.VERSION_KEY)
+                ProjectProtocol.requireRequest(envelope.containsKey(ProjectProtocol.VERSION_KEY), version, message.what)
                 when (message.what) {
                     1 -> Unit
                     2, 4 -> {
@@ -50,7 +55,11 @@ open class ProjectControlService : Service() {
                 }.toString()
             }
             runCatching { message.replyTo?.send(Message.obtain(null, message.what).apply {
-                data = Bundle().apply { putString("status", result.getOrNull()); putString("error", result.exceptionOrNull()?.message) }
+                data = Bundle().apply {
+                    putInt(ProjectProtocol.VERSION_KEY, ProjectProtocol.VERSION)
+                    putIntArray(ProjectProtocol.COMMANDS_KEY, ProjectProtocol.commands.toIntArray())
+                    putString("status", result.getOrNull()); putString("error", result.exceptionOrNull()?.message)
+                }
             }) }
         }
     })

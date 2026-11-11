@@ -6,6 +6,11 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Add an additive runner-control version/capability envelope with strict rejection
+  before state changes, legacy v1 compatibility and capability-gated controls.
+  Show incompatible protocol metadata and binding timeouts instead of silently
+  hiding a runner or waiting indefinitely. Physical envelope qualification pending.
+
 - Validate source manifest/runtime compatibility before host build or device
   commands; add offline `project inspect` and actionable missing-build errors.
   Document the source/ABI/management contracts and remaining IPC negotiation gate.

@@ -77,11 +77,34 @@ The main app discovers only version-1 compatible metadata. Its authenticated
 Messenger interface offers status, start, stop and configure. See
 [authorization](RUNNER-AUTHORIZATION.md) and [project controls](PROJECTS.md).
 
-There is no message-level capability negotiation yet. A runner with unsupported
-metadata may be absent from Projects; rebuild it with the compatible SDK. Future
-work must make incompatibility visible and negotiate control capabilities
-without weakening certificate authorization or silently accepting new commands.
-Host manifest validation does not close this gate.
+Updated services and controllers use an additive version-1 Messenger envelope:
+
+- Each new request has integer `protocolVersion = 1` in its Bundle.
+- Each new reply has integer `protocolVersion = 1` and an integer-array
+  `supportedCommands`. Commands are status (1), start (2), stop (3), configure (4).
+- Authorization by UID/package/certificate happens before reading request or
+  response contents. Protocol fields are compatibility data, not credentials.
+- The service rejects an explicit unsupported or malformed version and unknown
+  command before starting, stopping or saving settings. Unauthorized callers
+  still receive no reply.
+- The controller obtains status/capabilities before sending a state-changing
+  request. Unadvertised commands stay disabled. Unknown additive capability IDs
+  are ignored; malformed arrays or versions fail closed.
+
+For existing authenticated version-1 runners, replies without either envelope
+field retain the original four-command behavior. New services also accept legacy
+requests without a version. This migration path applies to version-1 installed
+metadata; it is not a fallback from an explicit incompatible version.
+
+Otherwise valid runners advertising incompatible management metadata remain
+visible in Projects with a rebuild message; the controller does not bind to them.
+A bind that never completes now reports a timeout. Refresh closes old connections
+before retrying. Invalid identities or malformed discovery metadata are still
+excluded. Compatibility failures do not stop a running project automatically.
+
+Pure contract tests and compilation cover this envelope. Physical updated/legacy
+Binder interoperability and incompatible-runner presentation still need dedicated
+qualification; existing DDS tests do not establish these new checks.
 
 ## Dependency and platform limits
 
@@ -101,6 +124,6 @@ When build/deploy fails:
 4. For missing/stale runner output, complete build and deploy again. Source edits
    and SDK/runtime changes require a new APK.
 
-Dependency reports with target availability, message-level compatibility and
-fresh-machine qualification remain roadmap work. See [Status](STATUS.md) and
+Dependency reports with target availability, physical compatibility-envelope tests
+and fresh-machine qualification remain roadmap work. See [Status](STATUS.md) and
 [testing](TESTING.md) for actual verification boundaries.

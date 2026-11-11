@@ -92,8 +92,8 @@ open class MainActivity : Activity() {
             val running = state == "Running"
             row.state.show(control.error ?: control.commandError ?: state)
             row.toggle.show(if (running) "Stop project" else "Start project")
-            row.toggle.isEnabled = value != null && control.error == null && !busy
-            row.settings.isEnabled = value != null && control.error == null
+            row.toggle.isEnabled = value != null && control.error == null && !busy && control.supports(if (state == "Running") 3 else 2)
+            row.settings.isEnabled = value != null && control.error == null && control.supports(4)
             val nodes = value?.optJSONObject("native")?.optJSONArray("nodes")
             row.nodes.show(if (running && nodes != null) (0 until nodes.length()).joinToString("\n") { nodes.getString(it) } else "")
             row.nodes.visibility = if (row.nodes.text.isEmpty()) android.view.View.GONE else android.view.View.VISIBLE
@@ -228,7 +228,7 @@ open class MainActivity : Activity() {
         val title = when { detail -> shortName(selected!!); tab == "Overview" -> getString(R.string.app_name); tab == "Connect" -> "Settings"; tab == "Help" -> "Help"; else -> tab }
         if (tab == "Overview") toolbar.addView(ImageView(this).apply { setImageResource(R.drawable.ic_ros_logo); contentDescription = "ROS2 Android logo" }, LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginEnd = dp(8) })
         toolbar.addView(text(title, 20).apply { heading() }, LinearLayout.LayoutParams(0, -2, 1f))
-        if (tab == "Projects") toolbar.addView(button("Refresh") { render() }.apply { tag = "refresh_projects" })
+        if (tab == "Projects") toolbar.addView(button("Refresh") { closeProjects(); render() }.apply { tag = "refresh_projects" })
         stopButton = button("Stop all") { stopSession() }.apply { tag = "stop_session"; contentDescription = "Stop all phone sensors, subscribers and controls" }
         toolbar.addView(stopButton); shell.addView(toolbar)
         status = text("Loading…", 13, muted).apply { tag = "session_status" }

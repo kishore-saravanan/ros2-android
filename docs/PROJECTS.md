@@ -44,7 +44,7 @@ From the repository root on your Linux PC, with DEVELOPMENT.md prerequisites:
 ## Compatibility and authentication
 
 Discovery queries only the explicit OPEN_PROJECT action, validates the expected
-runner namespace, Activity class and version-1 project metadata, and does not
+runner namespace, Activity class and project metadata, and does not
 request QUERY_ALL_PACKAGES or enumerate personal apps. Control uses an explicit
 bound Messenger protocol. Existing runners use the signature permission
 `dev.ros2android.android.MANAGE_PROJECTS`. Opted-in independent runners use a
@@ -59,6 +59,9 @@ validated connection profile. No arbitrary shell command or filesystem endpoint
 is exported. The narrow control service is separate from the existing shell-only
 DUMP-protected debug receiver. The main UI polls while on Projects and resumed,
 unbinds on leaving, and reports disconnects/timeouts instead of assuming Stopped.
+Version-1 control envelopes advertise commands before controls are enabled;
+legacy v1 runners remain compatible. Unsupported protocol versions appear with
+a rebuild message and receive no control binding. Refresh retries connections.
 Rebuild/redeploy older runners to enable controls; a matching namespace alone
 does not grant control. Main app and updated runner are both required.
 
