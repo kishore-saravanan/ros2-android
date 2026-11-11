@@ -2,8 +2,10 @@ import importlib.machinery
 import importlib.util
 from pathlib import Path
 import tempfile
+import sys
 import unittest
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 source = Path(__file__).resolve().parents[1] / 'ros2android-workspace'
 loader = importlib.machinery.SourceFileLoader('workspace_tool', str(source))
 spec = importlib.util.spec_from_loader(loader.name, loader)

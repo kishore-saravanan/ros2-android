@@ -76,3 +76,6 @@ parameter editor, per-node supervision, project removal, automatic restart and
 persistent logs. Physical verification of this control protocol currently covers
 one ordinary C++ workspace on the reference phone; all three runner variants
 build, but simultaneous multiple-workspace/device-version trials remain pending.
+
+For host manifest inspection, runtime ABI combinations and management-version
+limits, see the [project compatibility contract](PROJECT-CONTRACT.md).

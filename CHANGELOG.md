@@ -6,6 +6,10 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Validate source manifest/runtime compatibility before host build or device
+  commands; add offline `project inspect` and actionable missing-build errors.
+  Document the source/ABI/management contracts and remaining IPC negotiation gate.
+
 - Add opt-in independently signed runner controls: pin the verified controller
   APK public certificate at build time and approve/revoke each runner locally.
   Keep legacy signature controls; authenticate requests/replies by actual UID

@@ -31,3 +31,8 @@ runner authorization preview and installed-client external C++ workspace path
 have reference-device evidence. Review/update/rotation/multiple-author/API gates
 remain open. Next implement versioned manifest/management compatibility checks
 and improve dependency/failure diagnostics before extracting robot examples.
+
+Progress (2026-11-11): host source-manifest validation and offline project
+inspection are implemented with contract regression tests. Management-message
+negotiation, visible incompatible-runner discovery and target dependency reports
+remain open; this is not completion of the workspace/runtime contract gate.

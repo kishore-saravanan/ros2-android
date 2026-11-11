@@ -13,9 +13,9 @@ import time
 import tempfile
 from robot_launch import validate_launch
 from controller_identity import controller_certificate
+from project_manifest import load_manifest
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE_PATTERN = r'dev\.ros2android\.android\.runner\.[a-z][a-z0-9_]*'
 
 
 def source_id(project):
@@ -33,6 +33,7 @@ def main():
     parser.add_argument('--project', type=Path, default=ROOT / 'examples/cpp_talker')
     parser.add_argument('--serial', help='Optional ADB serial; otherwise use the single physical device')
     commands = parser.add_subparsers(dest='command', required=True)
+    commands.add_parser('inspect', help='Validate project compatibility without building or connecting to a phone')
     commands.add_parser('sdk', help='Build pinned Android ROS dependencies for the selected runtime')
     commands.add_parser('host-sdk', help='Prepare checksum-pinned PC Cyclone libraries in the user cache')
     commands.add_parser('host-interfaces', help='Build this project custom messages for the PC')
@@ -61,16 +62,16 @@ def main():
     commands.add_parser('logs', help='Stream only this runner process logs; Ctrl+C stops viewing')
     args = parser.parse_args()
     project = args.project.expanduser().resolve()
-    manifest = json.loads((project / 'robot-project.json').read_text())
+    manifest = load_manifest(project)
     package = manifest['applicationId']
-    if manifest.get('schemaVersion') != 1 or manifest.get('runtimeAbi') not in (1, 2):
-        parser.error('Unsupported project schema/runtime ABI')
-    if not re.fullmatch(PACKAGE_PATTERN, package):
-        parser.error('Refusing to control an app outside the generated project-runner namespace')
-    if not re.fullmatch(r'[a-z][a-z0-9_]{0,63}', manifest['id']):
-        parser.error('Invalid project ID')
     if hasattr(args, 'namespace') and args.namespace is None:
         args.namespace = '/python' if manifest.get('runtime') == 'python' else '/demo'
+    if args.command == 'inspect':
+        print(json.dumps({'project': str(project), 'manifest': manifest,
+                          'compatibility': {'schemaVersion': 1, 'runtime': manifest.get('runtime', 'cpp'),
+                                            'runtimeAbi': manifest['runtimeAbi']},
+                          'sourceId': source_id(project)}, indent=2))
+        return
     launch = None
     launch_arguments = {}
     for argument in getattr(args, 'launch_arg', []):
@@ -173,6 +174,8 @@ def main():
                         '-ProbotProjectDir=' + str(project), *build_options], cwd=ROOT, check=True)
         print(json.dumps({'apk': str(apk), 'sourceId': source_id(project), 'sha256': hashlib.sha256(apk.read_bytes()).hexdigest()}))
     elif args.command == 'deploy':
+        if not build_info.is_file() or not apk.is_file():
+            raise ValueError('No built runner APK/metadata for this runtime. Run build successfully before deploy.')
         info = json.loads(build_info.read_text())
         if info['applicationId'] != package or info['sourceId'] != source_id(project):
             raise RuntimeError('Built APK does not match this project/source. Run build first.')

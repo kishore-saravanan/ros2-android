@@ -214,5 +214,8 @@ The workspace supervisor heartbeat is its own elapsed-time indicator, not proof
 that user callbacks are making progress; use actual ROS traffic probes.
 
 [compatibility and validation](STATUS.md) ·
-[compatibility and validation](STATUS.md) ·
 [Android executable-code restrictions](https://developer.android.com/about/versions/10/behavior-changes-10#execute-permission)
+
+Source-manifest and runtime versions are described in the
+[project compatibility contract](PROJECT-CONTRACT.md). Workspace inspection is
+a package inventory, not proof that every dependency has an Android build.

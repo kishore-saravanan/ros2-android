@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
+from project_manifest import load_manifest
 
 ROOT = Path(__file__).resolve().parents[1]
 EXCLUDED = {'.git', 'build', 'install', 'log', '__pycache__', '.cxx', '.gradle'}
@@ -188,7 +189,7 @@ def main():
         if args.controller_apk:
             forward += ['--controller-apk', str(args.controller_apk.expanduser().resolve())]
     else:
-        manifest = json.loads((project / 'robot-project.json').read_text())
+        manifest = load_manifest(project)
         if args.command in ('deploy', 'start', 'launch-plan') and manifest['workspaceSourceHash'] != digest_tree(workspace / 'src'):
             parser.error('Workspace source changed; rebuild before deployment/start')
         if args.command in ('start', 'launch-plan') and '--launch-arg' in forward and '--launch' not in forward:
