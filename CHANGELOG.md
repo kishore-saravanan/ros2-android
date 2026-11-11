@@ -6,6 +6,11 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Add isolated installed-wheel CI definitions for Python 3.10/3.12. Verify offline
+  installation in a fresh venv without pip, masked SDK/ROS inputs, diagnostics,
+  command help and read-only external inspection. Check wheel/SDK legal, version,
+  hash and private-input gates and emit an optional path-free result report.
+
 - Bundle a compatibility matrix tied to source/build contracts and pinned input
   locks; stamp built wheels with their tooling snapshot hash. Add task-scoped
   `doctor` profiles with version checks and next actions, and document the setup

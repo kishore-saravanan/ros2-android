@@ -17,8 +17,8 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 Host tests need Python 3.10+ and a C++ compiler for the command-guard fixture.
 Most use synthetic files/processes. The ROS launch-adapter and Python lifecycle suites are
 explicitly skipped when ROS Python packages are absent. To run it, source Jazzy
-and repeat the host suite; the recorded local run has all 66 host tests passing.
-The ROS-independent run has 51 executed tests and 15 explicitly skipped
+and repeat the host suite; the recorded local run has all 69 host tests passing.
+The ROS-independent run has 54 executed tests and 15 explicitly skipped
 ROS-dependent tests.
 
 Android JVM tests/lint need Java 21 and Android platform/build tools 35 as
@@ -35,6 +35,30 @@ read-only and no hardware/signing secrets are used, following
 in SDK setup (`sdkmanager` was not on PATH), before tests/lint ran. The workflow
 now resolves it from the Android SDK root. The corrected workflow still needs a
 new hosted run; a clean-source local JVM/lint pass is not a hosted CI result.
+
+## Installed client: isolated package checks
+
+With the package-build prerequisites installed, run:
+
+```bash
+python setup/build-python-package.py
+python setup/verify-python-package.py dist/*.whl \
+  --report dist/installed-client-report.json
+```
+
+The invoking Python needs pip >=22.3, setuptools >=68 and wheel. The verifier
+creates a new venv without pip, installs the wheel offline using the invoking
+pip and runs outside the checkout. It does not use checkout imports, ROS overlays,
+an Android SDK or a prepared native SDK. It checks missing-prerequisite diagnostics,
+seven command help screens, repeatable external inspection, unchanged sources,
+archive/legal/hash/private-input rules and absence of guarded device/build/source
+fetch calls. See [host package](HOST-PACKAGE.md) for exact boundaries.
+
+The workflow now defines Python 3.10 and 3.12 installed-client jobs in addition to
+the source-host and Android JVM/lint jobs. Package tool versions are pinned;
+permissions remain read-only and no phone/signing secret is used. Local Python
+3.12 passed; new hosted jobs are not yet verified. A successful package smoke
+test is not a clean-machine native build, DDS or phone-deployment result.
 
 ## Full Android/native checks
 
@@ -129,3 +153,8 @@ version probes and no SDK extraction/device access. Its matrix regression ties
 client/app/build/contract versions and source-lock hashes to the current source.
 An installed wheel includes its tooling snapshot hash; preflight success is not
 a clean-machine build or native-runtime qualification.
+
+`PackageVerificationTest` checks rejection of unsafe/private/generated/key paths
+in both wheel and SDK payloads, as well as legal/version/hash mismatches, before
+installation. The actual offline-install verifier runs separately against a built
+wheel so the ordinary host unit suite does not need pip or an Android SDK.

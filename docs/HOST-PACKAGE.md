@@ -54,11 +54,13 @@ Python/shell dependencies need their separate documented preparation.
 
 ## Maintainer build and verification
 
-Use a Python environment with pip, setuptools >=68 and wheel installed:
+Use a Python environment with pip >=22.3, setuptools >=68 and wheel installed.
+CI currently pins pip 26.2.2, setuptools 84.2.1 and wheel 0.48.0:
 
 ```bash
 python setup/build-python-package.py
-python setup/verify-python-package.py dist/ros2_android-0.1.0a1-py3-none-any.whl
+python setup/verify-python-package.py dist/ros2_android-0.1.0a1-py3-none-any.whl \
+  --report dist/installed-client-report.json
 ```
 
 The build helper stages the Python package and creates a snapshot of Git-tracked
@@ -75,10 +77,23 @@ paths and stages atomically. Existing workspace/native SDK caches remain in thei
 previous locations. Upgrading the wheel selects a separate content-keyed tooling
 cache; it does not delete old builds, installed apps or user workspaces.
 
-Verification installs offline into a disposable venv, runs five backend help
-commands and inspects a temporary external workspace. It rejects private/generated
-SDK paths and removes its own temporary environment. It does not cross-build or
-flash hardware.
+Verification creates a fresh venv without pip and uses the invoking pip's
+`--python` option to install the supplied wheel offline (`--no-index --no-deps`).
+It therefore does not need ensurepip inside the test environment. It removes
+checkout imports/ROS overlays, masks Android/native prerequisites and isolates
+the tooling cache. It checks the installed version/matrix, diagnostic failure
+behavior, seven help screens and repeated read-only external-workspace inspection.
+
+Archive gates reject unsafe/private/generated paths and signing-key extensions,
+check legal files and compare matrix/SDK hashes before installation. Tool guards
+fail the check if help/inspection invokes ADB, ROS CLI, colcon or source-fetch
+commands. The optional JSON report contains versions, a snapshot hash and named
+checks, without local paths or device data. The temporary venv is removed.
+
+The CI workflow defines installed-client jobs for Python 3.10 and 3.12 on Ubuntu
+24.04. Local verification currently covers Python 3.12; the new hosted jobs need
+their first run after pushing. This check does not cross-build the SDK, deploy a
+phone, prove ROS traffic or qualify a complete fresh-machine installation.
 
 ## Current limits
 

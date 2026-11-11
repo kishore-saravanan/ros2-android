@@ -46,6 +46,7 @@ platform source or relying on this maintainer's prepared PC.
 - [ ] Resolve dependency/version conditions and report unsupported launch features.
 - [x] Define a bundled compatibility matrix tying CLI, APK, protocol, ABI and SDK locks.
 - [x] Add task-scoped preflight checks and document clean-machine setup order.
+- [x] Define isolated installed-wheel CI for Python 3.10/3.12; hosted runs pending.
 - [ ] Validate the installed-client journey on a clean Linux machine.
 - [ ] Refine inspect → build → deploy → start → observe → stop errors and guides.
 - [ ] Document signed runner upgrades, rollback and development-key ownership.

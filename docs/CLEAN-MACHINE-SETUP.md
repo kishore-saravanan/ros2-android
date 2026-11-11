@@ -131,3 +131,13 @@ actual build results, app/runner signing setup, device/Android version and an
 independent ROS traffic probe. Test restart and rollback as well as success.
 Keep private paths, keys, addresses and raw device logs out of public reports.
 The release gate remains open until that complete journey is reproduced.
+
+## Automated package slice
+
+Before attempting a long native SDK build, maintainers can run the isolated
+[installed-client smoke check](HOST-PACKAGE.md). It installs a wheel into a fresh
+venv without pip, uses an empty tooling cache and masks existing SDK/ROS build
+inputs. It validates diagnostic/help/inspection behavior without device access.
+CI definitions cover Python 3.10 and 3.12; only the local Python 3.12 execution
+has passed so far. Neither this check nor an ordinary venv substitutes for a
+fresh Ubuntu machine's full SDK build/deploy qualification.
