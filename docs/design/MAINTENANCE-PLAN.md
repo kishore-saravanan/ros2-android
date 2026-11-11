@@ -1,110 +1,65 @@
-# ROS2 Android: maintenance and delivery plan
+# Maintenance strategy
 
-Status: proposal, 2026-11-01. No repositories have been created or code moved.
-APT/Play publication stays deferred. Preserve the currently working robot demo
-while establishing the platform contracts.
+ROS2 Android is a modular Android application with isolated workspace runners and
+one host CLI. Prefer small changes that preserve supported workflows. The
+[roadmap](../ROADMAP.md) defines delivery order and acceptance gates.
 
-## Current assessment
+## Module boundaries
 
-There is real native ROS interoperability, a host CLI/wheel and Debian alpha,
-C++/Python runners, a phone-hosted Agent and an operator-confirmed ground demo.
-The architecture already has useful service-owned hardware lifetime and pinned
-native dependencies. These are foundations worth retaining.
+- Android UI presents configuration and observed state; services own hardware and
+  ROS sessions independently of screen navigation.
+- Sensor, Dashboard, project and MCU controllers own their respective resources.
+  Streaming paths use bounded queues and discard stale frames.
+- Runner backends share lifecycle and configuration contracts while retaining
+  backend-specific execution code.
+- Host implementation belongs in the `ros2android` Python package. Contributor
+  setup scripts bootstrap prerequisites; compatibility wrappers forward to the
+  same implementation.
+- Robot applications consume the public SDK. Move them to a companion examples
+  repository once a separate checkout can build and deploy without platform edits.
+  Keep small compatibility fixtures in the platform repository.
 
-The next work is operational reliability and developer independence. Current
-couplings include RobotSessionService handling hardware plus Dashboard state,
-MainActivity handling several product areas, host CLI dispatching cached scripts,
-duplicated runner packaging/lifecycle concerns and robot-specific firmware/demo
-code living beside platform code. The initial review found no GitHub Actions
-workflow; baseline host/documentation and Android JVM/lint jobs have since been
-added, with their first hosted execution pending. Existing unit, tooling and
-physical tests are retained rather than replaced by a new framework.
+See the [high-level design](HIGH-LEVEL-DESIGN.md),
+[low-level contracts](LOW-LEVEL-DESIGN.md) and
+[platform/examples decision](../decisions/0001-platform-and-examples.md).
 
-## Ordered work and exit gates
+## Contributor journeys
 
-| Stage | Work | Exit gate |
-| --- | --- | --- |
-| 0: preserve evidence | Save working source/artifacts, capture current supported journeys and known faults | Baseline recoverable; user videos linked with consent; no private logs/assets published |
-| 1: dependable control/state | Reproduce OFF failure, separate requested/observed state, specify stop scopes and startup/reconnect behavior | End-to-end ON/OFF, lost link and late/restarted subscriber checks pass; missing acknowledgement visible |
-| 2: supported runner trust | Document same-key developer path; design/review signer pairing for official APK + user-built runner | Independent author can install/control/upgrade/revoke a runner without maintainer secrets; unauthorized caller rejected |
-| 3: modular internals | Extract session/feature controllers and shared runner contracts; move host implementation into Python package | Existing journeys pass; module dependency rules/conformance tests prevent reverse coupling |
-| 4: external examples | Create proposed examples repo, move ball follower/motor application with history and metadata | Fresh checkout builds using documented platform package/SDK without platform source edits |
-| 5: qualified community alpha | Reproducible artifacts, operator docs, second phone and soak/failure tests | Clean-machine install/deploy/rollback and published compatibility/evidence matrix pass |
-| Later | APT publication, additional adapters/services/actions UX and broader device support | Core release gates stay green; each extension has a user journey and evidence |
+| Audience | Supported path |
+| --- | --- |
+| Operator | Install, configure, start, observe, stop and recover |
+| ROS developer | Inspect, build, deploy and run an external workspace |
+| Platform contributor | Build, test and change a focused module |
 
-Stages can overlap in documentation/tests; avoid combining behavioral fixes,
-large file moves, signing changes and UI redesign in one PR. The unfinished raw
-sensor_msgs/Image Dashboard subscription remains a planned feature, after the
-control/reliability gates rather than ahead of them.
+User guides describe current behavior. Design documents distinguish proposed
+contracts from implemented APIs. The status page records measured results and
+remaining compatibility limits.
 
-## Minimal contributor structure
+## Change discipline
 
-Keep the platform repository together. Proposed public docs: current Architecture,
-HLD, LLD, supported configurations, getting started, external workspace guide,
-troubleshooting, CONTRIBUTING, SECURITY reporting, release checklist and changelog.
-Use short architecture decision records for consequential choices, starting with
-[platform/examples separation](../decisions/0001-platform-and-examples.md).
+- Give each feature a resource owner, data contract, failure behavior and test gate.
+- Keep behavioral fixes, file moves, signing changes and UI redesigns in separate
+  reviewable commits.
+- Add modules when ownership or testing requires them; avoid a large rewrite or
+  microservices introduced solely for architectural patterns.
+- Preserve one authoritative observed state per component. Requested settings and
+  locally written messages do not establish remote application state.
+- Keep one owner per camera, ROS context, process group and USB connection.
 
-Three documentation journeys:
+## Validation and releases
 
-1. Operator: install APK/client, select connection, start components, observe,
-   stop and recover. Optional robot examples are linked separately.
-2. ROS developer: inspect/build/deploy an ordinary external workspace; understand
-   ABI/dependency limitations, runner trust, logs, ROS CLI and updates.
-3. Contributor: build/test the platform, understand module ownership and submit
-   focused changes. Main README should route to these journeys rather than grow
-   into a chronological project notebook.
+Run host and documentation checks plus Android JVM tests and lint on ordinary
+changes. Keep pinned native SDK builds separate from lightweight checks. A missing
+SDK is not a passing integration test. Installed-package tests must exercise the
+installed client outside its source checkout.
 
-Local handoff notes, device addresses/identifiers, recordings, firmware backups,
-signing keys and raw logs stay outside Git. Public design and decisions belong
-in the repository. Do not publish the user's new videos without explicit consent.
-Document what was measured separately from what an operator reported.
+Physical qualification covers offline startup, network and USB recovery, runtime
+lifetimes and supported upgrade paths. Tests involving actuators require explicit
+operator setup; public pull requests must not run unattended against robots.
+See [testing](../TESTING.md) and [release requirements](../RELEASING.md).
 
-## CI and release discipline
-
-Start with PR jobs for host unit/contract tests, native guard/codec tests, Android
-unit/lint/assembly and documentation links. Run expensive pinned native SDK builds
-in a separate cached workflow; never treat a missing SDK as a passing integration
-test. Add wheel/Debian content/install smoke tests in clean environments.
-Physical-device qualification remains an explicit operator-controlled test job;
-public PR code must not run unattended against a powered robot.
-
-One compatibility manifest links CLI, main APK, runner management protocol,
-runtime ABI, native SDK and supported example revisions. Publish checksums,
-provenance and required third-party notices with each artifact. No floating
-upstream dependency branches in released builds. Signing keys stay private;
-user-owned development keys require documented backup/upgrade behavior.
-
-Start with one maintained release line and a changelog. Document protocol-major
-breaks and migration instructions; do not promise indefinite ABI compatibility.
-Keep the previous installable artifact and profile for rollback. APT release can
-follow the same verified artifacts once the runtime/trust journey is sound.
-
-## Simplicity rules for the maintainer
-
-- Two repositories initially: platform and examples. No split per sensor/backend.
-- One public host command family, ros2-android; compatibility wrappers can forward
-  during migration. Setup scripts stay contributor bootstrap, not business logic.
-- One canonical accepted state per component; UI preferences are not remote truth.
-- One owner per camera/context/process group/USB connection.
-- One bounded queue per streaming stage; prefer dropping stale work to latency.
-- Shared schemas and lifecycle helpers only where multiple implementations need them.
-- Small PRs with behavior and verification explained; no large rewrite for patterns.
-- New features must name their owner, data contract, failure behavior and test gate.
-
-First implementation slice (2026-11-01): a bounded latest-request queue and local
-Switch request status are implemented. Pure regressions and an independent
-phone/PC ROS test cover OFF, navigation and no restart replay; see
-[physical test instructions](../../tests/integration/README.md). Original missed
-OFF root cause, network-loss/late-subscriber checks and integrated observed-state
-binding remain open. Stage 1 is partially implemented, not qualified complete.
-Resolve these reliability gaps and the runner signing path before an official
-installable community release.
-
-Independent runner slice (2026-11-01): optional controller APK certificate pinning,
-local runner approval/revocation and per-message UID checks are implemented.
-Reference tests cover a separate signing key and unauthorized isolated UID; an
-installed wheel built/deployed an external C++ workspace using the prepared SDK
-cache. See [authorization](../RUNNER-AUTHORIZATION.md). Stage2 remains a preview
-pending review, update/rotation/multiple-author and broader API/device tests.
-No robot application migration or fresh-machine qualification is implied.
+Keep CLI, APK, protocol, ABI and SDK versions in one compatibility matrix. Releases
+need checksums, dependency notices, documented upgrades and an available previous
+artifact. Signing keys remain private. Support one maintained release line before
+expanding compatibility promises. APT and Play Store distribution follow runtime
+and onboarding qualification.

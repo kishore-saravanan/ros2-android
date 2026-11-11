@@ -24,7 +24,9 @@ universal compatibility guarantees. See [Status](STATUS.md) for the boundaries.
 **Outcome:** explainable state and recovery, with phone-local work independent of
 a PC or an external network.
 
-- [ ] Qualify fresh startup without Wi-Fi, including phone-local nodes and USB Agent.
+- [ ] Qualify fresh startup without Wi-Fi across runner backends and USB Agent.
+      Battery/Dashboard and workspace Live/Stale checks have operator confirmation;
+      instrumented coverage and USB coexistence remain open.
 - [x] Share phone-local Cyclone startup settings across app, runners and shell; reject stale pins with recovery guidance.
 - [ ] Qualify network changes and reconnects consistently on devices.
 - [ ] Qualify USB detach/reconnect, permission denial and app-update recovery.
