@@ -49,15 +49,15 @@ The maintainer supplied two recordings of the November 1, 2026 ball-following
 experiment and requested their good opening sections for the community demo.
 Only the selected, compressed showcase and a reviewed cover enter the repository:
 
-- `demo/ros2-android-demo.mp4`: 70 seconds, H.264, 1280×720, 30 fps, muted,
-  fast-start MP4. It concatenates source 1 at 00:00–00:40 and source 2 at
-  00:00–00:30, with a brief identifying caption at each section's beginning.
-- `demo/cover.jpg`: real frames showing the remote Dashboard and onboard vision,
+- `demo/ros2-android-demo.mp4`: 67 seconds, H.264, 1280×720, 30 fps, muted,
+  fast-start MP4. It concatenates source 1 at 00:01–00:40 and source 2 at
+  00:00–00:28, with a brief identifying caption at each section's beginning.
+- `demo/cover.jpg`: real frames identifying the controller Android phone and onboard Android phone,
   arranged on a ROS-inspired title card. No generated robot imagery.
 
 Source recordings: `2026-11-01 20-25-41.mp4` (1920×1080/60 fps) and
 `20261101_203553.mp4` (3840×2160, variable frame rate). Raw files remain outside
-Git, unchanged. Separate uncaptioned 40-second/30-second 1080p clips and a 1080p
+Git, unchanged. Separate uncaptioned 39-second/28-second 1080p clips and a 1080p
 showcase are local sharing exports, not duplicate repository assets.
 
 Action plays at its original speed. Exports convert to 30 fps without motion
