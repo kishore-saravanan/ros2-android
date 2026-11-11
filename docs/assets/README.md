@@ -11,7 +11,7 @@ Screenshots show the development preview. Sensor availability varies by device.
 
 ## Demo videos
 
-[Onboard vision and robot control](https://github.com/user-attachments/assets/9e73870b-b0e7-409b-8e3f-f4866a42f35a)
+[Onboard vision and robot control](https://github.com/user-attachments/assets/cf2f065b-a2af-451b-9734-392699fe368c)
 demonstrates Android-hosted ROS 2 ball tracking with an ESP32 connected over USB
 micro-ROS. A remote Android phone triggers tracking and monitors annotated images.
 

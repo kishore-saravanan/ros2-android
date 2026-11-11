@@ -18,7 +18,7 @@ supported nodes run locally without a PC relay.
 A robot follows a red ball using camera capture, Python ROS 2 perception and
 motion control running on its onboard Android phone.
 
-https://github.com/user-attachments/assets/9e73870b-b0e7-409b-8e3f-f4866a42f35a
+https://github.com/user-attachments/assets/cf2f065b-a2af-451b-9734-392699fe368c
 
 A **remote Android phone** starts/stops tracking and displays annotated images.
 The **onboard Android phone** computes motion commands and hosts the USB micro-ROS
