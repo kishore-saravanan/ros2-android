@@ -75,13 +75,16 @@ def doctor(arguments):
 def main():
     parser = argparse.ArgumentParser(description='Build, deploy and operate native ROS 2 workspaces on Android.')
     parser.add_argument('--version', action='version', version=__version__)
-    parser.add_argument('command', choices=['doctor', 'compatibility', 'workspace', 'project', 'esp32', 'shell', 'setup', 'device'])
+    parser.add_argument('command', choices=['apk', 'doctor', 'compatibility', 'workspace', 'project', 'esp32', 'shell', 'setup', 'device'])
     # Preserve backend flags and ROS arguments verbatim; --help belongs to the selected command.
     if len(sys.argv) <= 1 or sys.argv[1] in ('-h', '--help', '--version'):
         parser.parse_args()
         return 0
     args = parser.parse_args(sys.argv[1:2])
     remaining = sys.argv[2:]
+    if args.command == 'apk':
+        from .apk import main as apk_main
+        return apk_main(remaining)
     if args.command == 'doctor':
         return doctor(remaining)
     if args.command == 'compatibility':

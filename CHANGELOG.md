@@ -6,6 +6,11 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Add read-only `apk inspect` and `apk compare` host commands using verified
+  signatures, package/version metadata and stable file hashes. Compare same-key
+  non-downgrade candidates without phone access, SDK extraction or installation.
+  Document signing-key ownership, deliberate upgrades and rollback limits.
+
 - Share phone-local Cyclone network configuration across the main app, all runner
   backends and workspace shell. Preserve loopback discovery with no external IPv4,
   reject stale address pins with recovery steps, and document offline startup.

@@ -17,7 +17,7 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 Host tests need Python 3.10+ and a C++ compiler for the command-guard fixture.
 Most use synthetic files/processes. The ROS launch-adapter and Python lifecycle suites are
 explicitly skipped when ROS Python packages are absent. To run it, source Jazzy
-and repeat the host suite; the recorded local run has all 69 host tests passing.
+and repeat the host suite; the recorded local run has all 80 host tests passing.
 The ROS-independent run has 54 executed tests and 15 explicitly skipped
 ROS-dependent tests.
 
@@ -50,7 +50,7 @@ The invoking Python needs pip >=22.3, setuptools >=68 and wheel. The verifier
 creates a new venv without pip, installs the wheel offline using the invoking
 pip and runs outside the checkout. It does not use checkout imports, ROS overlays,
 an Android SDK or a prepared native SDK. It checks missing-prerequisite diagnostics,
-seven command help screens, repeatable external inspection, unchanged sources,
+eight command help screens, repeatable external inspection, unchanged sources,
 archive/legal/hash/private-input rules and absence of guarded device/build/source
 fetch calls. See [host package](HOST-PACKAGE.md) for exact boundaries.
 
@@ -214,3 +214,10 @@ a clean-machine build or native-runtime qualification.
 in both wheel and SDK payloads, as well as legal/version/hash mismatches, before
 installation. The actual offline-install verifier runs separately against a built
 wheel so the ordinary host unit suite does not need pip or an Android SDK.
+
+`ApkArtifactsTest` covers metadata/current-signer parsing, major version ordering,
+wrong namespaces, malformed fields, missing/multiple signers, file changes during
+verification, missing/hanging tools, SDK selection and CLI errors/no extraction.
+It checks identical/candidate/blocked decisions without installing anything. Real
+local main/runner APK inspection uses SDK aapt/apksigner; file-level evidence does
+not qualify installed upgrades or profile/data preservation. See [Upgrading](UPGRADING.md).

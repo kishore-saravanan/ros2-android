@@ -68,6 +68,9 @@ a rebuild message and receive no control binding. Refresh retries connections.
 Rebuild/redeploy older runners to enable controls; a matching namespace alone
 does not grant control. Main app and updated runner are both required.
 
+See [Upgrading](UPGRADING.md) before replacing APKs or moving development to
+another PC; preserving signing identity is separate from keeping workspace source.
+
 ## How many APKs?
 
 Current packaging uses one main sensor app plus one runner APK per workspace.

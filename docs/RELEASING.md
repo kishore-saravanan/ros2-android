@@ -32,3 +32,6 @@ not a command that publishes automatically. A release needs explicit authorizati
 APT repository hosting/signing, Play Store requirements, public visibility and
 artifact publication are separate explicitly authorized steps. Adding this
 checklist or a CI workflow does not perform them.
+
+Use [APK inspection and upgrade checks](UPGRADING.md) when comparing release
+artifacts. File compatibility is not proof of a successful on-device upgrade.

@@ -68,6 +68,9 @@ benign behavior. Device installation, signing-key storage and ROS network trust
 remain separate concerns. Never distribute the maintainer's private signing key.
 See [the design decision](decisions/0002-runner-certificate-authorization.md).
 
+For file-level identity checks and same-key update/rollback procedures, see
+[Upgrading](UPGRADING.md). Comparing APKs does not authorize a runner or install it.
+
 ## Actual verification and remaining work
 
 Reference-device tests used a separate disposable signing key, a three-package

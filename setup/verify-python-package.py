@@ -92,6 +92,9 @@ def verify(wheel):
         require({'colcon', 'ros_setup', 'android_ndk', 'native_ros'}.issubset(diagnosis['missingOrIncompatible']),
                 'Missing prerequisites were not diagnosed')
         require(not (root / 'cache').exists(), 'Doctor/compatibility unexpectedly extracted the SDK')
+        require('usage:' in run('apk', '--help'), 'Missing APK command help')
+        require('error' in json.loads(run('apk', 'inspect', str(root / 'missing.apk'), code=2)), 'Missing APK did not fail clearly')
+        require(not (root / 'cache').exists(), 'APK checks unexpectedly extracted the SDK')
         for command in ('doctor', 'compatibility', 'workspace', 'project', 'shell', 'esp32', 'setup'):
             require('usage:' in run(command, '--help'), 'Missing help for ' + command)
         package = root / 'External workspace/src/demo'; package.mkdir(parents=True)
@@ -113,7 +116,7 @@ def verify(wheel):
             'sdkSnapshotSha256': matrix['artifact']['sdkSnapshotSha256'],
             'checks': ['archive/legal/private-input validation', 'offline installation in fresh venv',
                 'version and compatibility', 'missing-prerequisite diagnostics without extraction',
-                'seven command help screens', 'repeatable read-only external-workspace inspection',
+                'eight command help screens and missing-APK rejection without extraction', 'repeatable read-only external-workspace inspection',
                 'no guarded tool invocation'],
             'limits': 'No native SDK build, ROS traffic, signing upgrade, phone deployment or full clean-machine qualification.'}
 

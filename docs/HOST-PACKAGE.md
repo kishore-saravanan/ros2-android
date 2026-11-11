@@ -52,6 +52,11 @@ DEVELOPMENT.md. For example `setup sources` fetches pinned native sources and
 links the shared SDK cache; `setup native --with-cpp` builds the native SDK.
 Python/shell dependencies need their separate documented preparation.
 
+For read-only APK identity, signature and replacement checks, use
+`ros2-android apk inspect APK` or `ros2-android apk compare PREVIOUS REPLACEMENT`.
+These commands do not extract the SDK, contact a phone or install an artifact.
+See [upgrades and signing](UPGRADING.md) for requirements and decision limits.
+
 ## Maintainer build and verification
 
 Use a Python environment with pip >=22.3, setuptools >=68 and wheel installed.
@@ -82,7 +87,7 @@ Verification creates a fresh venv without pip and uses the invoking pip's
 It therefore does not need ensurepip inside the test environment. It removes
 checkout imports/ROS overlays, masks Android/native prerequisites and isolates
 the tooling cache. It checks the installed version/matrix, diagnostic failure
-behavior, seven help screens and repeated read-only external-workspace inspection.
+behavior, eight help screens and repeated read-only external-workspace inspection.
 
 Archive gates reject unsafe/private/generated paths and signing-key extensions,
 check legal files and compare matrix/SDK hashes before installation. Tool guards
