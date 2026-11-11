@@ -17,8 +17,8 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 Host tests need Python 3.10+ and a C++ compiler for the command-guard fixture.
 Most use synthetic files/processes. The ROS launch-adapter and Python lifecycle suites are
 explicitly skipped when ROS Python packages are absent. To run it, source Jazzy
-and repeat the host suite; the recorded local run has all 47 host tests passing.
-The ROS-independent run has 32 executed tests and 15 explicitly skipped
+and repeat the host suite; the recorded local run has all 56 host tests passing.
+The ROS-independent run has 41 executed tests and 15 explicitly skipped
 ROS-dependent tests.
 
 Android JVM tests/lint need Java 21 and Android platform/build tools 35 as
@@ -116,3 +116,9 @@ The README's intentionally curated media is separate from private device evidenc
 [Media provenance](assets/README.md) documents the opt-in content-only capture,
 address redaction and temporary inactive Dashboard layout. That test does not
 start ROS sessions, user projects, camera publishing or motor commands.
+
+`WorkspaceInspectionTest` uses synthetic source/SDK/host prefixes to check provider
+precedence, missing SDKs, conditions/versions/groups, unsupported package types,
+malformed manifests, ignored/generated paths and shell-profile isolation. Its
+external-path CLI check verifies inspection does not write a cache or execute
+workspace CMake. These tests do not cross-build the dependencies they inspect.

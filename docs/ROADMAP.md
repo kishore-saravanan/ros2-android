@@ -42,7 +42,8 @@ alone counts as proof of a working robot.
 **Outcome:** a developer builds their own supported ROS workspace without editing
 platform source or relying on this maintainer's prepared PC.
 
-- [ ] Report target dependency availability and unsupported package/launch features.
+- [x] Inspect declared dependency providers and unsupported package types.
+- [ ] Resolve dependency/version conditions and report unsupported launch features.
 - [ ] Publish a compatibility matrix tying CLI, APK, protocol, ABI and SDK revisions.
 - [ ] Validate the installed-client journey on a clean Linux machine.
 - [ ] Refine inspect → build → deploy → start → observe → stop errors and guides.

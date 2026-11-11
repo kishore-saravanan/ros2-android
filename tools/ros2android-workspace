@@ -11,9 +11,9 @@ import subprocess
 import sys
 import xml.etree.ElementTree as ET
 from project_manifest import load_manifest
+from workspace_inspection import EXCLUDED, inventory, inspect_dependencies, default_host_prefixes
 
 ROOT = Path(__file__).resolve().parents[1]
-EXCLUDED = {'.git', 'build', 'install', 'log', '__pycache__', '.cxx', '.gradle'}
 
 
 def digest_tree(path):
@@ -22,24 +22,6 @@ def digest_tree(path):
         digest.update(item.relative_to(path).as_posix().encode()); digest.update(b'\0')
         digest.update(item.read_bytes()); digest.update(b'\0')
     return digest.hexdigest()
-
-
-def inventory(workspace):
-    packages = []
-    for path in sorted((workspace / 'src').rglob('package.xml')):
-        if any((parent / 'COLCON_IGNORE').exists() for parent in [path.parent, *path.parent.parents] if parent == workspace or workspace in parent.parents):
-            continue
-        manifest = ET.parse(path).getroot()
-        packages.append({'name': manifest.findtext('name'), 'path': str(path.parent),
-                         'buildType': manifest.findtext('export/build_type', 'ament_cmake')})
-    if not packages:
-        raise ValueError('No ROS packages found under workspace/src')
-    if len({p['name'] for p in packages}) != len(packages):
-        raise ValueError('Duplicate package names')
-    unsupported = [p['name'] + ': ' + p['buildType'] for p in packages if p['buildType'] != 'ament_cmake']
-    if unsupported:
-        raise ValueError('Workspace process runner currently supports ament_cmake packages; unsupported: ' + ', '.join(unsupported))
-    return packages
 
 
 def elf_check(path):
@@ -144,14 +126,15 @@ def main():
     parser.add_argument('--id', help='Unique cache/project ID (default: workspace directory name)')
     parser.add_argument('--serial')
     commands = parser.add_subparsers(dest='command', required=True)
-    commands.add_parser('inspect')
+    inspect = commands.add_parser('inspect', help='Inspect packages and declared dependency providers without building')
     commands.add_parser('host-build')
     build = commands.add_parser('build')
-    shell = build.add_mutually_exclusive_group()
-    shell.add_argument('--with-shell', dest='with_shell', action='store_true', default=True,
-                       help='Bundle the standard native ROS CLI (default)')
-    shell.add_argument('--without-shell', dest='with_shell', action='store_false',
-                       help='Build a smaller C++-only APK without the ROS CLI')
+    for options in (inspect, build):
+        shell = options.add_mutually_exclusive_group()
+        shell.add_argument('--with-shell', dest='with_shell', action='store_true', default=True,
+                           help='Include the Python/shell SDK in the selected build profile (default)')
+        shell.add_argument('--without-shell', dest='with_shell', action='store_false',
+                           help='Select the C++-only profile without the ROS CLI')
     build.add_argument('--launch', type=Path)
     build.add_argument('--controller-apk', type=Path, help='Controller main APK for certificate-pinned runner controls')
     build.add_argument('--launch-arg', action='append', default=[])
@@ -160,9 +143,17 @@ def main():
     args, forward = parser.parse_known_args()
     workspace = args.workspace.expanduser().resolve()
     project_id = args.id or workspace.name
-    if not re.fullmatch(r'[a-z][a-z0-9_]{0,63}', project_id):
+    if args.command != 'inspect' and not re.fullmatch(r'[a-z][a-z0-9_]{0,63}', project_id):
         parser.error('Use --id with lowercase letters/digits/underscores')
-    packages = inventory(workspace) if args.command in ('inspect', 'host-build', 'build') else []
+    packages = inventory(workspace, allow_unsupported=args.command == 'inspect') if args.command in ('inspect', 'host-build', 'build') else []
+    if args.command == 'inspect':
+        if forward: parser.error('Unknown arguments: ' + str(forward))
+        prefixes = ([ROOT / 'native-deps/python-install'] if args.with_shell else []) + [ROOT / 'native-deps/install']
+        report = inspect_dependencies(packages, prefixes, default_host_prefixes())
+        print(json.dumps({'workspace': str(workspace), 'packages': packages,
+                          'sourceHash': digest_tree(workspace / 'src'),
+                          'inspection': report}, indent=2))
+        return
     cache = Path.home() / '.cache/ros2-android-workspaces' / project_id
     cache.mkdir(parents=True, exist_ok=True)
     owner = cache / 'workspace-root.txt'
@@ -170,9 +161,6 @@ def main():
         parser.error('Cache ID belongs to another workspace; choose --id')
     owner.write_text(str(workspace))
     project = cache / 'runner-project'
-    if args.command == 'inspect':
-        print(json.dumps({'workspace': str(workspace), 'packages': packages,
-                          'sourceHash': digest_tree(workspace / 'src')}, indent=2)); return
     if args.command == 'host-build':
         if forward: parser.error('Unknown arguments: ' + str(forward))
         subprocess.run([str(ROOT / 'setup/build-colcon-workspace.sh'), str(workspace), str(cache / 'host'), 'host'], check=True); return

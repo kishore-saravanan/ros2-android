@@ -31,6 +31,52 @@ The external smoke test used `build --without-shell`; it reuses prepared SDK
 artifacts and is not fresh-machine qualification. Shell-enabled builds retain
 their additional Python SDK prerequisites.
 
+## Inspect dependencies before building
+
+```bash
+ros2-android workspace --workspace /absolute/path/to/my_ws inspect
+# Match a C++-only build profile instead:
+ros2-android workspace --workspace /absolute/path/to/my_ws inspect --without-shell
+```
+
+From a source checkout use `./tools/ros2android-workspace` in place of
+`ros2-android workspace`. Inspection reads manifests and installed package-index
+markers. It does not execute CMake/launch code, call rosdep, start a build, contact
+a phone, write workspace files or reserve a cache ID. Directory names with spaces
+or capitals work for inspection; build/deploy still need a valid lowercase ID.
+
+The JSON retains `packages` and `sourceHash` and adds `inspection` version 1:
+
+| Dependency provider | What the evidence means |
+| --- | --- |
+| `workspace` | Another discovered source package declares this name |
+| `android-sdk` | A package marker exists in a selected target SDK prefix |
+| `host-only` | A marker exists only in a Linux ROS prefix; inspect the guidance |
+| `not-found` | No marker was found; this may also be a non-ament/system dependency |
+| `not-used` | Test/documentation dependency outside this build workflow |
+| `group-unresolved` | A dependency group needs build-system resolution |
+
+Each row names the requesting package, dependency tag and evidence location.
+Conditions and version constraints are preserved, not evaluated. Summary counts
+refer to declarations, not unique packages. `unsupportedPackages` identifies
+package types such as `ament_python`; inspection reports them, while build still
+rejects unsupported types. Invalid XML/names fail with the manifest path.
+
+The default profile checks the Python/shell and C++ target underlays; use
+`--without-shell` to inspect only the C++ underlay. `targetPrefixes.indexPresent`
+shows whether those indexes exist. Linux evidence comes from the configured ROS
+setup prefix (`ROBOT_ROS_SETUP`, default `/opt/ros/jazzy/setup.bash`) and inherited
+`AMENT_PREFIX_PATH`; Linux markers never become Android evidence.
+
+This is an advisory manifest scan, not a portability verdict or dependency solver.
+It does not check transitive dependencies, version satisfaction, ELF binaries or
+launch semantics. Source presence does not prove that a dependency can cross-build.
+SDK markers do not prove that its binaries match this target. Conversely, bundled
+Python assets and the supported host-side launch adapter can satisfy requirements
+without target ament markers: the reference example may report `launch_ros` as
+host-only even though its documented launch paths work. A normal report exits
+successfully even with unresolved dependencies; review it before building.
+
 ## Example contents
 
 ```text
@@ -218,4 +264,5 @@ that user callbacks are making progress; use actual ROS traffic probes.
 
 Source-manifest and runtime versions are described in the
 [project compatibility contract](PROJECT-CONTRACT.md). Workspace inspection is
-a package inventory, not proof that every dependency has an Android build.
+a declared-dependency evidence report, not proof that every dependency has an
+Android build.

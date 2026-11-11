@@ -21,9 +21,9 @@ execute the project's code. It does not verify native dependencies, build output
 launch semantics, signing identity or installed phone compatibility.
 
 For an ordinary colcon workspace use `ros2-android workspace --workspace PATH
-inspect` instead. That command inventories supported package types; the workspace
-builder generates the runner manifest in its cache. Do not add a manifest to each
-ROS package. See [workspace guide](COLCON-WORKSPACES.md).
+inspect` instead. That command inventories package types and declared dependency
+providers; the workspace builder generates the runner manifest in its cache. Do
+not add a manifest to each ROS package. See [workspace guide](COLCON-WORKSPACES.md).
 
 ## Source manifest version 1
 
@@ -108,9 +108,10 @@ qualification; existing DDS tests do not establish these new checks.
 
 ## Dependency and platform limits
 
-Workspace inspection currently accepts `ament_cmake`; it is not a dependency
-solver. A dependency installed in Linux through apt/rosdep is not evidence that
-an Android build exists. It must be in the target SDK or built from compatible
+Workspace build currently accepts `ament_cmake`. Inspection reports other
+package types and direct dependency providers without admitting them to build;
+it is not a dependency solver. A dependency installed in Linux through apt/rosdep
+is not evidence that an Android build exists. It must be in the target SDK or built from compatible
 workspace sources. Linux-only libraries, drivers and services need replacements
 or explicit Android ports. Mixed `ament_python` workspaces remain unsupported.
 
@@ -124,6 +125,7 @@ When build/deploy fails:
 4. For missing/stale runner output, complete build and deploy again. Source edits
    and SDK/runtime changes require a new APK.
 
-Dependency reports with target availability, physical compatibility-envelope tests
-and fresh-machine qualification remain roadmap work. See [Status](STATUS.md) and
+Declared dependency-provider reports are implemented. Full dependency/version
+resolution, physical compatibility-envelope tests and fresh-machine qualification
+remain roadmap work. See [Status](STATUS.md) and
 [testing](TESTING.md) for actual verification boundaries.

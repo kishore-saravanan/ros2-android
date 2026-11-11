@@ -6,6 +6,11 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Add read-only workspace inspection of declared dependency providers across
+  workspace sources, selected Android SDK indexes and Linux ROS indexes. Report
+  unsupported package types, unresolved groups, conditions and version constraints
+  without treating a manifest scan as proof of Android compatibility.
+
 - Fix Android CI bootstrap by resolving SDK Manager from the Android SDK root
   rather than assuming it is on PATH. Clean-source JVM/lint checks pass locally;
   hosted verification of the corrected workflow remains pending.
