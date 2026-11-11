@@ -128,6 +128,14 @@ leaves its outcome unknown. Timeout clears controls and unbinds for explicit
 Refresh; the runner service continues independently. See the
 [management contract](../PROJECT-CONTRACT.md) for legacy compatibility and limits.
 
+The main runtime, C++ factory, embedded Python runner, workspace child processes
+and workspace shell share `CycloneNetwork`: a JVM-only startup snapshot and pure
+XML policy. Native bridges receive the prepared XML; Fast DDS Agent configuration
+remains separate. Loopback is always selected, automatic external selection is
+conditional on an up IPv4 interface, and an unavailable explicit pin fails with
+recovery guidance. No profile is silently rewritten and no live interface-rebind
+or process-restart policy is implied. See [standalone startup](../STANDALONE-OPERATION.md).
+
 ## SOLID used pragmatically
 
 | Principle | Concrete use |

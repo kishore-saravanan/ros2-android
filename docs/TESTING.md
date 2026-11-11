@@ -141,6 +141,49 @@ private debug-only probe, as well as approval/identity/revocation. No camera or
 personal apps/data are accessed. Use a separate Linux ROS subscriber to verify
 `/android_test/result`; runner status alone is not traffic evidence.
 
+## Runner protocol fixture (prepared, physical execution pending)
+
+`RunnerProtocolTest` is opt-in and restricted to the stopped disposable
+`ws_auth_workspace` talker fixture described above. Rebuild it with the current
+SDK and deploy it before testing. Leave the main app unlocked and visible; no
+robot hardware is required. The test temporarily grants local approval if needed
+and restores its prior approval state. It requires a versioned service response
+before sending any malformed command, so an old service cannot execute a request
+that it would otherwise ignore version fields on.
+
+```bash
+./setup/build.sh :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=dev.ros2android.android.RunnerProtocolTest \
+  -Pandroid.testInstrumentationRunnerArguments.protocolTestPackage=dev.ros2android.android.runner.ws_auth_workspace
+```
+
+It checks authenticated legacy and versioned status requests, then unsupported,
+string and null protocol versions for all four commands and an unknown command.
+Each rejection must leave the stopped state and saved configuration unchanged.
+It never sends a valid start/stop/configure request. Compilation has passed;
+Binder execution has not been performed for this new test. This checks a new
+service accepting legacy requests, not an old runner APK or an APK upgrade.
+
+Remaining fixture matrix: new controller/old runner, old controller/new runner,
+incompatible installed metadata, reply delay beyond deadline, service death,
+runner update while bound and revoked/replaced signing identity. Verify clear
+errors, no stale status or command replay and preserved configuration. Use only
+isolated talker fixtures and qualify each case before marking it complete.
+
+## Offline network policy
+
+`CycloneNetworkTest` parses the actual shared Kotlin-generated XML and checks
+loopback interface/peer availability, external selection, explicit local-only
+mode, stale pins, unreachable peer hints and malformed/XML-injection inputs.
+The main app, all three backends and workspace shell compile this same source.
+Native JNI code consumes its XML; it no longer builds different configurations.
+
+Both generated offline policies were also accepted by a Linux host build of the
+pinned Cyclone revision, creating/deleting two participants per policy. This
+checks native parsing/initialization, not Android networking, ROS samples or
+micro-ROS interoperability. The [standalone checklist](STANDALONE-OPERATION.md)
+separates fresh startup from network interruption and lists pending device trials.
+
 ## Protocol and documentation captures
 
 `ProjectProtocolTest` exercises strict version types, supported command subsets,

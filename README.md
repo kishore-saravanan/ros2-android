@@ -42,7 +42,7 @@ hidden. Dashboard shows an inactive example layout; no commands were published.
 | Prepare another development PC | [Setup order](docs/CLEAN-MACHINE-SETUP.md) · [Compatibility matrix](docs/COMPATIBILITY.md) |
 | Run your own ROS workspace on the phone | [Workspace build and deployment](docs/COLCON-WORKSPACES.md) |
 | Configure buttons, joystick and subscribed values/images | [Dashboard](docs/CONTROLS.md) |
-| Connect an MCU and operate without the PC | [Robot operation](docs/ROBOT-OPERATION.md) |
+| Connect an MCU and operate without the PC | [Robot operation](docs/ROBOT-OPERATION.md) · [Standalone startup](docs/STANDALONE-OPERATION.md) |
 | Build or contribute to the platform | [Contributing](CONTRIBUTING.md) |
 
 The host client is `ros2-android`. Local wheel and Debian alpha packaging exist;

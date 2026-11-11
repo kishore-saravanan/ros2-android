@@ -70,23 +70,16 @@ void report(const std::string & error) {
 }
 }
 
-extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_runner_ProjectNative_start(
-  JNIEnv * env, jobject, jint domain, jstring name_space, jstring peer, jstring local,
+extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_runner_ProjectNative_startConfigured(
+  JNIEnv * env, jobject, jint domain, jstring name_space, jstring network_xml,
   jstring library_dir, jobjectArray arguments, jobjectArray components, jobjectArray node_arguments) {
   std::lock_guard<std::mutex> lock(lifecycle);
   try {
     if (context) throw std::runtime_error("Stop the current project before starting another");
     if (domain < 0 || domain > 101) throw std::runtime_error("Invalid ROS domain");
-    const auto lib = utf8(env, library_dir), p = utf8(env, peer), address = utf8(env, local);
-    auto valid_address = [](const std::string & value) { return value.find_first_not_of("0123456789.") == std::string::npos; };
-    if (!valid_address(p) || !valid_address(address)) throw std::runtime_error("Invalid IP characters");
+    const auto lib = utf8(env, library_dir), xml = utf8(env, network_xml);
     setenv("LD_LIBRARY_PATH", lib.c_str(), 1);
     setenv("RMW_IMPLEMENTATION", "rmw_cyclonedds_cpp", 1);
-    std::string xml = "<CycloneDDS><Domain><General><AllowMulticast>true</AllowMulticast>";
-    if (!address.empty()) xml += "<NetworkInterfaceAddress>" + address + "</NetworkInterfaceAddress>";
-    xml += "</General><Discovery><ParticipantIndex>auto</ParticipantIndex><MaxAutoParticipantIndex>50</MaxAutoParticipantIndex>";
-    if (!p.empty()) xml += "<Peers><Peer Address=\"" + p + "\"/></Peers>";
-    xml += "</Discovery></Domain></CycloneDDS>";
     setenv("CYCLONEDDS_URI", xml.c_str(), 1);
     rclcpp::InitOptions init;
     init.set_domain_id(static_cast<size_t>(domain)); init.shutdown_on_signal = false;

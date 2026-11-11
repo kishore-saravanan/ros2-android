@@ -6,6 +6,9 @@ ordinary app-owned nodes do not require a PC process to execute. Actual offline,
 power and recovery qualification is recorded separately below; not every Android
 phone or ROS package is supported.
 
+For address settings, offline startup and a repeatable qualification checklist,
+see [Standalone operation](STANDALONE-OPERATION.md).
+
 ## Prepare once
 
 1. Complete DEVELOPMENT.md and the battery walkthrough in GETTING-STARTED.md.

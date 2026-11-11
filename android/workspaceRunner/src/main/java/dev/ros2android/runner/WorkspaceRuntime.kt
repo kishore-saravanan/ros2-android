@@ -35,6 +35,7 @@ object ProjectNative {
               arguments: Array<String>, components: Array<String>, nodeArguments: Array<Array<String>>) = lifecycle.withLock {
         check(workers.isEmpty()) { "Stop the current workspace before starting" }
         require(components.size == nodeArguments.size && components.size in 1..16)
+        val xml = dev.ros2android.network.CycloneNetwork.current(peer, local)
         val prefix = File(app.filesDir, "ros2-workspace")
         extract("ros2-workspace", prefix)
         error = ""; started = SystemClock.elapsedRealtime()
@@ -46,10 +47,6 @@ object ProjectNative {
                 check(executable.isFile && executable.canExecute()) { "Packaged executable unavailable: $component" }
                 val command = listOf(executable.path, "--ros-args") + nodeArguments[i] + listOf("-r", "__ns:=$namespace") + arguments
                 val builder = ProcessBuilder(command).redirectErrorStream(true)
-                val xml = "<CycloneDDS><Domain><General><Interfaces>" +
-                    (if (local.isEmpty()) "<NetworkInterface autodetermine=\"true\"/>" else "<NetworkInterface address=\"$local\"/>") +
-                    "</Interfaces></General><Discovery><ParticipantIndex>auto</ParticipantIndex><MaxAutoParticipantIndex>50</MaxAutoParticipantIndex>" +
-                    (if (peer.isEmpty()) "" else "<Peers><Peer Address=\"$peer\"/></Peers>") + "</Discovery></Domain></CycloneDDS>"
                 builder.environment().apply {
                     put("LD_LIBRARY_PATH", libraryDir); put("AMENT_PREFIX_PATH", prefix.path)
                     put("RMW_IMPLEMENTATION", "rmw_cyclonedds_cpp"); put("ROS_DOMAIN_ID", domain.toString())

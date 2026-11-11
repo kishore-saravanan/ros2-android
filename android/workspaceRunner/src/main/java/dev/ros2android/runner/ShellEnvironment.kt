@@ -44,11 +44,7 @@ object ShellEnvironment {
         val prefs = app.getSharedPreferences("project_profile", Context.MODE_PRIVATE)
         val peer = prefs.getString("peer", "").orEmpty()
         val local = prefs.getString("local", "").orEmpty()
-        for (ip in listOf(peer, local)) require(ip.isEmpty() || ip.matches(Regex("[0-9.]+")))
-        val xml = "<CycloneDDS><Domain><General><Interfaces>" +
-            (if (local.isEmpty()) "<NetworkInterface autodetermine=\"true\"/>" else "<NetworkInterface address=\"$local\"/>") +
-            "</Interfaces></General><Discovery><ParticipantIndex>auto</ParticipantIndex><MaxAutoParticipantIndex>50</MaxAutoParticipantIndex>" +
-            (if (peer.isEmpty()) "" else "<Peers><Peer Address=\"$peer\"/></Peers>") + "</Discovery></Domain></CycloneDDS>"
+        val xml = dev.ros2android.network.CycloneNetwork.current(peer, local)
         val values = linkedMapOf(
             "HOME" to app.filesDir.path, "TMPDIR" to app.cacheDir.path,
             "PATH" to "${shell.path}/bin:/system/bin:/system/xbin", "LD_LIBRARY_PATH" to "${libs.path}:${shell.path}/site-packages/chaquopy/lib",

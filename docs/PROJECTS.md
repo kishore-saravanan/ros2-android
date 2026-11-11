@@ -25,6 +25,9 @@ and power constraints still apply. Stop project controls this runner's supervise
 group; Stop all in the sensor app controls its sensor endpoints. Neither is a
 robot-wide emergency stop or a per-node kill command.
 
+Projects start locally without a PC. For automatic/phone-local address settings
+and pending offline qualification, see [Standalone operation](STANDALONE-OPERATION.md).
+
 ## First workspace
 
 From the repository root on your Linux PC, with DEVELOPMENT.md prerequisites:

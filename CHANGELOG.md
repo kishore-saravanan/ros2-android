@@ -6,6 +6,12 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Share phone-local Cyclone network configuration across the main app, all runner
+  backends and workspace shell. Preserve loopback discovery with no external IPv4,
+  reject stale address pins with recovery steps, and document offline startup.
+  Add seven policy regressions and a compiled opt-in stopped-runner protocol test;
+  physical offline/recovery qualification remains pending.
+
 - Isolate runner replies by request and connection, including legacy services.
   Prevent polling from postponing command deadlines or overwriting command state.
   Disconnect on timeout/invalid reply and require Refresh without command replay.

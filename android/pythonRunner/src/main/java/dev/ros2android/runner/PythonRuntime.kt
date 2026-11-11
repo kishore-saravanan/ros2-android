@@ -7,7 +7,7 @@ import com.chaquo.python.android.AndroidPlatform
 import java.io.File
 
 private object PythonEnvironment {
-    external fun configure(peer: String, local: String, libraries: String, prefix: String)
+    external fun configure(networkXml: String, libraries: String, prefix: String)
 }
 
 /** Backend for the same foreground-service lifecycle as the native C++ runner. */
@@ -32,9 +32,10 @@ object ProjectNative {
               arguments: Array<String>, @Suppress("UNUSED_PARAMETER") components: Array<String>,
               @Suppress("UNUSED_PARAMETER") nodeArguments: Array<Array<String>>) {
         requireLoaded()
+        val networkXml = dev.ros2android.network.CycloneNetwork.current(peer, local)
         val prefix = File(app.filesDir, "ros2-python-sdk")
         extract("ros2-python-sdk", prefix)
-        PythonEnvironment.configure(peer, local, libraryDir, prefix.path)
+        PythonEnvironment.configure(networkXml, libraryDir, prefix.path)
         if (!Python.isStarted()) Python.start(AndroidPlatform(app))
         val module = Python.getInstance().getModule("phone_runtime")
         runtime = module

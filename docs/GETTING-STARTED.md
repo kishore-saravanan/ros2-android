@@ -148,3 +148,6 @@ that this trial or a clean-machine dependency install has passed.
 Continue with [Robot operation](ROBOT-OPERATION.md) for the workspace/MCU setup,
 start/stop scopes, loss-of-connection checks and recovery. APT distribution work
 is deferred while runtime qualification and usability are completed.
+
+For operation after disconnecting the PC and for stale saved-address recovery,
+see [Standalone operation](STANDALONE-OPERATION.md).

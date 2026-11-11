@@ -70,6 +70,7 @@ android {
     sourceSets["main"].res.srcDir("../branding/res")
     sourceSets["main"].java.srcDir("../security/src/main/java")
     sourceSets["main"].java.srcDir("../protocol/src/main/java")
+    sourceSets["main"].java.srcDir("../network/src/main/java")
     buildFeatures.buildConfig = true
     externalNativeBuild.cmake {
         path = file("../../native/runner/CMakeLists.txt")

@@ -25,12 +25,14 @@ universal compatibility guarantees. See [Status](STATUS.md) for the boundaries.
 a PC or an external network.
 
 - [ ] Qualify fresh startup without Wi-Fi, including phone-local nodes and USB Agent.
-- [ ] Handle stale interface settings, network changes and reconnects consistently.
+- [x] Share phone-local Cyclone startup settings across app, runners and shell; reject stale pins with recovery guidance.
+- [ ] Qualify network changes and reconnects consistently on devices.
 - [ ] Qualify USB detach/reconnect, permission denial and app-update recovery.
 - [ ] Exercise screen-off, task removal, process death and vendor power management.
 - [ ] Test Dashboard lost-link/late-subscriber behavior and distinguish local writes
       from remote acknowledgement.
 - [x] Isolate control requests and reject stale replies; unit-test timeout/reconnect rules.
+- [x] Prepare an opt-in stopped-fixture test for legacy requests and version rejection without state changes.
 - [ ] Qualify protocol envelopes and request recovery against updated, legacy and incompatible runners.
 - [ ] Review independent signing, update/reinstall, revocation and key rotation.
 

@@ -57,7 +57,8 @@ Wi-Fi enabled for development/PC observation; fully offline phone DDS discovery
 is not yet qualified. Clear stale explicit network addresses before trying an
 offline sensor profile. Phone-to-PC DDS monitoring can still use Wi-Fi
 separately; it is not the MCU transport. Remove the PC dependency when qualifying
-standalone operation. ADB need not be running for normal use.
+standalone operation. ADB need not be running for normal use. Follow the
+[standalone checklist](STANDALONE-OPERATION.md) for a fresh Wi-Fi-off trial.
 
 ## Transport and bandwidth
 

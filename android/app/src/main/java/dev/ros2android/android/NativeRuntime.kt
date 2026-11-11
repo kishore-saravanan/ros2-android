@@ -9,7 +9,9 @@ object NativeRuntime {
 
     external fun describe(): String
     external fun monotonicTimeNanos(): Long
-    external fun start(domain: Int, namespace: String, peer: String, localAddress: String, libraryDir: String)
+    fun start(domain: Int, namespace: String, peer: String, localAddress: String, libraryDir: String) =
+        startConfigured(domain, namespace, dev.ros2android.network.CycloneNetwork.current(peer, localAddress), libraryDir)
+    private external fun startConfigured(domain: Int, namespace: String, networkXml: String, libraryDir: String)
     external fun stop()
     external fun createPublisher(id: String, topic: String, kind: Int)
     external fun removePublisher(id: String)

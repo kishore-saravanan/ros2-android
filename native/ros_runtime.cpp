@@ -25,9 +25,6 @@
 #include <geometry_msgs/msg/twist.h>
 #include <geometry_msgs/msg/detail/twist__rosidl_typesupport_introspection_c.h>
 #include <cmath>
-#include <ifaddrs.h>
-#include <net/if.h>
-#include <netinet/in.h>
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
@@ -188,40 +185,15 @@ extern "C" JNIEXPORT jstring JNICALL Java_dev_ros2android_android_NativeRuntime_
 extern "C" JNIEXPORT jlong JNICALL Java_dev_ros2android_android_NativeRuntime_monotonicTimeNanos(JNIEnv*, jobject) {
     return static_cast<jlong>(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count());
 }
-extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_android_NativeRuntime_start(
-    JNIEnv* env, jobject, jint domain, jstring ns, jstring peer, jstring local, jstring directory) {
+extern "C" JNIEXPORT void JNICALL Java_dev_ros2android_android_NativeRuntime_startConfigured(
+    JNIEnv* env, jobject, jint domain, jstring ns, jstring network_xml, jstring directory) {
     std::lock_guard<std::mutex> lock(gate);
     try {
         stop_locked();
-        const std::string peer_address = str(env, peer), local_address = str(env, local), lib = str(env, directory);
+        const std::string xml = str(env, network_xml), lib = str(env, directory);
         node_namespace = str(env, ns);
         setenv("LD_LIBRARY_PATH", lib.c_str(), 1);
         setenv("RMW_IMPLEMENTATION", "rmw_cyclonedds_cpp", 1);
-        // Advertise a stable phone-local path alongside the robot/PC network.
-        // Redundant networking avoids selecting only Wi-Fi for a local Agent.
-        // Pinned Cyclone 0.10 disables multicast globally if ANY selected interface
-        // is non-multicast-capable (q_init.c). Linux/Android loopback supports IP
-        // multicast despite lacking IFF_MULTICAST: explicitly enable it here.
-        bool external_available = false;
-        ifaddrs* interfaces = nullptr;
-        if (getifaddrs(&interfaces) == 0) {
-            for (auto* it = interfaces; it; it = it->ifa_next) {
-                if (it->ifa_addr && it->ifa_addr->sa_family == AF_INET &&
-                    (it->ifa_flags & IFF_UP) && !(it->ifa_flags & IFF_LOOPBACK)) external_available = true;
-            }
-            freeifaddrs(interfaces);
-        }
-        std::string xml = "<CycloneDDS><Domain><General><Interfaces>"
-            "<NetworkInterface address=\"127.0.0.1\" multicast=\"true\" priority=\"10\"/>";
-        if (!local_address.empty() && local_address != "127.0.0.1")
-            xml += "<NetworkInterface address=\"" + local_address + "\"/>";
-        else if (external_available) xml += "<NetworkInterface autodetermine=\"true\"/>";
-        xml += "</Interfaces><MulticastRecvNetworkInterfaceAddresses>all</MulticastRecvNetworkInterfaceAddresses>"
-            "<RedundantNetworking>true</RedundantNetworking><AllowMulticast>true</AllowMulticast></General>"
-            "<Discovery><ParticipantIndex>auto</ParticipantIndex><MaxAutoParticipantIndex>50</MaxAutoParticipantIndex>"
-            "<Peers><Peer Address=\"127.0.0.1\"/>";
-        if (!peer_address.empty() && peer_address != "127.0.0.1") xml += "<Peer Address=\"" + peer_address + "\"/>";
-        xml += "</Peers></Discovery></Domain></CycloneDDS>";
         setenv("CYCLONEDDS_URI", xml.c_str(), 1);
         auto options = rcl_get_zero_initialized_init_options();
         check(rcl_init_options_init(&options, rcl_get_default_allocator()));
