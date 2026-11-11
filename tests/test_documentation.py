@@ -22,7 +22,7 @@ class DocumentationTest(unittest.TestCase):
             for target in targets:
                 if '://' in target or target.startswith(('#', 'mailto:')):
                     continue
-                target = unquote(target.split('#', 1)[0].strip('<>'))
+                target = unquote(target.split('#', 1)[0].split('?', 1)[0].strip('<>'))
                 if target:
                     with self.subTest(document=name, target=target):
                         self.assertTrue((path.parent / target).exists(), 'Missing local link')

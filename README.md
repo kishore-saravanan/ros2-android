@@ -126,13 +126,21 @@ deferred. There is no promised release date.
 Minimal [example workspaces](examples/README.md) exercise platform compatibility.
 The [ball follower](docs/BALL-FOLLOWER.md) demonstrates onboard Python vision and
 ROS control; it is not a calibrated or generally supported robot controller.
-[![Watch the ROS2 Android robot demo](docs/assets/demo/cover.jpg)](docs/assets/demo/ros2-android-demo.mp4)
 
-**[Watch/download the 67-second demo](docs/assets/demo/ros2-android-demo.mp4)** —
-A controller Android phone, an onboard Android phone running ball detection,
-and an ESP32 connected through USB micro-ROS. The phone runs the vision and ROS nodes; the ESP32 drives the motors.
+### Phone-powered ball following
+
+https://github.com/user-attachments/assets/bcb325b3-a472-4b71-82ee-de90b0352fcb
+
+**Remote Android phone:** starts/stops tracking and monitors annotated images.
+
+**Onboard Android phone:** runs camera capture, Python ROS 2 perception and motion
+control, and the USB micro-ROS Agent. **ESP32:** executes motor commands.
+
+[Download the 67-second video](docs/assets/demo/ros2-android-demo.mp4?raw=true) ·
+[View the demo cover](docs/assets/demo/cover.jpg) ·
+[Recording and edit details](docs/assets/README.md#demo-videos)
+
 Normal-speed, muted footage from the November 1 experiment.
-[Recording and edit details](docs/assets/README.md#demo-videos).
 
 Robot-specific examples will move to a companion repository after the external
 build/deploy journey is proven. No migration has occurred yet.

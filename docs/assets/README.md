@@ -45,6 +45,11 @@ robot mark, not an official ROS or Android logo. See [branding](../BRANDING.md).
 
 ## Demo videos
 
+The README embeds a GitHub-hosted [video attachment](https://github.com/user-attachments/assets/bcb325b3-a472-4b71-82ee-de90b0352fcb).
+The tracked MP4 remains a downloadable fallback; GitHub’s repository file viewer
+may decline to preview it. Attachment access follows the repository’s permissions.
+Only the stable attachment URL is used, never its temporary signed media URL.
+
 The maintainer supplied two recordings of the November 1, 2026 ball-following
 experiment and requested their good opening sections for the community demo.
 Only the selected, compressed showcase and a reviewed cover enter the repository:
@@ -52,7 +57,7 @@ Only the selected, compressed showcase and a reviewed cover enter the repository
 - `demo/ros2-android-demo.mp4`: 67 seconds, H.264, 1280×720, 30 fps, muted,
   fast-start MP4. It concatenates source 1 at 00:01–00:40 and source 2 at
   00:00–00:28, with a brief identifying caption at each section's beginning.
-- `demo/cover.jpg`: real frames identifying the controller Android phone and onboard Android phone,
+- `demo/cover.jpg`: real frames identifying the remote Android phone and onboard Android phone,
   arranged on a ROS-inspired title card. No generated robot imagery.
 
 Source recordings: `2026-11-01 20-25-41.mp4` (1920×1080/60 fps) and
@@ -69,8 +74,8 @@ supplied recorded media, not a new phone screen capture or camera access.
 
 The onboard phone runs camera capture and Python ROS 2 vision/control nodes. A
 phone-hosted micro-ROS Agent connects by USB to the ESP32 motor controller. A
-second phone provides Dashboard control and subscribed annotated images. The
-footage shows the then-current app UI, which can differ from later development.
+remote Android phone triggers tracking and monitors subscribed annotated images.
+The footage shows the then-current app UI, which can differ from later development.
 It demonstrates one application; it is not a latency, hard-real-time, endurance,
 calibrated-motion or general robot-controller benchmark.
 

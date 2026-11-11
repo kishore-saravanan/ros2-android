@@ -8,6 +8,8 @@ see the [release checklist](docs/RELEASING.md).
 
 - Add a reviewed, compressed ball-following showcase and real-frame cover to the
   README, with source/edit provenance and recorded-demo qualification limits.
+  Embed a GitHub video attachment and distinguish the remote Android phone from
+  onboard perception/control.
 
 - Add read-only `apk inspect` and `apk compare` host commands using verified
   signatures, package/version metadata and stable file hashes. Compare same-key
