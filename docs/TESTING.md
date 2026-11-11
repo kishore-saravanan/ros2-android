@@ -17,8 +17,8 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 Host tests need Python 3.10+ and a C++ compiler for the command-guard fixture.
 Most use synthetic files/processes. The ROS launch-adapter and Python lifecycle suites are
 explicitly skipped when ROS Python packages are absent. To run it, source Jazzy
-and repeat the host suite; the recorded local run has all 41 host tests passing.
-The ROS-independent run has 26 executed tests and 15 explicitly skipped
+and repeat the host suite; the recorded local run has all 47 host tests passing.
+The ROS-independent run has 32 executed tests and 15 explicitly skipped
 ROS-dependent tests.
 
 Android JVM tests/lint need Java 21 and Android platform/build tools 35 as
@@ -31,8 +31,10 @@ documentation before running it so it participates in the check.
 [Platform checks](../.github/workflows/checks.yml) runs these two groups on hosted
 runners for PRs and pushes to develop/main. Actions are pinned, permissions are
 read-only and no hardware/signing secrets are used, following
-[GitHub workflow security guidance](https://docs.github.com/en/actions/reference/security/secure-use). The workflow still needs its
-first GitHub-hosted run; local equivalents are not a hosted CI result.
+[GitHub workflow security guidance](https://docs.github.com/en/actions/reference/security/secure-use). The hosted host/documentation job passed on 2026-11-11. The Android job failed
+in SDK setup (`sdkmanager` was not on PATH), before tests/lint ran. The workflow
+now resolves it from the Android SDK root. The corrected workflow still needs a
+new hosted run; a clean-source local JVM/lint pass is not a hosted CI result.
 
 ## Full Android/native checks
 

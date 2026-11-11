@@ -6,6 +6,10 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Fix Android CI bootstrap by resolving SDK Manager from the Android SDK root
+  rather than assuming it is on PATH. Clean-source JVM/lint checks pass locally;
+  hosted verification of the corrected workflow remains pending.
+
 - Refresh the community README with the custom logo, real app screenshots,
   a system overview and a staged roadmap with explicit acceptance gates.
   Document media provenance and leave room for maintainer-provided demo videos.

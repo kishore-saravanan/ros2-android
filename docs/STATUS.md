@@ -17,7 +17,7 @@ No public APT repository or stable package release is available yet.
 | Python and launch | Separate Python/rclpy examples and supported launch paths passed reference tests. Arbitrary mixed workspaces and Linux dependencies are not guaranteed. |
 | Dashboard | Scalar subscriptions, joystick release/focus-loss zero commands and JPEG/PNG image receipt/recovery passed physical tests. Two-phone camera viewing and reference robot control were also confirmed by the operator. |
 | Camera options | Supported 1280×720, quality 80, automatic FPS produced about 29.9 capture/publish FPS in a reference sample; a PC received 20 valid JPEGs. This is not an endurance or latency measurement. |
-| Latest platform regression | Build/lint and 31 JVM unit tests passed. Independent phone/PC Switch ON/OFF, navigation/no restart replay and joystick release/focus-loss tests passed. 47 host tests passed with Jazzy available. Baseline JVM/lint tasks also passed from a clean source export without native-deps. Hosted CI execution is pending. |
+| Latest platform regression | Build/lint and 31 JVM unit tests passed. Independent phone/PC Switch ON/OFF, navigation/no restart replay and joystick release/focus-loss tests passed. 47 host tests passed with Jazzy available. Baseline JVM/lint tasks also passed from a clean source export without native-deps. Hosted host/documentation checks passed; Android CI failed before tests because sdkmanager was absent from PATH. The SDK-path fix awaits a new hosted run. |
 | ESP32 programming through phone | ROM-loader application writes passed hash verification and micro-ROS recovery checks. Sustained stub transfers remain unreliable; see the programming guide. |
 
 The reference phone advertises normal capture modes up to 30 FPS. Higher FPS
