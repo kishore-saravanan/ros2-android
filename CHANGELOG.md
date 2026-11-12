@@ -6,6 +6,11 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Fix fresh native SDK builds: `rcl`'s test dependency `test_msgs` was skipped
+  rather than ignored, so colcon required an earlier install of it and a new
+  machine failed. Add a scripted installed-client journey (wheel to external
+  workspace APK, no phone) and run it in the manual native workflow.
+
 - Run Google's Accessibility Test Framework on core screens in light and dark. Fix
   what it found: text fields are now named by their visible labels instead of
   machine identifiers, expandable sections no longer announce their state twice,

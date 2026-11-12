@@ -93,14 +93,17 @@ native SDK preparation and [Status](STATUS.md) for qualification boundaries.
 
 [Native Android SDK build](../.github/workflows/native-sdk.yml) is a manual
 `workflow_dispatch` job on Ubuntu 24.04, separate from PR checks. It prepares
-Jazzy and the pinned Android tools, fetches locked sources into a fresh build
-cache, cross-builds the C++ ROS SDK, and packages `android_test_ws` without the
-Python shell. It checks required library hashes and the resulting workspace APK.
+Jazzy and the pinned Android tools, builds the bundled host wheel and runs the
+[installed-client journey](../tests/integration/README.md#installed-client-journey):
+the documented user path from managed build tools and locked sources through the
+C++ ROS SDK to an `android_test_ws` APK without the Python shell. The job summary
+lists each step, the native library hash count and the workspace APK.
 There is no restored native cache, phone connection, signing secret or publishing
 step. Its managed colcon venv is prepared with `setup/prepare-build-tools.py`,
 because the hosted ROS setup already installs APT colcon and plain pip would then
 create no venv `colcon` command; a hosted run that stopped there is what exposed
-this. A successful hosted execution remains pending. `tools/tests/test_build_tools.py`
+this. A successful hosted execution remains pending. The same journey passed locally
+from an empty HOME, Gradle home and Android SDK on the reference OS. `tools/tests/test_build_tools.py`
 covers the host-provided and fresh cases without network access.
 
 Run it from **Actions → Native Android SDK build → Run workflow** on the intended

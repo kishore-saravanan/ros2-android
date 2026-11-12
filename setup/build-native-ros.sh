@@ -21,7 +21,7 @@ cd "$project_root/native-deps"
 export PKG_CONFIG_LIBDIR="$PWD/install/lib/pkgconfig"
 "$colcon_bin" build --merge-install --base-paths src \
     --packages-up-to "${packages[@]}" \
-    --packages-skip rcl_logging_spdlog test_msgs \
+    --packages-ignore rcl_logging_spdlog test_msgs \
     --executor sequential --event-handlers console_direct+ --cmake-clean-cache \
     --cmake-args -G Ninja \
     -DCMAKE_TOOLCHAIN_FILE="$sdk_root/ndk/27.2.12479018/build/cmake/android.toolchain.cmake" \

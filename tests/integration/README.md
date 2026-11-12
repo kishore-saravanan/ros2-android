@@ -80,3 +80,23 @@ process, and exits with the observed command's status. The sampling interval
 bounds what it can see: a freeze shorter than one interval can be missed.
 Freezer cgroup names are vendor policy details; correlate them with fixture
 timestamps before attributing a gap. Keep the output under ignored `device-logs/`.
+
+## Installed-client journey
+
+`installed_client_journey.sh WHEEL WORK_DIR` follows the documented user path without
+a phone: install the wheel into a new venv, `setup build-tools`, `setup sources`,
+`setup native --with-cpp`, doctor checks, then inspect, host-build and build a copy of
+`examples/android_test_ws` into an APK. It stops at the first failing step and keeps one
+log per step plus `logs/summary.txt` under `WORK_DIR`. The manual native SDK workflow
+runs it on a clean hosted runner. On a prepared machine, isolate it from existing
+caches with a fresh `HOME` and `GRADLE_USER_HOME` (Gradle ignores `$HOME`) and an
+Android SDK holding only the pinned packages:
+
+```bash
+env -i HOME=/fresh/home GRADLE_USER_HOME=/fresh/home/.gradle PATH=/usr/bin:/bin \
+  JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 ANDROID_HOME=/fresh/home/Android/Sdk \
+  tests/integration/installed_client_journey.sh dist/ros2_android-0.1.0a1-py3-none-any.whl /fresh/work
+```
+
+Set `PIP_ZIPAPP` to pip's standalone `pip.pyz` when the system Python lacks `ensurepip`.
+Same-OS isolation does not replace a clean OS install: system packages are reused.

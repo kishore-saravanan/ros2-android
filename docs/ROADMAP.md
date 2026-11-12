@@ -76,6 +76,9 @@ platform source or relying on this maintainer's prepared PC.
 - [x] Add task-scoped preflight checks and document clean-machine setup order.
 - [x] Run isolated installed-wheel CI for Python 3.10/3.12; both hosted jobs pass.
 - [ ] Validate the installed-client journey on a clean Linux machine.
+      A scripted journey passes from an empty HOME, Gradle home and Android SDK on
+      the reference OS (it caught a native build step that needed an older install);
+      the manual hosted workflow now runs it. A clean OS run and phone deployment remain.
 - [ ] Refine inspect → build → deploy → start → observe → stop errors and guides.
       Help lists each step and the journey; `workspace ... ros` observes with the
       matching middleware/message overlay; `status` explains pauses and battery

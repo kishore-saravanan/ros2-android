@@ -1,10 +1,12 @@
 # Prepare another Linux development machine
 
 Goal: use the installed host client to build an external workspace, with no
-platform source edits. **This is the documented setup order; a full fresh-machine
-build/deploy qualification is still pending.** Installed-client inspection and an
-external C++ build using a prepared SDK have passed separate tests. Those are not
-evidence of a turnkey fresh installation.
+platform source edits. **This is the documented setup order.** On the reference OS,
+the [scripted journey](../tests/integration/README.md#installed-client-journey) passes
+from an empty home directory, Gradle home and Android SDK: managed build tools, locked
+sources, the native C++ SDK and an external workspace APK. That run found and fixed a
+native build step that only worked when an older install already existed. A
+different clean OS install and phone deployment from such a machine remain pending.
 
 There is no public APT/PyPI installer yet. Obtain a maintainer-built local alpha
 wheel, or use the contributor [build guide](DEVELOPMENT.md) to produce one. The

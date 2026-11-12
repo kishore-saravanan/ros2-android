@@ -20,7 +20,7 @@ export PKG_CONFIG_LIBDIR="$PWD/python-install/lib/pkgconfig"
 "$colcon_bin" --log-base python-log build --merge-install --base-paths src "$project_root/examples/python_talker/interfaces" \
     --build-base python-build --install-base python-install \
     --packages-up-to rclpy sensor_msgs std_srvs composition_interfaces rmw_cyclonedds_cpp demo_interfaces \
-    --packages-skip rcl_logging_spdlog test_msgs \
+    --packages-ignore rcl_logging_spdlog test_msgs \
     --executor sequential --event-handlers console_direct+ \
     --cmake-args -G Ninja \
     -DCMAKE_TOOLCHAIN_FILE="$sdk_root/ndk/27.2.12479018/build/cmake/android.toolchain.cmake" \
