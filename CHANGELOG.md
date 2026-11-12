@@ -6,6 +6,10 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Package project orchestration, bounded launch validation and controller identity
+  inspection. Bundle matching helper sources for system-Python launch compilation;
+  retain existing command entry points as compatibility wrappers.
+
 - Canonicalize SDK snapshot archive metadata and package only tracked Python
   sources; exclude untracked modules and reject tracked source symlinks.
 

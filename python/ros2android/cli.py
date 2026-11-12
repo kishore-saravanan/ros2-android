@@ -92,6 +92,9 @@ def main():
         print(json.dumps(compatibility(), indent=2))
         return 0
     root = sdk_root()
+    if args.command == 'project':
+        from .project import run
+        return run(remaining, tooling_root=root)
     if args.command == 'workspace':
         from .workspace import run
         return run(remaining, tooling_root=root)

@@ -45,7 +45,8 @@ def check_archive(wheel):
         require(matrix['artifact']['sdkSnapshotSha256'] == hashlib.sha256(sdk_bytes).hexdigest(), 'Bundled SDK snapshot hash mismatch')
         with zipfile.ZipFile(io.BytesIO(sdk_bytes)) as sdk:
             require_safe_paths(sdk.namelist())
-            require({'gradlew', 'LICENSE', 'NOTICE', 'CITATION.cff'}.issubset(sdk.namelist()), 'Incomplete SDK snapshot')
+            require({'gradlew', 'LICENSE', 'NOTICE', 'CITATION.cff',
+                     'python/ros2android/project.py', 'python/ros2android/robot_launch.py'}.issubset(sdk.namelist()), 'Incomplete SDK snapshot')
         return matrix
 
 
@@ -120,6 +121,15 @@ def verify(wheel):
         run('workspace', '--workspace', str(workspace), '--id', 'external_test', 'host-build', '--typo', code=2)
         require(not (root / 'home/.cache/ros2-android-workspaces').exists(),
                 'Invalid build arguments created cache state')
+        project = root / 'External project'; project.mkdir()
+        (project / 'robot-project.json').write_text(json.dumps({'schemaVersion': 1, 'id': 'packaged_fixture',
+            'applicationId': 'dev.ros2android.android.runner.packaged_fixture', 'runtime': 'cpp', 'runtimeAbi': 1}))
+        inspected = json.loads(run('project', '--project', str(project), 'inspect'))
+        require(inspected['manifest']['id'] == 'packaged_fixture', 'Packaged project inspection failed')
+        snapshot = root / 'cache/ros2-android/tooling' / matrix['artifact']['sdkSnapshotSha256'][:16]
+        helper = subprocess.run(['/usr/bin/python3', '-I', str(snapshot / 'tools/robot_launch.py')],
+                                cwd=root, env=env, capture_output=True, text=True, timeout=30)
+        require(helper.returncode == 0, 'SDK launch helper cannot import its matching packaged source under system Python: ' + helper.stderr)
         require(fingerprint(workspace) == original, 'Inspection modified the external workspace')
         require(not blocked.exists(), 'Unexpected build/device/network tool invocation')
         require(not (root / 'missing-sdk').exists(), 'Unexpected Android SDK writes')
@@ -130,6 +140,7 @@ def verify(wheel):
                 'version and compatibility', 'missing-prerequisite diagnostics without extraction',
                 'eight command help screens and missing-APK rejection without extraction', 'repeatable read-only external-workspace inspection',
                 'unbuilt operations and invalid build flags fail without cache writes',
+                'packaged project inspection and isolated system-Python launch-helper imports',
                 'no guarded tool invocation'],
             'limits': 'No native SDK build, ROS traffic, signing upgrade, phone deployment or full clean-machine qualification.'}
 

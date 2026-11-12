@@ -90,9 +90,9 @@ sensor, Dashboard widget and runtime backend.
       and other screen responsibilities remain to be separated.
 - [ ] Share runner lifecycle/configuration contracts across the three backends.
 - [ ] Move host implementation into the Python package behind one CLI family.
-      Diagnostics, APK checks, workspace inspection/orchestration and manifest validation
-      are packaged. Native build, project/device and launch backends still use
-      compatibility scripts.
+      Diagnostics, APK checks, workspace/project orchestration, manifest validation
+      and bounded launch validation are packaged. Native setup/build, MCU and shell
+      adapters remain separate scripts.
 - [x] Guard installed host-module boundaries and expand package/artifact checks in CI.
       Thin compatibility wrappers and package imports have host regressions; Android
       feature-module extraction remains incremental.

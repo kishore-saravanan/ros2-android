@@ -15,7 +15,8 @@ covered by tests; do not replace working services in a single rewrite.
 | MicroRosAgentService / UsbSerialBridge / Esp32ProgrammingService | Agent/programming controllers sharing one exclusive USB lease |
 | ProjectController / ProjectControlService | Versioned typed management contract with caller authentication |
 | ProjectService + native/Python/workspace backends | Shared supervisor contract plus honest backend capabilities |
-| python/ros2android/cli.py + tools scripts | Thin public CLI over importable device/build/package/run backends |
+| python/ros2android | Public CLI, project/workspace orchestration, inspection and validation; explicit SDK root |
+| tools compatibility entries + setup adapters | Forward to packaged logic; bootstrap native builds and platform-specific subprocesses |
 
 Use package separation within existing Gradle modules first. Prefer a few small
 interfaces at native, hardware, IPC, clock and process boundaries. Do not create

@@ -18,7 +18,8 @@ class PackageVerificationTest(unittest.TestCase):
     def wheel(self, root, sdk_extra=None, bad_hash=False, version='0.1.0a1', legal=True, wheel_extra=None):
         data = io.BytesIO()
         with zipfile.ZipFile(data, 'w') as sdk:
-            for name in ('gradlew', 'LICENSE', 'NOTICE', 'CITATION.cff'):
+            for name in ('gradlew', 'LICENSE', 'NOTICE', 'CITATION.cff',
+                         'python/ros2android/project.py', 'python/ros2android/robot_launch.py'):
                 sdk.writestr(name, 'fixture')
             for name in sdk_extra or []:
                 sdk.writestr(name, 'not for distribution')

@@ -11,7 +11,7 @@ import tempfile
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-SDK_DIRS = {'android', 'native', 'setup', 'tools', 'examples', 'gradle'}
+SDK_DIRS = {'python', 'android', 'native', 'setup', 'tools', 'examples', 'gradle'}
 SDK_FILES = {'LICENSE', 'NOTICE', 'CITATION.cff', 'gradlew', 'gradlew.bat', 'gradle.properties', 'build.gradle.kts', 'settings.gradle.kts'}
 
 
