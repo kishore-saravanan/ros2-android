@@ -47,16 +47,17 @@ a PC or an external network.
 - [x] Test Dashboard peer loss/late subscribers and distinguish local writes
       from remote acknowledgement. Separate C++ and Python peers pass over
       phone-local DDS with Wi-Fi off: stale data, explicit restart and no replay.
-      Headless C++ passes repeated strict runs with background activity allowed;
-      the strict Python rerun is pending. Cross-network interruptions remain part
+      Headless C++ and Python runs pass strictly with background activity allowed
+      on the reference phone and an Android 15 emulator. Cross-network interruptions remain part
       of the network qualification gate.
 - [x] Isolate control requests and reject stale replies; unit-test timeout/reconnect rules.
 - [x] Prepare an opt-in stopped-fixture test for legacy requests and version rejection without state changes.
 - [x] Qualify current-service legacy/versioned status and invalid request rejection without state changes.
 - [ ] Complete old-runner, delayed-reply, service-death and update/reconnect qualification.
-      Updating a running C++ or Python runner while controls are bound passes on an
-      Android 15 emulator: controls fail closed, Refresh shows Stopped with the saved
-      profile, nothing is replayed and an explicit Start gives fresh data.
+      Updating a running runner while controls are bound passes on the reference
+      phone (C++) and an Android 15 emulator (C++ and Python): controls fail closed,
+      Refresh shows Stopped with the saved profile, nothing is replayed and an
+      explicit Start gives fresh data.
       Current runner-process SIGKILL invalidates controls and reconnects to Stopped;
       the broader compatibility/update matrix remains open.
 - [ ] Review independent signing, update/reinstall, revocation and key rotation.
@@ -81,10 +82,11 @@ platform source or relying on this maintainer's prepared PC.
 - [x] Define a bundled compatibility matrix tying CLI, APK, protocol, ABI and SDK locks.
 - [x] Add task-scoped preflight checks and document clean-machine setup order.
 - [x] Run isolated installed-wheel CI for Python 3.10/3.12; both hosted jobs pass.
-- [ ] Validate the installed-client journey on a clean Linux machine.
-      A scripted journey passes from an empty HOME, Gradle home and Android SDK on
-      the reference OS (it caught a native build step that needed an older install);
-      the manual hosted workflow now runs it. A clean OS run and phone deployment remain.
+- [x] Validate the installed-client journey on a clean Linux machine.
+      The scripted journey (wheel, build tools, locked sources, native SDK, external
+      workspace APK) passes on a clean hosted Ubuntu 24.04 runner and from an empty
+      HOME locally; it caught a native build step that needed an older install. Deploying
+      from such a machine to a phone remains part of the exit gate below.
 - [ ] Refine inspect → build → deploy → start → observe → stop errors and guides.
       Help lists each step and the journey; `workspace ... ros` observes with the
       matching middleware/message overlay; `status` explains pauses and battery
@@ -122,7 +124,7 @@ sensor, Dashboard widget and runtime backend.
 - [x] Add native SDK build automation separately from lightweight PR checks.
       A manual hosted workflow builds locked ARM64 sources and a C++ workspace APK.
       Its first hosted run exposed a managed-colcon bootstrap gap, now fixed by the
-      packaged build-tools command; a successful hosted execution remains pending.
+      packaged build-tools command; the hosted workflow now passes end to end.
 
 **Exit gate:** focused modules with clear owners, unchanged supported journeys and
 regression coverage. Keep the modular app and isolated runners; no microservices

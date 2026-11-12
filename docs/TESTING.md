@@ -102,8 +102,8 @@ There is no restored native cache, phone connection, signing secret or publishin
 step. Its managed colcon venv is prepared with `setup/prepare-build-tools.py`,
 because the hosted ROS setup already installs APT colcon and plain pip would then
 create no venv `colcon` command; a hosted run that stopped there is what exposed
-this. A successful hosted execution remains pending. The same journey passed locally
-from an empty HOME, Gradle home and Android SDK on the reference OS. `tools/tests/test_build_tools.py`
+this. The hosted workflow now passes end to end on a clean runner, and the same journey
+passed locally from an empty HOME, Gradle home and Android SDK on the reference OS. `tools/tests/test_build_tools.py`
 covers the host-provided and fresh cases without network access.
 
 Run it from **Actions → Native Android SDK build → Run workflow** on the intended
@@ -505,7 +505,8 @@ headless trials with background activity allowed and no reported pauses. With th
 default vendor battery policy, the runner process was frozen for 1–20 seconds
 (confirmed by independent process observation and by the runner's own pause
 report) and the test failed, which is the intended result. Both backends passed
-the earlier Activity-hosted run; the strict Python rerun is pending.
+the earlier Activity-hosted run, and the strict headless rerun for both passes on the
+reference phone with the current build.
 
 ## Newer Android on an emulator
 
@@ -534,8 +535,8 @@ recreation pass for both runtimes. A deliberate 2.5-second `SIGSTOP` of a runnin
 runner was reported as one pause of 2.27 s, and the project card, runner screen and
 Details showed the expected text in light and dark mode. The two micro-ROS Agent
 executable checks fail only because the emulator's ARM translation ignores
-`LD_LIBRARY_PATH` for standalone ARM executables; the Agent and workspace child
-nodes therefore need ARM hardware. Emulator results are compatibility evidence, not
+`LD_LIBRARY_PATH` for standalone ARM executables; they pass on the ARM reference
+phone, so test the Agent and workspace child nodes on ARM hardware. Emulator results are compatibility evidence, not
 phone qualification: there is no vendor power policy, real radio or USB.
 
 ## Runner update while bound
@@ -555,7 +556,8 @@ adb push android/runner/build/outputs/apk/debug/runner-debug.apk /data/local/tmp
   -Pandroid.testInstrumentationRunnerArguments.runnerUpdateApk=/data/local/tmp/runner_update.apk
 ```
 
-It passes for the C++ and Python fixtures on the Android 15 emulator. A same-version
+It passes for the C++ fixture on the reference phone and for the C++ and Python
+fixtures on the Android 15 emulator. A same-version
 reinstall exercises the update path, not a signer change or a protocol migration.
 
 ## Core layout and navigation checks

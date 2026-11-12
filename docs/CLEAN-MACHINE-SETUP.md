@@ -5,8 +5,9 @@ platform source edits. **This is the documented setup order.** On the reference 
 the [scripted journey](../tests/integration/README.md#installed-client-journey) passes
 from an empty home directory, Gradle home and Android SDK: managed build tools, locked
 sources, the native C++ SDK and an external workspace APK. That run found and fixed a
-native build step that only worked when an older install already existed. A
-different clean OS install and phone deployment from such a machine remain pending.
+native build step that only worked when an older install already existed. The same
+journey also passes on a clean hosted Ubuntu 24.04 runner. Deploying to a phone from
+such a freshly prepared machine remains to be shown.
 
 There is no public APT/PyPI installer yet. Obtain a maintainer-built local alpha
 wheel, or use the contributor [build guide](DEVELOPMENT.md) to produce one. The

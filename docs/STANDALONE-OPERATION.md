@@ -158,7 +158,7 @@ one test before each is understood.
 | --- | --- | --- |
 | PC absent, Wi-Fi present | Start deployed talker/processor and receive advancing results on phone | Repeat for current builds |
 | Fresh Wi-Fi-off startup | Two workspace nodes exchange data and Dashboard receives advancing results | C++ workspace physical test passes, including stop/Stale and restart/fresh recovery; other backends remain open |
-| Embedded Python and C++ factory offline | Start/stop without PC and receive application results in phone Dashboard | Headless Dashboard peer test: C++ factory passes repeated strict trials with background activity allowed and no reported pauses; with default battery policy it fails from vendor pauses. Python passed earlier runs; its strict rerun is pending |
+| Embedded Python and C++ factory offline | Start/stop without PC and receive application results in phone Dashboard | Headless Dashboard peer test: C++ factory passes repeated strict trials with background activity allowed and no reported pauses; with default battery policy it fails from vendor pauses. The strict headless rerun also passes for Python on the reference phone |
 | Fresh USB Agent startup, Wi-Fi off | Fresh typed MCU replies continue alongside project results | Physical test pending |
 | Wi-Fi off/on after startup | Local sequences continue; remote reception recovers after intended restarts | Earlier USB interruption evidence is narrower than fresh offline startup |
 | USB detach/reattach or denial | Clear status, explicit restart, fresh MCU replies, unchanged project profile | Repeat on current build; permission approval may require operator |
