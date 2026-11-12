@@ -126,6 +126,8 @@ def verify(wheel):
             'applicationId': 'dev.ros2android.android.runner.packaged_fixture', 'runtime': 'cpp', 'runtimeAbi': 1}))
         inspected = json.loads(run('project', '--project', str(project), 'inspect'))
         require(inspected['manifest']['id'] == 'packaged_fixture', 'Packaged project inspection failed')
+        for invalid in (('--domain', '102'), ('--local', 'PHONE_IP'), ('--namespace', 'relative')):
+            run('project', '--project', str(project), 'start', *invalid, code=1)
         snapshot = root / 'cache/ros2-android/tooling' / matrix['artifact']['sdkSnapshotSha256'][:16]
         helper = subprocess.run(['/usr/bin/python3', '-I', str(snapshot / 'tools/robot_launch.py')],
                                 cwd=root, env=env, capture_output=True, text=True, timeout=30)
@@ -141,6 +143,7 @@ def verify(wheel):
                 'eight command help screens and missing-APK rejection without extraction', 'repeatable read-only external-workspace inspection',
                 'unbuilt operations and invalid build flags fail without cache writes',
                 'packaged project inspection and isolated system-Python launch-helper imports',
+                'invalid start profiles rejected before device access',
                 'no guarded tool invocation'],
             'limits': 'No native SDK build, ROS traffic, signing upgrade, phone deployment or full clean-machine qualification.'}
 

@@ -6,6 +6,9 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Validate start domains, namespaces, IPv4 fields and ROS argument bounds before
+  invoking build/device tools; keep blank-address offline discovery available.
+
 - Return a CLI error when cooperative stop reaches its deadline with a backend
   still transitioning, or reports a cleanup failure; never force-stop automatically.
 

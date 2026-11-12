@@ -10,7 +10,7 @@ import subprocess
 import sys
 import time
 import tempfile
-from .robot_launch import validate_launch
+from .robot_launch import NAMESPACE, validate_launch
 from .controller_identity import controller_certificate
 from .project_manifest import load_manifest
 
@@ -23,6 +23,26 @@ def source_id(project):
         digest.update(path.relative_to(project).as_posix().encode())
         digest.update(b'\0'); digest.update(path.read_bytes()); digest.update(b'\0')
     return digest.hexdigest()[:12]
+
+
+def validate_start(domain, namespace, peer, local, arguments):
+    """Check the runner's bounded start profile before any build or device call."""
+    if not 0 <= domain <= 101:
+        raise ValueError('ROS domain must be 0–101')
+    if namespace != '/' and not NAMESPACE.fullmatch(namespace):
+        raise ValueError('Use an absolute ROS namespace, for example /robot')
+    for label, address in (('Peer', peer), ('Phone', local)):
+        if address and (not re.fullmatch(r'[0-9]{1,3}(?:\.[0-9]{1,3}){3}', address)
+                        or any(int(octet) > 255 for octet in address.split('.'))):
+            raise ValueError(label + ' address must be IPv4, or blank for automatic discovery')
+    result = list(arguments)
+    if result and result[0] == '--':
+        result = result[1:]
+    if result and result[0] == '--ros-args':
+        result = result[1:]
+    if len(result) > 128 or any(len(value.encode('utf-16-le')) // 2 > 4096 or '\0' in value for value in result):
+        raise ValueError('ROS arguments exceed runner limits (128 arguments, 4096 characters each, no NUL)')
+    return result
 
 
 def main(arguments=None, *, tooling_root):
@@ -70,6 +90,8 @@ def main(arguments=None, *, tooling_root):
                                             'runtimeAbi': manifest['runtimeAbi']},
                           'sourceId': source_id(project)}, indent=2))
         return
+    if args.command == 'start':
+        args.ros_args = validate_start(args.domain, args.namespace, args.peer, args.local, args.ros_args)
     launch = None
     launch_arguments = {}
     for argument in getattr(args, 'launch_arg', []):
@@ -187,10 +209,6 @@ def main(arguments=None, *, tooling_root):
         if 'showing=true' in policy:
             raise RuntimeError('Unlock the phone before starting a project. Security settings are unchanged.')
         ros_args = args.ros_args
-        if ros_args and ros_args[0] == '--':
-            ros_args = ros_args[1:]
-        if ros_args and ros_args[0] == '--ros-args':
-            ros_args = ros_args[1:]
         print(remote('am', 'start', '-W', '-n', package + '/dev.ros2android.runner.MainActivity').strip())
         deadline = time.monotonic() + 10
         retry_at = time.monotonic() + 2

@@ -295,6 +295,12 @@ Android build.
 
 ## Recovering from command errors
 
+Start validates domain (0–101), absolute namespace, IPv4 fields and bounded ROS
+arguments before device access. Replace `PC_IP`/`PHONE_IP` placeholders with actual
+current addresses, or leave both options out for automatic/local discovery.
+Address syntax validation cannot establish whether an address belongs to the
+phone; the runner checks an explicit local address against its current interfaces.
+
 - **No built workspace:** run `build` for the same workspace and `--id` before
   `deploy`, `start`, `status` or `stop`. These commands do not create a cache for
   an unbuilt workspace.
