@@ -81,8 +81,9 @@ sensor, Dashboard widget and runtime backend.
 - [ ] Extract focused controllers from the main Activity/session service incrementally.
 - [ ] Share runner lifecycle/configuration contracts across the three backends.
 - [ ] Move host implementation into the Python package behind one CLI family.
-      Diagnostics, APK checks and workspace inspection are packaged; build/deploy
-      backends still use compatibility scripts.
+      Diagnostics, APK checks, workspace inspection/orchestration and manifest validation
+      are packaged. Native build, project/device and launch backends still use
+      compatibility scripts.
 - [ ] Test module boundaries and expand package/artifact checks in CI.
 - [ ] Add native SDK build automation separately from lightweight PR checks.
 

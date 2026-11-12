@@ -92,6 +92,9 @@ def main():
         print(json.dumps(compatibility(), indent=2))
         return 0
     root = sdk_root()
+    if args.command == 'workspace':
+        from .workspace import run
+        return run(remaining, tooling_root=root)
     if args.command == 'device':
         device_parser = argparse.ArgumentParser(prog='ros2-android device')
         device_parser.add_argument('action', choices=['setup'])

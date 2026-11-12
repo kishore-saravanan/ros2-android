@@ -266,3 +266,19 @@ Source-manifest and runtime versions are described in the
 [project compatibility contract](PROJECT-CONTRACT.md). Workspace inspection is
 a declared-dependency evidence report, not proof that every dependency has an
 Android build.
+
+## Recovering from command errors
+
+- **No built workspace:** run `build` for the same workspace and `--id` before
+  `deploy`, `start`, `status` or `stop`. These commands do not create a cache for
+  an unbuilt workspace.
+- **Cache ID belongs to another workspace:** choose a different `--id`; the client
+  preserves the existing cache rather than overwriting its owner.
+- **Standard CLI needs the Python SDK:** prepare it with `ros2-android setup python`,
+  or select `build --without-shell` when only native C++ processes are needed.
+- **Unknown arguments:** correct the option before retrying. Build argument errors
+  are rejected before workspace cache creation or build-tool execution.
+
+The installed workspace command and `tools/ros2android-workspace` use the same
+packaged implementation. Native build and launch adapters still require the
+matching SDK and the prerequisites described above.

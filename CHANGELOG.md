@@ -6,6 +6,9 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Package workspace orchestration and manifest validation behind both CLI entry points.
+  Reject invalid build options and unbuilt workspace operations without cache writes.
+
 - Add a two-phase main-app process-death test with PC-side process observations,
   saved connection/Dashboard settings checks and verified ROS recovery. Its prepare
   phase deliberately ends instrumentation; only the full integration result passes.

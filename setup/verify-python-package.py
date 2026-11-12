@@ -69,7 +69,8 @@ def verify(wheel):
         env = {key: value for key, value in os.environ.items() if key not in {
             'PYTHONPATH', 'PYTHONHOME', 'VIRTUAL_ENV', 'AMENT_PREFIX_PATH', 'CMAKE_PREFIX_PATH',
             'COLCON_PREFIX_PATH', 'ROS_DISTRO', 'PYTHONOPTIMIZE'}}
-        env.update(XDG_CACHE_HOME=str(root / 'cache'), ANDROID_HOME=str(root / 'missing-sdk'),
+        (root / 'home').mkdir()
+        env.update(HOME=str(root / 'home'), XDG_CACHE_HOME=str(root / 'cache'), ANDROID_HOME=str(root / 'missing-sdk'),
             ANDROID_SDK_ROOT=str(root / 'missing-sdk'), COLCON_BIN=str(root / 'missing-colcon'),
             ROBOT_ROS_SETUP=str(root / 'missing-ros/setup.bash'), PYTHONNOUSERSITE='1')
         blocked = root / 'blocked-tools.log'
@@ -108,6 +109,13 @@ def verify(wheel):
             require(result['packages'][0]['name'] == 'demo', 'External workspace missing')
             require(result['inspection']['summary']['not-found'] == 1, 'Expected missing dependency report')
             require(not any(p['indexPresent'] for p in result['inspection']['targetPrefixes']), 'Unexpected prepared SDK')
+        for command in ('start', 'status', 'stop'):
+            run('workspace', '--workspace', str(workspace), '--id', 'external_test', command, code=2)
+        require(not (root / 'home/.cache/ros2-android-workspaces').exists(),
+                'Unbuilt workspace operations created cache state')
+        run('workspace', '--workspace', str(workspace), '--id', 'external_test', 'host-build', '--typo', code=2)
+        require(not (root / 'home/.cache/ros2-android-workspaces').exists(),
+                'Invalid build arguments created cache state')
         require(fingerprint(workspace) == original, 'Inspection modified the external workspace')
         require(not blocked.exists(), 'Unexpected build/device/network tool invocation')
         require(not (root / 'missing-sdk').exists(), 'Unexpected Android SDK writes')
@@ -117,6 +125,7 @@ def verify(wheel):
             'checks': ['archive/legal/private-input validation', 'offline installation in fresh venv',
                 'version and compatibility', 'missing-prerequisite diagnostics without extraction',
                 'eight command help screens and missing-APK rejection without extraction', 'repeatable read-only external-workspace inspection',
+                'unbuilt operations and invalid build flags fail without cache writes',
                 'no guarded tool invocation'],
             'limits': 'No native SDK build, ROS traffic, signing upgrade, phone deployment or full clean-machine qualification.'}
 

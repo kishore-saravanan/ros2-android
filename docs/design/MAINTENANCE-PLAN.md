@@ -14,7 +14,10 @@ one host CLI. Prefer small changes that preserve supported workflows. The
   backend-specific execution code.
 - Host implementation belongs in the `ros2android` Python package. Contributor
   setup scripts bootstrap prerequisites; compatibility wrappers forward to the
-  same implementation.
+  same implementation. Workspace orchestration and manifest validation live in
+  `python/ros2android`; workspace commands take an explicit tooling root so the
+  source checkout and installed SDK use the same code. Setup and native build
+  adapters remain separate subprocesses.
 - Robot applications consume the public SDK. Move them to a companion examples
   repository once a separate checkout can build and deploy without platform edits.
   Keep small compatibility fixtures in the platform repository.
