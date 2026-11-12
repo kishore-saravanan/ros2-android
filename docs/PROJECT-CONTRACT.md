@@ -124,6 +124,11 @@ capability change, and controllers treat its absence as unknown. A vendor pause 
 the runner process that outlasts the four-second request deadline appears as a
 controller timeout; Refresh then reads the actual state and its recorded pauses.
 
+Updating a runner while bound ends its process; the controller reports "Runner updated.
+Tap Refresh." and never replays a command. `RunnerUpdateTest` verifies Stopped state,
+the preserved profile and fresh data after an explicit Start for both C++ and Python
+runners on an Android 15 emulator.
+
 Pure contract/request-state tests and compilation cover these rules. Physical updated/legacy
 Binder interoperability and incompatible-runner presentation still need dedicated
 qualification; existing DDS tests do not establish these new checks.

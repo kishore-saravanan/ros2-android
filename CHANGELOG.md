@@ -6,6 +6,10 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Verify that updating a running runner while the app is bound fails closed, keeps
+  the runner Stopped with its profile and replays nothing (C++ and Python runners);
+  the phone qualification batch includes this check.
+
 - Add an opt-in endurance test and resource monitor (memory, CPU, battery, thermal),
   and a phone qualification driver and guide for checking additional phones.
 

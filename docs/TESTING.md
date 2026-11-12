@@ -538,6 +538,26 @@ executable checks fail only because the emulator's ARM translation ignores
 nodes therefore need ARM hardware. Emulator results are compatibility evidence, not
 phone qualification: there is no vendor power policy, real radio or USB.
 
+## Runner update while bound
+
+`RunnerUpdateTest` starts a disposable fixture, receives its telemetry in the Dashboard,
+then installs an update of that same package with `pm install -r` from the
+instrumentation shell while controls are bound. It requires the controls to fail
+closed, the old telemetry to become Stale, Refresh to show Stopped with the saved
+profile, no replayed Start within three seconds, and fresh telemetry only after an
+explicit Start. Push the APK first (Wi-Fi off, fixture stopped):
+
+```bash
+adb push android/runner/build/outputs/apk/debug/runner-debug.apk /data/local/tmp/runner_update.apk
+./setup/build.sh :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=dev.ros2android.android.RunnerUpdateTest \
+  -Pandroid.testInstrumentationRunnerArguments.runnerUpdatePackage=dev.ros2android.android.runner.fixture_cpp \
+  -Pandroid.testInstrumentationRunnerArguments.runnerUpdateApk=/data/local/tmp/runner_update.apk
+```
+
+It passes for the C++ and Python fixtures on the Android 15 emulator. A same-version
+reinstall exercises the update path, not a signer change or a protocol migration.
+
 ## Core layout and navigation checks
 
 `AccessibilityChecksTest` runs Google's Accessibility Test Framework (latest preset:

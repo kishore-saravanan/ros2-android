@@ -54,6 +54,9 @@ a PC or an external network.
 - [x] Prepare an opt-in stopped-fixture test for legacy requests and version rejection without state changes.
 - [x] Qualify current-service legacy/versioned status and invalid request rejection without state changes.
 - [ ] Complete old-runner, delayed-reply, service-death and update/reconnect qualification.
+      Updating a running C++ or Python runner while controls are bound passes on an
+      Android 15 emulator: controls fail closed, Refresh shows Stopped with the saved
+      profile, nothing is replayed and an explicit Start gives fresh data.
       Current runner-process SIGKILL invalidates controls and reconnects to Stopped;
       the broader compatibility/update matrix remains open.
 - [ ] Review independent signing, update/reinstall, revocation and key rotation.

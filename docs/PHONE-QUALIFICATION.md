@@ -44,6 +44,7 @@ It runs, pinned to that phone:
 | --- | --- |
 | `suite` | Every instrumentation test; hardware tests without their opt-in arguments are skipped |
 | `dashboard-peers` | Phone-local DDS between the app and separate C++ and Python runners, peer loss/Stale, restart without replay, zero Android pauses |
+| `runner-update` | Reinstalling a running C++ runner invalidates app controls; after Refresh it is Stopped with its profile, nothing is replayed, and an explicit Start delivers fresh data |
 | `endurance` (optional) | Continuous 5 Hz runner telemetry for the chosen minutes with memory, CPU, battery and thermal sampling |
 
 Results are under `device-logs/qualification/<label>/`. A failing check is a finding,

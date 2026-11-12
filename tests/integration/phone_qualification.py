@@ -81,6 +81,14 @@ def main(arguments=None):
     batches = [('suite', []),
                ('dashboard-peers', ['-Pandroid.testInstrumentationRunnerArguments.class=dev.ros2android.android.DashboardPeerRecoveryTest',
                                     '-Pandroid.testInstrumentationRunnerArguments.dashboardRecoveryPackage=both'])]
+    # Update the running C++ fixture with its own current build while controls are bound.
+    update_apk = ROOT / 'android/runner/build/outputs/apk/debug/runner-debug.apk'
+    if update_apk.is_file():
+        subprocess.run([*adb, 'push', str(update_apk), '/data/local/tmp/ros2android_runner_update.apk'], check=True,
+                       capture_output=True)
+        batches.append(('runner-update', ['-Pandroid.testInstrumentationRunnerArguments.class=dev.ros2android.android.RunnerUpdateTest',
+                                          '-Pandroid.testInstrumentationRunnerArguments.runnerUpdatePackage=' + FIXTURES['cpp'],
+                                          '-Pandroid.testInstrumentationRunnerArguments.runnerUpdateApk=/data/local/tmp/ros2android_runner_update.apk']))
     if args.endurance_minutes:
         batches.append(('endurance', ['-Pandroid.testInstrumentationRunnerArguments.class=dev.ros2android.android.EnduranceTest',
                                       '-Pandroid.testInstrumentationRunnerArguments.enduranceRunnerPackage=' + FIXTURES['cpp'],
@@ -96,6 +104,7 @@ def main(arguments=None):
         report['batches'][name] = {'exitCode': code, 'cases': cases,
                                    'counts': {s: sum(c['status'] == s for c in cases) for s in ('pass', 'fail', 'skip')}}
         print(f"{name}: exit {code} {report['batches'][name]['counts']}")
+    subprocess.run([*adb, 'shell', 'rm', '-f', '/data/local/tmp/ros2android_runner_update.apk'], capture_output=True)
     (out / 'summary.json').write_text(json.dumps(report, indent=2) + '\n')
     print(f'Wrote {out / "summary.json"}')
     return 0 if all(batch['exitCode'] == 0 for batch in report['batches'].values()) else 1
