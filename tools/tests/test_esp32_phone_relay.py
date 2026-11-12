@@ -1,6 +1,4 @@
 """Exercise the real socket relay with binary data and its authentication prelude."""
-import importlib.machinery
-import importlib.util
 from pathlib import Path
 import socket
 import threading
@@ -11,10 +9,9 @@ import io
 import json
 import subprocess
 
-loader = importlib.machinery.SourceFileLoader('esp32_phone_tool', str(Path(__file__).parents[1] / 'esp32-via-phone'))
-spec = importlib.util.spec_from_loader(loader.name, loader)
-tool = importlib.util.module_from_spec(spec)
-loader.exec_module(tool)
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'python'))
+from ros2android import esp32 as tool
 
 
 class VersionTest(unittest.TestCase):

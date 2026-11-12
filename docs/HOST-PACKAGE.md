@@ -113,3 +113,11 @@ phone, prove ROS traffic or qualify a complete fresh-machine installation.
   included in wheel metadata and the backend snapshot, with CITATION.cff in the
   snapshot. No public publishing. Third-party notices and release gates still
   require review before public distribution.
+
+## Implementation boundaries
+
+Project/workspace orchestration, shell connection, phone-mediated programming and
+pinned native-source preparation live in the installed Python package. Source
+checkout entry points forward to those modules. Native compiler/build, staging
+and Android installation drivers remain bundled SDK scripts; the client invokes
+them explicitly. Installing the wheel does not run those drivers or flash a board.

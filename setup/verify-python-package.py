@@ -124,6 +124,11 @@ def verify(wheel):
         project = root / 'External project'; project.mkdir()
         (project / 'robot-project.json').write_text(json.dumps({'schemaVersion': 1, 'id': 'packaged_fixture',
             'applicationId': 'dev.ros2android.android.runner.packaged_fixture', 'runtime': 'cpp', 'runtimeAbi': 1}))
+        run('shell', '--workspace', str(workspace), '--id', 'external_test', code=2)
+        run('esp32', 'status', 'extra', code=2)
+        run('setup', 'sources', '--typo', code=2)
+        require(not (root / 'home/.cache/ros2-android-workspaces').exists(), 'Unbuilt shell created workspace state')
+        require(not (root / 'home/.cache/ros2-android-native').exists(), 'Invalid source arguments created native state')
         inspected = json.loads(run('project', '--project', str(project), 'inspect'))
         require(inspected['manifest']['id'] == 'packaged_fixture', 'Packaged project inspection failed')
         for invalid in (('--domain', '102'), ('--local', 'PHONE_IP'), ('--namespace', 'relative')):
@@ -144,6 +149,7 @@ def verify(wheel):
                 'unbuilt operations and invalid build flags fail without cache writes',
                 'packaged project inspection and isolated system-Python launch-helper imports',
                 'invalid start profiles rejected before device access',
+                'unbuilt shell and invalid programming/source arguments rejected before tool access',
                 'no guarded tool invocation'],
             'limits': 'No native SDK build, ROS traffic, signing upgrade, phone deployment or full clean-machine qualification.'}
 

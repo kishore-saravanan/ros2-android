@@ -93,8 +93,9 @@ sensor, Dashboard widget and runtime backend.
       validated project configuration; backend isolation and qualification still differ.
 - [ ] Move host implementation into the Python package behind one CLI family.
       Diagnostics, APK checks, workspace/project orchestration, manifest validation
-      and bounded launch validation are packaged. Native setup/build, MCU and shell
-      adapters remain separate scripts.
+      bounded launch validation, shell entry and phone-mediated MCU programming are
+      packaged. Pinned native-source preparation is packaged too; native compiler,
+      staging and platform-specific installation adapters remain SDK scripts.
 - [x] Guard installed host-module boundaries and expand package/artifact checks in CI.
       Thin compatibility wrappers and package imports have host regressions; Android
       feature-module extraction remains incremental.

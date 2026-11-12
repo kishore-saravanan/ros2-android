@@ -6,6 +6,11 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Package shell connection, phone-mediated ESP32 programming and pinned native-source
+  preparation behind the installed CLI, retaining thin source-checkout wrappers.
+  Reject unbuilt shell caches, invalid cache IDs and unknown source-fetch options
+  before device/network access.
+
 - Add a separate manual native-SDK workflow for locked Jazzy ARM64 sources and
   C++ workspace APK builds; hosted execution and runtime qualification stay separate.
 

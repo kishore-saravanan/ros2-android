@@ -117,17 +117,22 @@ def main():
         setup_parser = argparse.ArgumentParser(prog='ros2-android setup')
         setup_parser.add_argument('action', choices=['sources', 'app-build', 'app-install', 'native', 'python', 'agent'])
         selected, extra = setup_parser.parse_known_args(remaining)
+        if selected.action == 'sources':
+            from .native_sources import run
+            return run(extra, tooling_root=root)
         script = {'sources': 'fetch-native-ros.py', 'app-build': 'build.sh',
                   'app-install': 'run-device.sh', 'native': 'build-native-ros.sh',
                   'python': 'build-python-ros.sh', 'agent': 'build-micro-ros-agent.sh'}[selected.action]
         path = root / 'setup' / script
         command = [sys.executable, str(path)] if script.endswith('.py') else [str(path)]
         return subprocess.call([*command, *extra], cwd=root)
-    backend = {'workspace': 'ros2android-workspace', 'project': 'ros2android',
-               'esp32': 'esp32-via-phone', 'shell': 'connect-shell'}[args.command]
-    path = root / 'tools' / backend
-    command = [sys.executable, str(path)]
-    return subprocess.call([*command, *remaining])
+    if args.command == 'esp32':
+        from .esp32 import run
+        return run(remaining)
+    if args.command == 'shell':
+        from .shell import run
+        return run(remaining)
+    raise AssertionError('Unrouted command: ' + args.command)
 
 
 if __name__ == '__main__':

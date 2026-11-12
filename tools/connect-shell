@@ -1,60 +1,18 @@
 #!/usr/bin/env python3
-"""Connect to a deployed workspace's native Android ROS shell over authorized ADB."""
-import argparse
-import json
-import os
+"""Compatibility entry point for packaged shell commands."""
 from pathlib import Path
-import re
-import shlex
-import subprocess
 import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if (ROOT / 'python/ros2android').is_dir():
+    sys.path.insert(0, str(ROOT / 'python'))
+
+from ros2android.shell import run  # noqa: E402,F401
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--workspace', type=Path, default=Path('examples/android_test_ws'))
-    parser.add_argument('--id', help='Cache ID used when building the workspace')
-    parser.add_argument('--serial', help='Authorized ADB device (including an already connected wireless ADB device)')
-    parser.add_argument('command', nargs=argparse.REMAINDER, help='Optional command after --; otherwise open an interactive phone shell')
-    args = parser.parse_args()
-    workspace = args.workspace.expanduser().resolve()
-    cache = Path.home() / '.cache/ros2-android-workspaces' / (args.id or workspace.name)
-    if (cache / 'workspace-root.txt').read_text() != str(workspace):
-        parser.error('Workspace/cache mismatch; use the same --workspace and --id as build')
-    manifest = json.loads((cache / 'runner-project/robot-project.json').read_text())
-    if not manifest.get('withShell'):
-        parser.error('Build with --with-shell, then deploy before connecting')
-    package = manifest['applicationId']
-    if not re.fullmatch(r'dev\.ros2android\.android\.runner\.[a-z][a-z0-9_]*', package):
-        parser.error('Refusing application outside this project runner namespace')
-    sdk = Path(os.environ.get('ANDROID_HOME', os.environ.get('ANDROID_SDK_ROOT', str(Path.home() / 'Android/Sdk'))))
-    adb = [str(sdk / 'platform-tools/adb'), *(['-s', args.serial] if args.serial else ['-d'])]
-    def remote(*command):
-        return subprocess.check_output([*adb, 'shell', shlex.join(command)], text=True)
-    if 'showing=true' in remote('dumpsys', 'window', 'policy'):
-        parser.error('Unlock the phone first; no security settings are changed')
-    remote('am', 'start', '-W', '-n', package + '/dev.ros2android.runner.MainActivity')
-    response = remote('am', 'broadcast', '--include-stopped-packages', '-n', package + '/dev.ros2android.runner.DebugControlReceiver',
-                      '-a', 'dev.ros2android.runner.PREPARE_SHELL')
-    match = re.search(r'Broadcast completed: result=(-?\d+)(?:, data="(.*)")?', response)
-    if not match or match[1] != '0':
-        raise RuntimeError('Shell preparation failed: ' + response.strip())
-    env = match[2]
-    expected = f'/data/user/0/{package}/files/ros2-shell/environment.sh'
-    if env != expected:
-        raise RuntimeError('Unexpected shell environment path; use the primary Android user')
-    command = args.command
-    if command and command[0] == '--': command = command[1:]
-    script = '. ' + shlex.quote(env) + '; '
-    script += 'exec ' + (shlex.join(command) if command else '/system/bin/sh -i')
-    # run-as enters only this debug runner UID; executables remain in APK read-only libs.
-    target = shlex.join(['run-as', package, '/system/bin/sh', '-c', script])
-    os.execv(adb[0], [*adb, 'shell', *([] if command else ['-t']), target])
+    return run()
 
 
 if __name__ == '__main__':
-    try:
-        main()
-    except (OSError, ValueError, KeyError, RuntimeError, subprocess.SubprocessError) as error:
-        print('connect-shell: ' + str(error), file=sys.stderr)
-        sys.exit(1)
+    raise SystemExit(main())
