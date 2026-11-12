@@ -149,6 +149,10 @@ package/SDK without editing the platform checkout. No mandatory submodule.
       actual signed release remain.
 - [ ] Verify installation, upgrade and rollback from clean environments.
 - [ ] Complete public-history/privacy and security review before wider publication.
+      The [pre-release review](SECURITY-REVIEW.md) scanned all history for keys,
+      tokens and addresses (none found), checked component exposure and listeners,
+      and queried OSV for every pinned commit (none known). History rewrite,
+      key custody and dependency alerting remain owner decisions/open items.
 
 **Exit gate:** the [release checklist](RELEASING.md) passes with linked evidence;
 previous artifacts remain available for rollback. Local wheel/Debian alpha builds

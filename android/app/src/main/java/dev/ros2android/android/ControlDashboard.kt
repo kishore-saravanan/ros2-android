@@ -14,7 +14,8 @@ import org.json.JSONObject
 import java.util.UUID
 import kotlin.math.*
 
-internal class ControlDashboard(context: Context, private val robot: () -> RobotSessionService?, private val profile: () -> RobotSessionService.Profile) : LinearLayout(context) {
+internal class ControlDashboard(context: Context, private val robot: () -> RobotSessionService?, private val profile: () -> RobotSessionService.Profile,
+    private val beforeStart: () -> Unit = {}) : LinearLayout(context) {
     private val prefs = context.getSharedPreferences("control_dashboard_v1", Context.MODE_PRIVATE)
     private val widgets = mutableListOf<ControlWidget>()
     private val interactive = mutableListOf<View>()
@@ -54,7 +55,7 @@ internal class ControlDashboard(context: Context, private val robot: () -> Robot
         enable.setOnClickListener {
             runCatching {
                 val service = robot() ?: error("Connecting to phone runtime…")
-                if (service.controlsEnabled) service.stopControls() else service.startControls(widgets, profile())
+                if (service.controlsEnabled) service.stopControls() else { beforeStart(); service.startControls(widgets, profile()) }
             }.onFailure(::failure)
             refresh()
         }

@@ -124,6 +124,7 @@ class MainActivity : Activity() {
                 .putExtra("ros_args", fields.getValue("ros_args").text.toString())
             ProjectConfig.from(intent)
             save(); feedback.visibility = View.GONE
+            requestNotificationsOnce()
             startForegroundService(intent); start.isEnabled = false
         }.onFailure { showError("Cannot start: ${it.message}") }
     }
@@ -159,6 +160,14 @@ class MainActivity : Activity() {
         pauseWarning.show(warning.orEmpty()); pauseWarning.visibility = if (warning == null) View.GONE else View.VISIBLE
         if (policy.isShown) policy.show(HealthText.policy(BackgroundPolicy.batteryOptimized(this), BackgroundPolicy.backgroundRestricted(this)))
         if (diagnostic.isShown) diagnostic.show(snapshot.toString(2).take(16384))
+    }
+    /** The project notification carries its Stop action; Android 13+ hides it until notifications are allowed. */
+    private fun requestNotificationsOnce() {
+        if (Build.VERSION.SDK_INT < 33 || checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) return
+        val asked = getSharedPreferences("runner_ui", MODE_PRIVATE)
+        if (asked.getBoolean("notifications_requested", false)) return
+        asked.edit().putBoolean("notifications_requested", true).apply()
+        requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 11)
     }
     private fun showError(message: String) { feedback.text = message; feedback.visibility = View.VISIBLE }
     private fun save() { val edit = prefs.edit(); fields.forEach { (key, value) -> edit.putString(key, value.text.toString()) }; edit.apply() }

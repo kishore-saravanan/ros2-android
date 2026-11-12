@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <queries><package android:name="dev.ros2android.android" /></queries>
     <application android:icon="@mipmap/ic_launcher_ros2" android:roundIcon="@mipmap/ic_launcher_ros2" android:allowBackup="false" android:label="ROS2 Android · ${runnerProjectId}" android:theme="@style/RunnerTheme">
         <service android:name=".PairedProjectControlService" android:exported="true" android:enabled="${pairedControlEnabled}" />

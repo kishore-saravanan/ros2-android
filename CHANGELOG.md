@@ -6,6 +6,11 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Declare and request notification permission (once, at the first session or
+  project start) on Android 13+, where foreground-service notifications and their
+  Stop actions are otherwise hidden. Add a pre-release security/privacy review and
+  document the Wi-Fi micro-ROS Agent's network exposure and disabled DDS Security.
+
 - Ship upstream license texts for every bundled native component: the ROS 2 stack,
   Cyclone DDS, libyaml and the NDK's libc++ in the app and all runners, and the
   previously empty TinyXML-2/android-ifaddrs texts of the micro-ROS Agent. Add

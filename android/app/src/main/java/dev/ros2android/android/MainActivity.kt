@@ -254,7 +254,7 @@ open class MainActivity : Activity() {
         page.addView(feedback)
         when {
             tab == "Overview" -> homeScreen()
-            tab == "Dashboard" -> { dashboard = ControlDashboard(this, { session }, ::arguments); page.addView(dashboard) }
+            tab == "Dashboard" -> { dashboard = ControlDashboard(this, { session }, ::arguments, ::requestNotificationsOnce); page.addView(dashboard) }
             detail -> publisherDetail(selected!!)
             tab == "Sensors" -> sensorList()
             tab == "Projects" -> projectsScreen()
@@ -403,11 +403,11 @@ open class MainActivity : Activity() {
             agentStatus = text(MicroRosAgentService.state, 14).also { box.addView(it) }
             agentToggle = button("Start Wi-Fi agent") {
                 if (MicroRosAgentService.running) stopService(Intent(this, MicroRosAgentService::class.java))
-                else startForegroundService(Intent(this, MicroRosAgentService::class.java))
+                else { requestNotificationsOnce(); startForegroundService(Intent(this, MicroRosAgentService::class.java)) }
             }.apply { tag = "toggle_micro_ros_agent" }; box.addView(agentToggle)
             box.addView(button("Start USB agent") {
                 if (MicroRosAgentService.running) announce("Stop the current agent before changing transport")
-                else startForegroundService(Intent(this, MicroRosAgentService::class.java).putExtra(MicroRosAgentService.USB, true))
+                else { requestNotificationsOnce(); startForegroundService(Intent(this, MicroRosAgentService::class.java).putExtra(MicroRosAgentService.USB, true)) }
             }.apply { tag = "start_usb_micro_ros_agent" })
             box.addView(text("Wi-Fi: UDP 8888. USB: CP2102 ESP32 with serial firmware and OTG cable. Use the same ROS domain as the sensors.", 13, muted))
             disclosure(box, "micro_ros_logs", "Agent logs") { info ->
@@ -593,7 +593,16 @@ open class MainActivity : Activity() {
         }.onFailure { errors[cap.id] = it.message ?: "Invalid endpoint"; announce(it.message); refresh() }
     }
     private fun startPublisher(cap: PhoneCapability, config: EndpointConfig) {
+        requestNotificationsOnce()
         session?.startPublisher(cap, config, arguments())
+    }
+    /** Session notifications carry the Stop action; Android 13+ hides them until the user allows notifications. */
+    private fun requestNotificationsOnce() {
+        if (Build.VERSION.SDK_INT < 33 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return
+        val asked = getSharedPreferences("ui_state", MODE_PRIVATE)
+        if (asked.getBoolean("notifications_requested", false)) return // Settings → App notifications remains available.
+        asked.edit().putBoolean("notifications_requested", true).apply()
+        requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 11) // Result is informational: services run either way.
     }
     private fun stopPublisher(id: String) { session?.stopPublisher(id) }
     override fun onRequestPermissionsResult(code: Int, permissions: Array<out String>, results: IntArray) {

@@ -27,8 +27,15 @@ Current boundaries and limitations:
   Current network operation assumes a trusted ROS network; do not expose the
   development controls or DDS traffic directly to the Internet. A domain ID is
   discovery separation, not an access-control credential.
+- DDS Security (SROS 2) is disabled in the native build, so ROS traffic is neither
+  authenticated nor encrypted. While the Wi-Fi micro-ROS Agent runs, any device on
+  that network can reach it on UDP 8888 and create ROS entities; prefer USB for robots.
+- Debug-only receivers and probes require the ADB `DUMP` permission and are absent
+  from release builds. On Android 13+, allow notifications so each session's Stop
+  action stays visible.
 - A Dashboard request/local write is not confirmed robot state. Actuator-local
   expiry and physical stop mechanisms remain application/hardware responsibilities.
 
-See [architecture](ARCHITECTURE.md), [operating limits](docs/STATUS.md) and
-[release gates](docs/RELEASING.md). This policy does not claim a security audit.
+See [architecture](ARCHITECTURE.md), [operating limits](docs/STATUS.md),
+[release gates](docs/RELEASING.md) and the [pre-release review](docs/SECURITY-REVIEW.md).
+This policy does not claim an independent security audit.

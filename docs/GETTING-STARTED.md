@@ -63,8 +63,10 @@ publishing. The detail screen shows:
 - Rate: 1 Hz
 - Type: std_msgs/msg/Float64 (a percentage from 0 to 100)
 
-Tap **Publish**. Expected: the button becomes Stop and the detail screen shows a value
-such as 85% battery; its local sent-message count is available under Advanced. The phone can
+Tap **Publish**. On Android 13 and newer, the first Publish asks to allow notifications:
+allow them so the running-session notification and its **Stop** action stay visible
+(publishing works either way). Expected: the button becomes Stop and the detail screen
+shows a value such as 85% battery; its local sent-message count is available under Advanced. The phone can
 repeat the same percentage for a long time while its charge stays constant.
 
 If you need another topic or rate, edit the topic and rate on the battery detail screen before Publish.

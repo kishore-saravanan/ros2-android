@@ -82,7 +82,9 @@ Configure the main app and each runner separately:
 1. Open Settings → Background operation → Android app settings for the main app.
 2. For a runner, open Projects → Details → Android app settings.
 3. In Android's battery settings, allow background activity or choose Unrestricted
-   if available. Labels and additional vendor controls vary by device.
+   if available. Labels and additional vendor controls vary by device. On Android
+   13+, also allow notifications there so the app's or runner's Stop notification
+   stays visible; each app asks once when you first start it.
 4. Return to ROS2 Android and repeat the background reception test with a
    non-actuator workspace before relying on it.
 
