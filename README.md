@@ -6,6 +6,8 @@
 
 **Your phone. Your ROS nodes. Your robot.**
 
+[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/kishore-saravanan)
+
 Use an Android phone as a robot's onboard ROS 2 computer: run supported nodes
 locally, publish phone sensors, connect microcontrollers and configure a control
 Dashboard. Develop on Linux and deploy to the phone over USB or Wi-Fi.
@@ -141,6 +143,12 @@ Contributor entry points: [build and test](docs/DEVELOPMENT.md),
 [CI and test scope](docs/TESTING.md), [architecture decisions](docs/decisions/0001-platform-and-examples.md),
 [release checklist](docs/RELEASING.md), [changelog](CHANGELOG.md) and
 [security reporting](SECURITY.md).
+
+## Support development
+
+ROS2 Android is built by Kishore Saravanan. Enjoying it? Buy me a coffee and help
+support its development through [GitHub Sponsors](https://github.com/sponsors/kishore-saravanan).
+The same link is under Settings → About in the app.
 
 ## License and citation
 

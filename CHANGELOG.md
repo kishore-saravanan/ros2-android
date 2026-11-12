@@ -6,6 +6,8 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Link GitHub Sponsors from the README and the repository's Sponsor button.
+
 - Document runner authorization behavior for every signer change, reinstall and
   revocation, and why main-app key rotation requires rebuilding paired runners.
 
