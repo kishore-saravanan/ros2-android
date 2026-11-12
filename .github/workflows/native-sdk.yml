@@ -1,0 +1,71 @@
+name: Native Android SDK build
+
+# Deliberately separate from lightweight PR checks; no phone or release publishing.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-sdk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    name: Jazzy ARM64 SDK and C++ workspace APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: ros-tooling/setup-ros@2b7b7e10fd30ff131dfb33248ddd71c5ba31dd30 # 0.7.15
+        with:
+          required-ros-distributions: jazzy
+          use-ros2-testing: false
+          install-connext: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Host build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            build-essential binutils cmake ninja-build python3-dev python3-venv
+          python3 -m venv --system-site-packages "$HOME/.local/share/ros2-android-tools/build-venv"
+          "$HOME/.local/share/ros2-android-tools/build-venv/bin/python" -m pip install \
+            colcon-common-extensions==0.3.0 vcstool==0.3.0
+      - name: Pinned Android tools
+        run: |
+          sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:?Android SDK root is missing}}"
+          printf 'ANDROID_HOME=%s\n' "$sdk_root" >> "$GITHUB_ENV"
+          "$sdk_root/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$sdk_root" \
+            'platform-tools' 'platforms;android-35' 'build-tools;35.0.0' \
+            'ndk;27.2.12479018' 'cmake;3.22.1'
+      - name: Fetch locked native sources
+        run: python3 setup/fetch-native-ros.py
+      - name: Cross-build and verify ARM64 ROS libraries
+        run: ./setup/build-native-ros.sh --with-cpp
+      - name: Build supported C++ workspace without Python shell
+        run: |
+          ./tools/ros2android-workspace --workspace examples/android_test_ws \
+            --id native_ci_fixture build --without-shell
+      - name: Record build scope
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          hashes = json.loads(Path('native-deps/native-library-checksums.json').read_text())
+          assert 'librclcpp.so' in hashes and 'librcl.so' in hashes, 'Missing core native libraries'
+          apk = Path('android/workspaceRunner/build/outputs/apk/debug/workspaceRunner-debug.apk')
+          assert apk.is_file(), 'Workspace APK missing'
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as report:
+              report.write('Built pinned ARM64 native sources and the C++ example workspace APK.\n\n')
+              report.write(f'Verified native library hashes: {len(hashes)}.\n\n')
+              report.write('Build-only qualification: no phone, ROS interoperability, Python/Agent SDK, '
+                           'signing upgrade, release publication or runtime performance test.\n')
+          PY

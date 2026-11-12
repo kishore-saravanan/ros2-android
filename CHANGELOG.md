@@ -6,6 +6,9 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Add a separate manual native-SDK workflow for locked Jazzy ARM64 sources and
+  C++ workspace APK builds; hosted execution and runtime qualification stay separate.
+
 - Validate start domains, namespaces, IPv4 fields and ROS argument bounds before
   invoking build/device tools; keep blank-address offline discovery available.
 

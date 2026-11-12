@@ -70,6 +70,23 @@ This assembles the debug app and runs JVM tests/lint. Native build success alone
 does not establish interoperability. Follow [Development](DEVELOPMENT.md) for
 native SDK preparation and [Status](STATUS.md) for qualification boundaries.
 
+## Native SDK build workflow
+
+[Native Android SDK build](../.github/workflows/native-sdk.yml) is a manual
+`workflow_dispatch` job on Ubuntu 24.04, separate from PR checks. It prepares
+Jazzy and the pinned Android tools, fetches locked sources into a fresh build
+cache, cross-builds the C++ ROS SDK, and packages `android_test_ws` without the
+Python shell. It checks required library hashes and the resulting workspace APK.
+There is no restored native cache, phone connection, signing secret or publishing
+step. The first hosted execution remains pending.
+
+Run it from **Actions → Native Android SDK build → Run workflow** on the intended
+branch once that branch contains the workflow. A successful job establishes build
+qualification for that runner environment, not Android ROS traffic or performance.
+The Python SDK, micro-ROS Agent and physical recovery matrix are separate checks.
+Pinned upstream source revisions do not pin every host APT package or guarantee
+bit-for-bit binary reproduction.
+
 ## Runner request regression without hardware
 
 Host `test_project_stop.py` checks CLI stop outcomes with controlled time and

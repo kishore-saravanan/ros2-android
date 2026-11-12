@@ -98,7 +98,9 @@ sensor, Dashboard widget and runtime backend.
 - [x] Guard installed host-module boundaries and expand package/artifact checks in CI.
       Thin compatibility wrappers and package imports have host regressions; Android
       feature-module extraction remains incremental.
-- [ ] Add native SDK build automation separately from lightweight PR checks.
+- [x] Add native SDK build automation separately from lightweight PR checks.
+      A manual hosted workflow builds locked ARM64 sources and a C++ workspace APK;
+      its first hosted execution remains pending.
 
 **Exit gate:** focused modules with clear owners, unchanged supported journeys and
 regression coverage. Keep the modular app and isolated runners; no microservices
