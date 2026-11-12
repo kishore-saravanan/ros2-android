@@ -287,6 +287,8 @@ unlocked, run from the repository root:
 
 ```bash
 python3 tests/integration/main_process_recovery.py
+# Separate Android Force stop trial, applied while the main app is still alive:
+python3 tests/integration/main_process_recovery.py --mode force-stop
 ```
 
 Use `--serial` if a specific USB ADB target is needed. The driver targets that same
@@ -294,7 +296,8 @@ device for Gradle and outside observations; it never selects another app or runn
 It requires current debug artifacts and the Android/native build prerequisites.
 
 The prepare phase receives verified workspace results, saves a private checkpoint,
-and deliberately terminates the main app process. Its instrumentation run is
+and deliberately terminates the main app process. In Force stop mode it waits
+for the PC to apply `am force-stop` to the confirmed-live main process instead. Its instrumentation run is
 **expected to abort**, not pass as a JUnit test. The PC driver requires that abort,
 a valid checkpoint, 15 seconds with no main process and unchanged runner/native
 process identities. A new instrumentation process then requires inactive local
@@ -320,8 +323,11 @@ resumed with the app open/unlocked and the fixture still Running:
 ```
 
 Do not delete a failed checkpoint until its saved fixture profile has been
-restored. Expired checkpoints require explicit fixture cleanup/reconfiguration.
-Force stop, low-memory eviction and vendor Recents swipes remain separate cases.
+restored. For a Force stop checkpoint, also pass
+`-Pandroid.testInstrumentationRunnerArguments.workspaceMainDeathMode=force-stop`
+to the recovery command. Expired checkpoints require explicit fixture
+cleanup/reconfiguration. Low-memory eviction and vendor Recents swipes remain
+separate cases; a main-app Force stop does not stop a separate runner.
 
 ## Offline network policy
 
@@ -374,3 +380,19 @@ verification, missing/hanging tools, SDK selection and CLI errors/no extraction.
 It checks identical/candidate/blocked decisions without installing anything. Real
 local main/runner APK inspection uses SDK aapt/apksigner; file-level evidence does
 not qualify installed upgrades or profile/data preservation. See [Upgrading](UPGRADING.md).
+
+### Runner Android Force stop
+
+With the same stopped protocol fixture and offline test prerequisites, run:
+
+```bash
+./setup/build.sh :app:connectedDebugAndroidTest \
+  '-Pandroid.testInstrumentationRunnerArguments.class=dev.ros2android.android.WorkspaceLocalLifecycleTest#offlineResultsRecoverAfterRunnerForceStop' \
+  -Pandroid.testInstrumentationRunnerArguments.workspaceLocalTestPackage=dev.ros2android.android.runner.ws_protocol_workspace
+```
+
+The test applies Android Force stop only to the allowlisted disposable runner. It
+requires control disconnection, no remaining native workspace processes, stale ROS
+readings, unchanged runner profile, and fresh correct results after explicit
+restart. This passes on the reference C++ fixture; it does not qualify other
+backends, vendor Recents behavior, reboot or automatic restart.

@@ -35,9 +35,10 @@ a PC or an external network.
       A five-minute Wi-Fi-off C++ workspace background trial passes on the reference
       phone with background activity allowed for both apps. A separate 60-second
       screen-off trial also passes while USB-connected to the PC. Own-task removal,
-      native-child exit and runner-process death tests pass for the C++ fixture.
-      A two-phase main-app SIGKILL test also passes with outside process observations,
-      saved settings and fresh ROS recovery. Vendor Recents swipes, Force stop,
+      native-child exit, runner-process death and runner Force stop tests pass for
+      the C++ fixture.
+      Two-phase main-app SIGKILL and Android Force stop tests also pass with outside process observations,
+      saved settings and fresh ROS recovery. Vendor Recents swipes,
       unplugged idle, other devices/backends and endurance remain open.
 - [ ] Test Dashboard lost-link/late-subscriber behavior and distinguish local writes
       from remote acknowledgement.

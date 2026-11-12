@@ -35,6 +35,8 @@ class WorkspaceLocalLifecycleTest {
 
     @Test fun offlineResultsRecoverAfterRunnerDeath() = qualify(false, Interruption.RUNNER_DEATH)
 
+    @Test fun offlineResultsRecoverAfterRunnerForceStop() = qualify(false, Interruption.RUNNER_FORCE_STOP)
+
     @Test fun prepareMainProcessDeath() {
         assumeTrue(InstrumentationRegistry.getArguments().getString("workspaceMainDeathPhase") == "prepare")
         qualify(false, Interruption.MAIN_DEATH)
@@ -45,7 +47,7 @@ class WorkspaceLocalLifecycleTest {
         qualify(false, Interruption.MAIN_RECOVERY)
     }
 
-    private enum class Interruption { NONE, TASK_REMOVAL, CHILD_EXIT, RUNNER_DEATH, MAIN_DEATH, MAIN_RECOVERY }
+    private enum class Interruption { NONE, TASK_REMOVAL, CHILD_EXIT, RUNNER_DEATH, RUNNER_FORCE_STOP, MAIN_DEATH, MAIN_RECOVERY }
 
     private fun qualify(background: Boolean, interruption: Interruption = Interruption.NONE) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -53,9 +55,12 @@ class WorkspaceLocalLifecycleTest {
         assumeTrue("Requires the disposable workspace fixture", target != null)
         require(target == "dev.ros2android.android.runner.ws_protocol_workspace")
         val context = instrumentation.targetContext
+        val deathMode = InstrumentationRegistry.getArguments().getString("workspaceMainDeathMode", "sigkill")
+        require(deathMode in setOf("sigkill", "force-stop"))
         val checkpointFile = File(context.cacheDir, "workspace-main-death.json")
         val checkpoint = if (interruption == Interruption.MAIN_RECOVERY) {
             JSONObject(checkpointFile.readText()).also {
+                require(it.optString("mode", "sigkill") == deathMode) { "Checkpoint mode differs from requested trial" }
                 require(it.getInt("schema") == 1 && it.getInt("pid") != Process.myPid()) { "Requires a new main process" }
                 require(SystemClock.elapsedRealtime() - it.getLong("elapsed") in 0..600000) { "Checkpoint expired; restore fixture manually" }
             }
@@ -220,7 +225,7 @@ class WorkspaceLocalLifecycleTest {
                 assertTrue("Workspace sequence did not advance across main-app death", sequence > checkpoint.getLong("sequence"))
             }
             if (interruption == Interruption.MAIN_DEATH) {
-                val record = JSONObject().put("schema", 1).put("pid", Process.myPid())
+                val record = JSONObject().put("schema", 1).put("mode", deathMode).put("pid", Process.myPid())
                     .put("elapsed", SystemClock.elapsedRealtime()).put("sequence", sequence)
                     .put("runnerProfile", original).put("settings", savedSettings())
                     .put("processes", org.json.JSONArray(processes().filter { it.name == target || it.name.startsWith("libworkspace_exec_") }
@@ -229,6 +234,12 @@ class WorkspaceLocalLifecycleTest {
                     stream.write(record.toString().toByteArray()); stream.flush(); stream.fd.sync()
                 }
                 main { control.close() }
+                if (deathMode == "force-stop") {
+                    // Keep instrumentation alive until the driver stops this active app.
+                    android.util.Log.i("ROS2Qualification", "Checkpoint saved; waiting for external Force stop")
+                    SystemClock.sleep(60000)
+                    error("External Force stop did not occur within sixty seconds")
+                }
                 android.util.Log.i("ROS2Qualification", "Checkpoint saved; deliberately terminating main process")
                 Process.killProcess(Process.myPid())
                 error("Main process termination did not occur")
@@ -253,7 +264,7 @@ class WorkspaceLocalLifecycleTest {
                 replacement = ActivityScenario.launch(MainActivity::class.java)
                 connect(); state("Running")
             }
-            if (interruption == Interruption.CHILD_EXIT || interruption == Interruption.RUNNER_DEATH) {
+            if (interruption in setOf(Interruption.CHILD_EXIT, Interruption.RUNNER_DEATH, Interruption.RUNNER_FORCE_STOP)) {
                 val parent = processes().single { it.name == target }
                 injectedChildren = processes().filter { it.parent == parent.pid && it.name.startsWith("libworkspace_exec_") }
                 assertEquals("Expected only the fixture's two workspace children", 2, injectedChildren.size)
@@ -266,7 +277,8 @@ class WorkspaceLocalLifecycleTest {
                     }
                 } else {
                     main { disconnected = false }
-                    inject("TEST_EXIT_RUNNER")
+                    if (interruption == Interruption.RUNNER_FORCE_STOP) shell("am force-stop $target")
+                    else inject("TEST_EXIT_RUNNER")
                     waitFor("Runner death did not invalidate the control connection") { disconnected }
                     main { control.close() }
                     connect(); state("Stopped")

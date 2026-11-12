@@ -46,6 +46,8 @@ session and ROS2 Android open/unlocked:
 
 ```bash
 python3 tests/integration/main_process_recovery.py
+# Android Force stop of the active main app:
+python3 tests/integration/main_process_recovery.py --mode force-stop
 ```
 
 The prepare instrumentation intentionally terminates with the main app. The PC

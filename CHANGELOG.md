@@ -6,6 +6,9 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Qualify explicit main-app Android Force stop separately from SIGKILL, with
+  outside workspace process observations, saved settings and fresh ROS recovery.
+
 - Package workspace orchestration and manifest validation behind both CLI entry points.
   Reject invalid build options and unbuilt workspace operations without cache writes.
 
