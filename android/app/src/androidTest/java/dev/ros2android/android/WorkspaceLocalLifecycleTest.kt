@@ -32,6 +32,8 @@ class WorkspaceLocalLifecycleTest {
         assumeTrue("Requires the disposable workspace fixture", target != null)
         require(target == "dev.ros2android.android.runner.ws_protocol_workspace")
         val context = instrumentation.targetContext
+        val backgroundSeconds = InstrumentationRegistry.getArguments().getString("workspaceBackgroundSeconds", "10").toLong()
+        require(backgroundSeconds in 1..300) { "Use 1–300 seconds for the background trial" }
         val keepBound = InstrumentationRegistry.getArguments().getString("workspaceKeepControllerBound") == "true"
         val local = if (InstrumentationRegistry.getArguments().getString("workspaceLocalOnly") == "true") "127.0.0.1" else ""
         assertEquals("Turn Wi-Fi off before this fresh-start test", 0,
@@ -56,15 +58,26 @@ class WorkspaceLocalLifecycleTest {
             assertTrue(label, passed)
         }
         fun connect() {
-            activity.scenario.onActivity { app ->
-                control = ProjectController(app, InstalledProjects.list(app).single { it.packageName == target }) {}
+            main {
+                control = ProjectController(context, InstalledProjects.list(context).single { it.packageName == target }) {}
                 controlReady = true
                 control.connect()
             }
-            waitFor("No fixture status") { control.poll(); control.status != null }
+            waitFor("No fixture status") { control.status != null }
+        }
+        fun command(command: Int, config: Bundle = Bundle()) {
+            var previous: JSONObject? = null
+            main { previous = control.status; control.send(command, config) }
+            // A matching cached profile/state is not an acknowledgement of this command.
+            waitFor("Runner did not acknowledge command $command") {
+                check(control.error == null) { control.error.orEmpty() }
+                check(control.commandError == null) { control.commandError.orEmpty() }
+                control.status != null && control.status !== previous
+            }
         }
         fun state(expected: String) = waitFor("Fixture did not become $expected") {
-            control.poll(); control.status?.optString("state") == expected
+            if (control.status?.optString("state") == expected) true
+            else { control.poll(); false }
         }
         val localEcho = ControlWidget("offline_local_echo", "Local probe", "Subscribed value", "/qualification/local_echo")
         val widget = ControlWidget("offline_result_test", "Workspace result", "Subscribed value", "/android_test/result")
@@ -84,15 +97,13 @@ class WorkspaceLocalLifecycleTest {
                 assertEquals("Stop the disposable fixture first", "Stopped", control.status!!.getString("state"))
                 original = JSONObject(control.status!!.getJSONObject("config").toString())
                 ownsFixture = true
-                control.send(4, Bundle().apply {
-                    putString("domain", "87"); putString("namespace", "/android_test")
-                    putString("peer", ""); putString("local", local); putString("ros_args", "[]")
-                })
             }
-            waitFor("Fixture profile not applied") {
-                control.poll(); control.status?.optJSONObject("config")?.optString("domain") == "87"
-            }
-            main { control.send(2) }; state("Running")
+            command(4, Bundle().apply {
+                putString("domain", "87"); putString("namespace", "/android_test")
+                putString("peer", ""); putString("local", local); putString("ros_args", "[]")
+            })
+            main { assertEquals("87", control.status!!.getJSONObject("config").getString("domain")) }
+            command(2); state("Running")
             main {
                 ownsSession = true
                 session.startControls(listOf(widget, localEcho), RobotSessionService.Profile(SessionConfig("/qualification", 87), "", local))
@@ -100,10 +111,14 @@ class WorkspaceLocalLifecycleTest {
             waitFor("No workspace result reached the main app") { session.dashboardReadings[widget.id] != null }
             main { NativeRuntime.createPublisher("qualification_echo", localEcho.topic, 11) }
             fun observe(label: String, milliseconds: Long): Long {
-                val end = SystemClock.elapsedRealtime() + milliseconds
+                val startedAt = SystemClock.elapsedRealtime()
+                val end = startedAt + milliseconds
+                var lastObservation = startedAt
                 var previous = -1L
                 var fresh = 0L
                 while (SystemClock.elapsedRealtime() < end) {
+                    val observedAt = SystemClock.elapsedRealtime()
+                    assertTrue("$label: observer paused for more than two seconds", observedAt - lastObservation < 2000)
                     main {
                         assertTrue("Local probe write failed", NativeRuntime.publishControl("qualification_echo", doubleArrayOf(0.0, 0.0), SystemClock.elapsedRealtime().toString()))
                         val reading = checkNotNull(session.dashboardReadings[widget.id])
@@ -114,9 +129,12 @@ class WorkspaceLocalLifecycleTest {
                         assertEquals("$label: incorrect processor result", sequence * sequence * 0.0625, value.getDouble("squared"), 0.00001)
                         if (sequence != previous) { fresh++; previous = sequence }
                     }
+                    assertTrue("$label: main-thread observation paused for more than two seconds", SystemClock.elapsedRealtime() - observedAt < 2000)
+                    lastObservation = observedAt
                     SystemClock.sleep(100)
                 }
-                assertTrue("$label: insufficient fresh ROS results", fresh >= 5)
+                assertTrue("$label: trial exceeded its duration by more than two seconds", SystemClock.elapsedRealtime() - startedAt < milliseconds + 2000)
+                assertTrue("$label: insufficient fresh ROS results", fresh >= maxOf(5, milliseconds / 1000))
                 android.util.Log.i("ROS2Qualification", "$label: $fresh distinct verified results")
                 return previous
             }
@@ -124,21 +142,20 @@ class WorkspaceLocalLifecycleTest {
             if (background) {
                 if (!keepBound) main { control.close() }
                 activity.scenario.moveToState(Lifecycle.State.CREATED)
-                observe("background", 10000)
+                observe("background", backgroundSeconds * 1000)
                 activity.scenario.moveToState(Lifecycle.State.RESUMED)
                 if (!keepBound) connect()
                 state("Running")
             }
-            main { control.send(3) }; state("Stopped")
+            command(3); state("Stopped")
             SystemClock.sleep(6000)
             main { assertEquals("Stale", session.dashboardReadings[widget.id]!!.state(SystemClock.elapsedRealtime())) }
-            main { control.send(2) }; state("Running")
+            command(2); state("Running")
             waitFor("Results did not recover after workspace restart") {
                 session.dashboardReadings[widget.id]?.state(SystemClock.elapsedRealtime()) == "Live"
             }
             observe("restart", 3000)
         } finally {
-            activity.scenario.moveToState(Lifecycle.State.RESUMED)
             if (ownsSession) {
                 main { session.stopSession() }
                 waitFor("Main test session did not stop") { !session.connected && !session.busy }
@@ -147,18 +164,18 @@ class WorkspaceLocalLifecycleTest {
                 // Reconnect if the test failed while its Activity was backgrounded.
                 main { control.close() }
                 connect()
-                main { control.send(3) }; state("Stopped")
-                main { control.send(4, Bundle().apply {
+                command(3); state("Stopped")
+                command(4, Bundle().apply {
                     for (key in listOf("domain", "namespace", "peer", "local", "ros_args")) putString(key, original!!.getString(key))
-                }) }
+                })
                 waitFor("Fixture configuration was not restored") {
-                    control.poll()
                     val config = control.status?.optJSONObject("config")
                     config != null && listOf("domain", "namespace", "peer", "local", "ros_args").all { config.getString(it) == original!!.getString(it) }
                 }
             }
             if (controlReady) main { control.close() }
             context.unbindService(connection)
+            activity.scenario.moveToState(Lifecycle.State.RESUMED)
         }
     }
 }

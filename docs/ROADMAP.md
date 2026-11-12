@@ -32,8 +32,9 @@ a PC or an external network.
 - [ ] Qualify network changes and reconnects consistently on devices.
 - [ ] Qualify USB detach/reconnect, permission denial and app-update recovery.
 - [ ] Exercise screen-off, task removal, process death and vendor power management.
-      Short Activity-background result freshness failed on the reference phone in
-      automatic and loopback-only modes; investigate before qualification.
+      A 60-second Wi-Fi-off C++ workspace background trial passes on the reference
+      phone with background activity allowed for both apps. Screen-off, task
+      removal, process death, other devices and endurance remain open.
 - [ ] Test Dashboard lost-link/late-subscriber behavior and distinguish local writes
       from remote acknowledgement.
 - [x] Isolate control requests and reject stale replies; unit-test timeout/reconnect rules.

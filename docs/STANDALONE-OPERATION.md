@@ -71,6 +71,23 @@ fresh offline startup and recovery of the main app’s local publisher/subscribe
 It does not qualify workspace runners, USB Agent or background execution; run
 those cases separately below. Stop the test widget/publisher when finished.
 
+## Allow background operation
+
+Some devices suspend native workspace processes when the app leaves the
+foreground. Configure the main app and each runner separately:
+
+1. Open Settings → Background operation → Android app settings for the main app.
+2. For a runner, open Projects → Details → Android app settings.
+3. In Android's battery settings, allow background activity or choose Unrestricted
+   if available. Labels and additional vendor controls vary by device.
+4. Return to ROS2 Android and repeat the background reception test with a
+   non-actuator workspace before relying on it.
+
+These shortcuts open settings for the selected app; they do not change power
+policy automatically. Power Saving being off alone does not establish permission
+for background execution. App-specific settings do not guarantee uninterrupted
+execution or recovery after Force stop, task removal or a reboot.
+
 ## Start without a PC
 
 1. Disconnect the PC. For a fresh offline trial, turn Wi-Fi off **before** starting
@@ -106,9 +123,11 @@ application merely to perform this test.
 | Process/app update or Force stop | Reopen and explicitly start intended components; automatic boot/restart is not provided |
 
 Background execution is owned by foreground services, not by whether a card
-appears in Recent apps. Vendor battery policies and task removal still need
-qualification. Keep the app visible for current supported development operation;
-there is no claim of unattended screen-off endurance or hard real-time scheduling.
+appears in Recent apps. Vendor policies can still suspend native children; qualify
+the selected app settings on the target device. A 60-second Wi-Fi-off workspace
+trial passed after background activity was allowed for both apps on the reference
+setup; the default policy previously stalled results. This does not establish
+unattended screen-off endurance or hard real-time scheduling.
 No uninstall, app-data reset or global security-setting change is a recovery step.
 
 ## Qualification checklist

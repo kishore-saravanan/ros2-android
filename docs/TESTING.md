@@ -194,18 +194,29 @@ domain, restores the fixture profile and leaves it stopped. Saved Dashboard
 widgets and main connection preferences are not changed.
 
 The separate `offlineResultsContinueInBackgroundAndRecoverAfterRestart` method
-adds ten seconds with the Activity stopped and the controller unbound. It requires
-fresh results with gaps below two seconds. A reference-device trial exceeded that
-gap in automatic and explicit loopback-only profiles; background continuity
-remains a known qualification failure. Add `workspaceLocalOnly=true` as an
-instrumentation argument to select the isolated loopback diagnostic, or
-`workspaceKeepControllerBound=true` to compare a retained management binding.
-The test also sends an isolated String self-probe to distinguish main-app
-reception from workspace results. In the reference failure, the self-probe remained
-fresh while workspace results stalled; retaining the management binding did not
-prevent the gap. The underlying cause is not established. This is an
-explicit diagnostic test, not part of unattended CI. Screen-off, task removal,
-process death and USB coexistence are separate cases.
+adds ten seconds with the Activity stopped and the controller unbound. Set
+`workspaceBackgroundSeconds=60` as an instrumentation argument for a one-minute
+trial (accepted range 1–300 seconds). Both result freshness and observer timing
+must stay within two seconds; a frozen observer or overlong trial must fail.
+This is a qualification threshold, not a real-time guarantee.
+
+On the reference phone, the 60-second background trial passed with Wi-Fi off
+and background activity allowed for both the main app and runner: 296 distinct
+verified results, followed by stop/Stale and restart/fresh recovery. Observer
+pauses and result ages stayed below the test's two-second threshold.
+Default background policy previously stalled native children even while their
+parent service remained active. Configure both packages separately; see
+[background setup](STANDALONE-OPERATION.md#allow-background-operation).
+This result covers one device and a C++ workspace, not every backend or vendor.
+
+Optional diagnostics are `workspaceLocalOnly=true` for loopback-only selection
+and `workspaceKeepControllerBound=true` for a retained management binding. An
+isolated String self-probe distinguishes main-app reception from workspace output.
+Before the background-policy change, the self-probe remained fresh while
+workspace results stalled; retaining the binding did not prevent the gap.
+
+These are explicit device tests, not unattended CI. Screen-off, task removal,
+process death, USB coexistence and longer endurance remain separate cases.
 
 ## Offline network policy
 

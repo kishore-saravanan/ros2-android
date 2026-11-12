@@ -390,6 +390,9 @@ open class MainActivity : Activity() {
             }
             box.addView(button("Save") { runCatching { arguments(); save() }.onSuccess { announce("Connection saved") }.onFailure { announce(it.message) } })
         }
+        disclosure(page, "background_operation", "Background operation") { box ->
+            backgroundSettings(box, packageName)
+        }
         disclosure(page, "network_info", "Network addresses") { box -> box.addView(text(DeviceDiagnostics.networks(), 14)); box.addView(text(DeviceDiagnostics.usb(this), 13, muted)) }
         disclosure(page, "runtime_info", "Runtime diagnostics") { box -> box.addView(text(NativeRuntime.diagnostic(), 13, muted)); box.addView(text(DeviceDiagnostics.phone(), 13, muted)); box.addView(text(DeviceDiagnostics.power(this), 13, muted).apply { tag = "power_diagnostics" }) }
         disclosure(page, "micro_ros_agent", "Microcontrollers") { box ->
@@ -455,6 +458,8 @@ open class MainActivity : Activity() {
                     }.apply { tag = "authorize_project:${project.id}" })
                     info.addView(text("Revoking disconnects app controls; it does not stop a running project. Stop the project first.", 12, muted))
                 }
+                info.addView(text("Background operation", 14))
+                backgroundSettings(info, project.packageName)
                 info.addView(button("Open runner") { runCatching { save(); startActivity(project.openIntent()) }.onFailure { announce("Could not open project. Refresh and try again.") } }.apply { tag = "open_project:${project.id}" })
             }
             projectRows[project.packageName] = ProjectRow(state, nodes, toggle, settings, logs)
@@ -500,6 +505,15 @@ open class MainActivity : Activity() {
                 openWebLink(getString(R.string.sponsor_url))
             })
         }
+    }
+    private fun backgroundSettings(box: LinearLayout, targetPackage: String) {
+        box.addView(text("For background ROS operation, allow background activity in this app’s Android battery settings. Names vary by phone.", 13, muted))
+        box.addView(button("Android app settings") {
+            try {
+                startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.fromParts("package", targetPackage, null)))
+            } catch (_: ActivityNotFoundException) { announce("Android app settings are unavailable on this device") }
+        }.apply { tag = "app_settings:$targetPackage" })
     }
     private fun openWebLink(url: String) {
         try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)) }
