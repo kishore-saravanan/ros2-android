@@ -53,8 +53,8 @@ android {
         applicationId = runnerApplicationId
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0-runner-dev1"
+        versionCode = rootProject.extra["runnerVersionCode"] as Int
+        versionName = (rootProject.extra["runnerVersionName"] as String).ifEmpty { "0.1.0-runner-dev1" }
         ndk { abiFilters += "arm64-v8a" }
         buildConfigField("String", "PROJECT_NAMESPACE", "\"/demo\"")
         buildConfigField("int", "PROJECT_RUNTIME_ABI", runtimeAbi.toString())

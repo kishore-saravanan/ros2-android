@@ -43,7 +43,7 @@ android {
         manifestPlaceholders += mapOf("runnerProjectId" to projectId, "runnerRuntime" to "python", "runnerSourceId" to sourceId)
         applicationId = runnerApplicationId
         minSdk = 26; targetSdk = 35
-        versionCode = 1; versionName = "0.1.0-python-dev1"
+        versionCode = rootProject.extra["runnerVersionCode"] as Int; versionName = (rootProject.extra["runnerVersionName"] as String).ifEmpty { "0.1.0-python-dev1" }
         ndk { abiFilters += "arm64-v8a" }
         buildConfigField("String", "PROJECT_ID", JsonOutput.toJson(projectId))
         buildConfigField("String", "PROJECT_SOURCE_ID", JsonOutput.toJson(sourceId))

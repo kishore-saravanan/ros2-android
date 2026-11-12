@@ -6,6 +6,9 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Share validated runner version properties across all three backends. Qualify
+  a same-key C++ runner update, profile preservation and rejected downgrade.
+
 - Qualify explicit main-app Android Force stop separately from SIGKILL, with
   outside workspace process observations, saved settings and fresh ROS recovery.
 

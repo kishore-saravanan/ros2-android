@@ -69,6 +69,9 @@ platform source or relying on this maintainer's prepared PC.
 - [x] Document signed runner upgrades, rollback limits and development-key ownership.
 - [x] Compare local APK identity/signature/version before installation without contacting a phone.
 - [ ] Qualify actual same-key upgrades, profile preservation and rollback on devices.
+      A reference C++ runner code-1 → code-2 update preserves its profile and passes
+      fresh ROS stop/restart checks; a rejected downgrade preserves code 2/data.
+      Successful rollback, other backends and broader signing cases remain open.
 
 **Exit gate:** a fresh-machine user completes the external-workspace walkthrough
 using documented artifacts and prerequisites; an independent peer observes ROS

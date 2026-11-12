@@ -47,8 +47,21 @@ installed app, Android API/ABI support, signing lineage, data compatibility or
 runtime behavior. Compare against the exact APK previously installed, not merely
 one with the same display version. `versionName` is a label; numeric version code
 controls ordering. Inspection reads the typed manifest as well as badging, since
-build-tools 35 badging omits `versionCodeMajor`. Local debug rebuilds currently reuse version codes, so a changed
-hash at the same code can still be a candidate. Releases must increment codes.
+build-tools 35 badging omits `versionCodeMajor`. Debug builds default to version code 1, so a changed hash at the same code can
+still be a candidate. Releases must increment codes. All three runner backends
+share optional `runnerVersionCode` and `runnerVersionName` Gradle properties. For
+maintainers building a workspace runner from source:
+
+```bash
+./setup/build.sh :workspaceRunner:assembleDebug \
+  -ProbotProjectDir=/absolute/path/to/generated/runner-project \
+  -PrunnerVersionCode=2 -PrunnerVersionName=0.1.0-dev2
+```
+
+Choose a code greater than the installed artifact. Codes must be integers from
+1 to 2100000000; names must be nonblank, at most 100 characters and contain no
+control characters. The properties change version metadata, not the package ID,
+source ID, signing key, authorization or deployment policy.
 
 ## Preserve signing identity
 
@@ -106,6 +119,20 @@ data can block it or make it incompatible. Prefer a forward fix signed by the sa
 key with a newer version code. Keep older source/artifacts for reproduction; use
 a disposable test phone/fixture to qualify actual rollback and data compatibility.
 There is no generic app-profile export/import or automatic data rollback yet.
+
+## Reference upgrade qualification
+
+A stopped disposable C++ workspace runner passed a same-key update from code 1
+to code 2. Its saved profile remained byte-for-byte unchanged immediately after
+installation. Fresh offline calculation results, Stop/Stale and explicit restart
+then passed on the updated runner. A deliberate attempt to install the saved
+code-1 APK through the normal installer was rejected with
+`INSTALL_FAILED_VERSION_DOWNGRADE`; code 2 and its saved profile remained intact.
+No downgrade flags, uninstall or data clearing were used.
+
+This qualifies that reference runner/update pair. It does not qualify data-schema
+migrations, different signers, main-app updates, bound-request races, release-key
+rotation, other backends or a successful rollback.
 
 ## Remaining device qualification
 
