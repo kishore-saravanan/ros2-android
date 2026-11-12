@@ -145,6 +145,9 @@ Contributor entry points: [build and test](docs/DEVELOPMENT.md),
 ## License and citation
 
 Original project material is [Apache-2.0](LICENSE), copyright 2026 Kishore
-Saravanan. See [NOTICE](NOTICE); dependencies retain their own licenses.
+Saravanan. See [NOTICE](NOTICE); dependencies retain their own licenses. Components
+built into the APKs are listed in [third-party notices](THIRD-PARTY-NOTICES.md);
+their full license texts ship inside each APK and appear in the app at
+Settings → About → Open-source licenses.
 Please cite [CITATION.cff](CITATION.cff) when using the project in research or
 other work. Citation is requested, not an additional license condition.

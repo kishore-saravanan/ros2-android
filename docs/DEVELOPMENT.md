@@ -68,7 +68,13 @@ applies the checked-in Android patches idempotently. Source/build output lives
 in an ignored `native-deps` link to a cache directory without spaces, because
 upstream generators do not consistently handle spaces in their workspace path.
 `stage-native-libs.py` verifies ARM64 ELF headers and stages the ROS libraries
-with checksums. The app and ROS dependencies use the same shared NDK C++ runtime.
+with checksums. `stage-licenses.py` then stages each locked source's license and
+notice files, the vendored libyaml license and the NDK libc++ (LLVM) license into
+`native-deps/ros-assets`, which the app and all runners package under
+`assets/licenses/`. For an SDK prepared before this step existed, run
+`python3 setup/stage-licenses.py` once. It fails if a locked source has no license
+file. After changing a lock, regenerate the inventory with
+`python3 setup/generate-notices.py`; a host test fails when it is out of date. The app and ROS dependencies use the same shared NDK C++ runtime.
 
 ```bash
 ./setup/build.sh

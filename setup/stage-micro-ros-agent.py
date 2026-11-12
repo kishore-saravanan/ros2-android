@@ -69,9 +69,20 @@ license_roots = {
     'tinyxml2': build / 'fastdds/src/fastdds/thirdparty/tinyxml2',
     'android-ifaddrs': build / 'fastdds/src/fastdds/thirdparty/android-ifaddrs',
 }
+# Some vendored sources carry their terms only in a source-file header comment.
+header_licenses = {'tinyxml2': 'tinyxml2.h', 'android-ifaddrs': 'ifaddrs.c'}
+empty = []
 for label, prefix in license_roots.items():
     target = root / 'native-deps/agent-assets/licenses' / label
     target.mkdir(parents=True, exist_ok=True)
     for pattern in ('LICENSE*', 'COPYING*', 'NOTICE*'):
         for path in prefix.glob(pattern):
             if path.is_file(): shutil.copy2(path, target / path.name)
+    if not any(target.iterdir()) and label in header_licenses:
+        header = re.match(r'\s*/\*(.*?)\*/', (prefix / header_licenses[label]).read_text(errors='replace'), re.S)
+        if header:
+            (target / 'LICENSE-from-source-header.txt').write_text(
+                f'License terms from the header of {header_licenses[label]}:\n\n' + header.group(1).strip('\n') + '\n')
+    if not any(target.iterdir()):
+        empty.append(label)
+assert not empty, 'No license text staged for: ' + ', '.join(empty)

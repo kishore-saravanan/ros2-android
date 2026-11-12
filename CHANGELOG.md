@@ -6,6 +6,16 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Ship upstream license texts for every bundled native component: the ROS 2 stack,
+  Cyclone DDS, libyaml and the NDK's libc++ in the app and all runners, and the
+  previously empty TinyXML-2/android-ifaddrs texts of the micro-ROS Agent. Add
+  Settings → About → Open-source licenses and a generated THIRD-PARTY-NOTICES.md
+  that a host test keeps in step with the source locks.
+- Add release assembly and verification: sign the main APK with an owner-held key
+  (passwords from the environment), refuse dirty trees, debuggable or mismatched
+  APKs, and write a provenance manifest plus SHA256SUMS; verify checksums, signer,
+  identity and the bundled APK inside an optional Debian package.
+
 - Add `ros2-android setup build-tools` (source checkout:
   `setup/prepare-build-tools.py`) to prepare the managed colcon/vcstool venv. On
   hosts that already provide colcon through APT, it adds the missing venv commands

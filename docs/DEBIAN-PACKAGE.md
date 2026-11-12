@@ -29,7 +29,9 @@ not require Android SDK/NDK or aapt. Building workspaces still requires the full
 Android/Jazzy toolchain; doctor is a prerequisite presence check only.
 
 The alpha currently bundles a debug APK. It is for local development only, not a
-production-signing or public-release claim. The top-level project uses Apache-2.0;
+production-signing or public-release claim. For a release, build the package from
+the signed APK in the assembled release folder (see [releasing](RELEASING.md)). The
+top-level project uses Apache-2.0;
 third-party notices and APK license closure still require review before release.
 
 ## Maintainer build

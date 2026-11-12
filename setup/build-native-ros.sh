@@ -37,3 +37,4 @@ export PKG_CONFIG_LIBDIR="$PWD/install/lib/pkgconfig"
     -DBUILD_IDLC=OFF -DBUILD_DDSPERF=OFF \
     -DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384
 python3 "$project_root/setup/stage-native-libs.py"
+python3 "$project_root/setup/stage-licenses.py"

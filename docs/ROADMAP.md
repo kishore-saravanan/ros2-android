@@ -143,6 +143,10 @@ package/SDK without editing the platform checkout. No mandatory submodule.
       Reference-phone core tabs, app-local light/dark and large-text layouts pass;
       broader widget/dialog, screen-reader and device coverage remains open.
 - [ ] Produce signed, checksummed APK/client/SDK artifacts and dependency notices.
+      Release assembly/verification signs, checksums and records provenance; APKs
+      carry license texts for every staged native component, listed in
+      THIRD-PARTY-NOTICES. An owner-held release key, a prebuilt SDK archive and an
+      actual signed release remain.
 - [ ] Verify installation, upgrade and rollback from clean environments.
 - [ ] Complete public-history/privacy and security review before wider publication.
 

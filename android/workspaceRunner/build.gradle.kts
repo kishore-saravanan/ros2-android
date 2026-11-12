@@ -50,6 +50,8 @@ android {
     sourceSets["main"].java.srcDir("../protocol/src/main/java")
     sourceSets["main"].java.srcDir("../network/src/main/java")
     sourceSets["main"].java.srcDir("../health/src/main/java")
+    // Upstream license texts for bundled native libraries (setup/stage-licenses.py).
+    sourceSets["main"].assets.srcDir("../../native-deps/ros-assets")
     buildFeatures.buildConfig = true
     sourceSets["main"].apply {
         manifest.srcFile("../runner/src/main/AndroidManifest.xml")

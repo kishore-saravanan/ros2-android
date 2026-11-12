@@ -506,7 +506,26 @@ open class MainActivity : Activity() {
             box.addView(button(getString(R.string.about_support_button)) {
                 openWebLink(getString(R.string.sponsor_url))
             })
+            box.addView(button("Open-source licenses") { openSourceLicenses() }.apply { tag = "open_source_licenses" })
         }
+    }
+    /** Upstream license texts packaged under assets/licenses/<component>/ by the native staging scripts. */
+    private fun openSourceLicenses() {
+        val components = runCatching { assets.list("licenses").orEmpty().filter { it != "index.json" }.sorted() }.getOrDefault(emptyList())
+        if (components.isEmpty()) { announce("This build does not include third-party license texts"); return }
+        AlertDialog.Builder(this).setTitle("Open-source licenses")
+            .setItems(components.toTypedArray()) { _, which -> showLicense(components[which]) }
+            .setNegativeButton("Close", null).show()
+    }
+    private fun showLicense(component: String) {
+        val content = runCatching {
+            assets.list("licenses/$component").orEmpty().sorted().joinToString("\n\n") { name ->
+                "$name\n\n" + assets.open("licenses/$component/$name").bufferedReader().use { it.readText() }
+            }
+        }.getOrElse { "Cannot read this license text: ${it.message}" }
+        val body = text(content, 12).apply { setTextIsSelectable(true); setPadding(dp(20), dp(8), dp(20), dp(8)) }
+        AlertDialog.Builder(this).setTitle(component).setView(ScrollView(this).apply { addView(body) })
+            .setPositiveButton("All licenses") { _, _ -> openSourceLicenses() }.setNegativeButton("Close", null).show()
     }
     private fun backgroundSettings(box: LinearLayout, targetPackage: String) {
         // Restriction is only readable for this app; battery optimization is readable for any package.

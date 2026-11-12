@@ -33,6 +33,48 @@ not a command that publishes automatically. A release needs explicit authorizati
 - Publish known limits and test conditions with release notes. Do not infer
   real-time guarantees, endurance or all-device support from a demonstration.
 
+## Assemble a release folder
+
+These commands prepare, sign and verify artifacts locally; they publish nothing.
+Run them from a clean checkout of the tagged revision with the prepared SDK:
+
+```bash
+python3 setup/stage-licenses.py            # also part of setup/build-native-ros.sh
+python3 setup/generate-notices.py --check  # THIRD-PARTY-NOTICES.md matches the locks
+./setup/build.sh :app:assembleRelease :app:lintVitalRelease
+python3 setup/build-python-package.py      # bundled host wheel, from a venv with pip
+export ROS2_ANDROID_KEYSTORE_PASSWORD=...  # never on the command line
+python3 setup/assemble-release.py --apk android/app/build/outputs/apk/release/app-release-unsigned.apk \
+  --wheel dist/ros2_android-0.1.0a1-py3-none-any.whl \
+  --keystore /offline/ros2-android-release.jks --key-alias ros2-android --out dist/release-0.1.1
+python3 setup/verify-release.py dist/release-0.1.1 --expect-certificate <published SHA-256>
+```
+
+The assembler refuses a dirty tracked tree, a debuggable APK, a version that
+differs from the compatibility matrix and an APK without license texts for every
+staged component. It aligns and signs the APK with `apksigner` (v2/v3 schemes for
+API 26+), checks the single signer, copies LICENSE, NOTICE,
+[THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md) and CHANGELOG, and writes
+`release-manifest.json` (source revision, versions, toolchain pins, SDK snapshot,
+signer digest and schemes) plus `SHA256SUMS`, which `sha256sum -c` also accepts.
+To include a Debian package, build it from the signed APK in the release folder
+and pass `--deb` in a second assembly; the assembler rejects a package bundling any
+other APK. `--unsigned-dry-run` exercises the flow without a key and is marked as
+not a release; the verifier rejects it unless `--allow-unsigned` is given.
+
+Signing key custody is a maintainer decision made before the first public APK:
+
+- Generate a long-lived key (for example RSA 3072/4096 with `keytool`) on a trusted
+  machine, keep the keystore and passwords outside the repository and CI logs, and
+  keep an encrypted offline backup. Losing it prevents updates to installed apps.
+- Publish the certificate SHA-256 alongside releases so users and
+  `verify-release.py --expect-certificate` can check the signer.
+- Android only updates an app signed by the same key, or by a rotated key that
+  carries a v3 rotation lineage (`apksigner rotate`). Plan rotation before a key is
+  suspected compromised; a different key otherwise needs uninstall/reinstall.
+- Runner APKs are signed by whoever builds them. They must share the controller's
+  signature or use [independent runner authorization](RUNNER-AUTHORIZATION.md).
+
 APT repository hosting/signing, Play Store requirements, public visibility and
 artifact publication are separate explicitly authorized steps. Adding this
 checklist or a CI workflow does not perform them.
