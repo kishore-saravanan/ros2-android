@@ -6,6 +6,10 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Add a two-phase main-app process-death test with PC-side process observations,
+  saved connection/Dashboard settings checks and verified ROS recovery. Its prepare
+  phase deliberately ends instrumentation; only the full integration result passes.
+
 - Add disposable C++ workspace qualification for own-task removal, native-child
   failure and abrupt runner death, including profile preservation and explicit
   restart with verified ROS results. Failure hooks are debug-only, DUMP-protected

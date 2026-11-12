@@ -36,8 +36,9 @@ a PC or an external network.
       phone with background activity allowed for both apps. A separate 60-second
       screen-off trial also passes while USB-connected to the PC. Own-task removal,
       native-child exit and runner-process death tests pass for the C++ fixture.
-      Vendor Recents swipes, main-app death, Force stop, unplugged idle, other
-      devices/backends and endurance remain open.
+      A two-phase main-app SIGKILL test also passes with outside process observations,
+      saved settings and fresh ROS recovery. Vendor Recents swipes, Force stop,
+      unplugged idle, other devices/backends and endurance remain open.
 - [ ] Test Dashboard lost-link/late-subscriber behavior and distinguish local writes
       from remote acknowledgement.
 - [x] Isolate control requests and reject stale replies; unit-test timeout/reconnect rules.

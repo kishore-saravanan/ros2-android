@@ -38,8 +38,11 @@ log tail. Refresh/reconnect, check the saved profile and start explicitly; a
 reconnected Stopped card does not mean nodes resumed automatically.
 
 Reference fixture tests cover both cases. Removing the main app's own task also
-preserved local traffic in a bounded test, but vendor Recents behavior, Force stop
-and main-app process death still need separate qualification.
+preserved local traffic in a bounded test. A separate main-app SIGKILL test verified
+that the fixture's workspace processes survived and fresh results returned after
+reopening and explicitly restarting the local subscriber. Saved connection and
+Dashboard settings survived. This is not automatic session recovery; vendor
+Recents behavior and Force stop still need separate qualification.
 
 ## First workspace
 

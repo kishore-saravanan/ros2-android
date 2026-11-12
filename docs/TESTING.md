@@ -279,6 +279,50 @@ invalidated the control session and left no workspace children. Both failure cas
 preserved the profile, became Stale and received fresh verified results after an
 explicit restart. This qualifies the disposable C++ fixture, not every backend.
 
+
+### Main-app process death
+
+With the same disposable fixture stopped, Wi-Fi off and ROS2 Android open and
+unlocked, run from the repository root:
+
+```bash
+python3 tests/integration/main_process_recovery.py
+```
+
+Use `--serial` if a specific USB ADB target is needed. The driver targets that same
+device for Gradle and outside observations; it never selects another app or runner.
+It requires current debug artifacts and the Android/native build prerequisites.
+
+The prepare phase receives verified workspace results, saves a private checkpoint,
+and deliberately terminates the main app process. Its instrumentation run is
+**expected to abort**, not pass as a JUnit test. The PC driver requires that abort,
+a valid checkpoint, 15 seconds with no main process and unchanged runner/native
+process identities. A new instrumentation process then requires inactive local
+hardware/Dashboard state, unchanged saved connection/widget settings and fresh
+correct workspace results with a sequence beyond the checkpoint. It explicitly
+restarts the subscriber, tests project stop/Stale/restart, restores the runner
+profile and removes the completed phone checkpoint.
+
+Only the full driver result counts as this qualification. Process survival is not
+proof of uninterrupted ROS reception while the main app's subscriber is absent.
+Private checkpoints, device IDs and logs stay under ignored `device-logs/`.
+This test does not add a kill endpoint to the app or change automatic-start policy.
+
+If interrupted, the driver refuses to overwrite an existing checkpoint. Review its
+private report before proceeding. Within ten minutes, the recovery phase can be
+resumed with the app open/unlocked and the fixture still Running:
+
+```bash
+./setup/build.sh :app:connectedDebugAndroidTest \
+  '-Pandroid.testInstrumentationRunnerArguments.class=dev.ros2android.android.WorkspaceLocalLifecycleTest#recoverAfterMainProcessDeath' \
+  -Pandroid.testInstrumentationRunnerArguments.workspaceLocalTestPackage=dev.ros2android.android.runner.ws_protocol_workspace \
+  -Pandroid.testInstrumentationRunnerArguments.workspaceMainDeathPhase=recover
+```
+
+Do not delete a failed checkpoint until its saved fixture profile has been
+restored. Expired checkpoints require explicit fixture cleanup/reconfiguration.
+Force stop, low-memory eviction and vendor Recents swipes remain separate cases.
+
 ## Offline network policy
 
 `CycloneNetworkTest` parses the actual shared Kotlin-generated XML and checks

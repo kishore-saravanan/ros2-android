@@ -16,6 +16,7 @@ import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -34,7 +35,17 @@ class WorkspaceLocalLifecycleTest {
 
     @Test fun offlineResultsRecoverAfterRunnerDeath() = qualify(false, Interruption.RUNNER_DEATH)
 
-    private enum class Interruption { NONE, TASK_REMOVAL, CHILD_EXIT, RUNNER_DEATH }
+    @Test fun prepareMainProcessDeath() {
+        assumeTrue(InstrumentationRegistry.getArguments().getString("workspaceMainDeathPhase") == "prepare")
+        qualify(false, Interruption.MAIN_DEATH)
+    }
+
+    @Test fun recoverAfterMainProcessDeath() {
+        assumeTrue(InstrumentationRegistry.getArguments().getString("workspaceMainDeathPhase") == "recover")
+        qualify(false, Interruption.MAIN_RECOVERY)
+    }
+
+    private enum class Interruption { NONE, TASK_REMOVAL, CHILD_EXIT, RUNNER_DEATH, MAIN_DEATH, MAIN_RECOVERY }
 
     private fun qualify(background: Boolean, interruption: Interruption = Interruption.NONE) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -42,6 +53,19 @@ class WorkspaceLocalLifecycleTest {
         assumeTrue("Requires the disposable workspace fixture", target != null)
         require(target == "dev.ros2android.android.runner.ws_protocol_workspace")
         val context = instrumentation.targetContext
+        val checkpointFile = File(context.cacheDir, "workspace-main-death.json")
+        val checkpoint = if (interruption == Interruption.MAIN_RECOVERY) {
+            JSONObject(checkpointFile.readText()).also {
+                require(it.getInt("schema") == 1 && it.getInt("pid") != Process.myPid()) { "Requires a new main process" }
+                require(SystemClock.elapsedRealtime() - it.getLong("elapsed") in 0..600000) { "Checkpoint expired; restore fixture manually" }
+            }
+        } else null
+        if (interruption == Interruption.MAIN_DEATH) check(!checkpointFile.exists()) { "Resolve the existing death-test checkpoint first" }
+        fun savedSettings(): JSONObject = JSONObject().apply {
+            val endpoints = context.getSharedPreferences("endpoints_v1", Context.MODE_PRIVATE).all
+            put("endpoints", JSONObject().apply { endpoints.toSortedMap().forEach { (key, value) -> put(key, value.toString()) } })
+            put("widgets", context.getSharedPreferences("control_dashboard_v1", Context.MODE_PRIVATE).getString("widgets", null) ?: JSONObject.NULL)
+        }
         val screenOff = InstrumentationRegistry.getArguments().getString("workspaceScreenOff") == "true"
         require(!screenOff || background) { "Screen-off qualification requires the background method" }
         val power = context.getSystemService(PowerManager::class.java)
@@ -126,6 +150,7 @@ class WorkspaceLocalLifecycleTest {
         var original: JSONObject? = null
         var ownsFixture = false
         var ownsSession = false
+        var recoveryPassed = false
         val serviceBound = context.bindService(Intent(context, RobotSessionService::class.java), connection, Context.BIND_AUTO_CREATE)
         assertTrue(serviceBound)
         try {
@@ -133,19 +158,26 @@ class WorkspaceLocalLifecycleTest {
             activity.scenario.onActivity { app ->
                 check(!app.getSystemService(KeyguardManager::class.java).isKeyguardLocked && app.hasWindowFocus())
                 assertFalse("Stop the main session before testing", session.connected || session.busy || session.controlsEnabled)
+                if (checkpoint != null) {
+                    assertTrue("Hardware/session state was replayed after death", session.active.isEmpty() && !session.subscribed)
+                    assertEquals("Saved settings changed across death", checkpoint.getJSONObject("settings").toString(), savedSettings().toString())
+                }
             }
             connect()
             main {
-                assertEquals("Stop the disposable fixture first", "Stopped", control.status!!.getString("state"))
-                original = JSONObject(control.status!!.getJSONObject("config").toString())
+                assertEquals("Unexpected disposable fixture state", if (checkpoint == null) "Stopped" else "Running", control.status!!.getString("state"))
+                original = if (checkpoint == null) JSONObject(control.status!!.getJSONObject("config").toString())
+                    else checkpoint.getJSONObject("runnerProfile")
                 ownsFixture = true
             }
-            command(4, Bundle().apply {
-                putString("domain", "87"); putString("namespace", "/android_test")
-                putString("peer", ""); putString("local", local); putString("ros_args", "[]")
-            })
-            main { assertEquals("87", control.status!!.getJSONObject("config").getString("domain")) }
-            command(2); state("Running")
+            if (checkpoint == null) {
+                command(4, Bundle().apply {
+                    putString("domain", "87"); putString("namespace", "/android_test")
+                    putString("peer", ""); putString("local", local); putString("ros_args", "[]")
+                })
+                main { assertEquals("87", control.status!!.getJSONObject("config").getString("domain")) }
+                command(2); state("Running")
+            }
             main {
                 ownsSession = true
                 session.startControls(listOf(widget, localEcho), RobotSessionService.Profile(SessionConfig("/qualification", 87), "", local))
@@ -183,7 +215,24 @@ class WorkspaceLocalLifecycleTest {
                 android.util.Log.i("ROS2Qualification", "$label: $fresh distinct verified results")
                 return previous
             }
-            observe("foreground", 3000)
+            val sequence = observe(if (checkpoint == null) "foreground" else "main-death-recovery", 3000)
+            if (checkpoint != null) {
+                assertTrue("Workspace sequence did not advance across main-app death", sequence > checkpoint.getLong("sequence"))
+            }
+            if (interruption == Interruption.MAIN_DEATH) {
+                val record = JSONObject().put("schema", 1).put("pid", Process.myPid())
+                    .put("elapsed", SystemClock.elapsedRealtime()).put("sequence", sequence)
+                    .put("runnerProfile", original).put("settings", savedSettings())
+                    .put("processes", org.json.JSONArray(processes().filter { it.name == target || it.name.startsWith("libworkspace_exec_") }
+                        .map { JSONObject().put("pid", it.pid).put("parent", it.parent).put("name", it.name) }))
+                checkpointFile.outputStream().use { stream ->
+                    stream.write(record.toString().toByteArray()); stream.flush(); stream.fd.sync()
+                }
+                main { control.close() }
+                android.util.Log.i("ROS2Qualification", "Checkpoint saved; deliberately terminating main process")
+                Process.killProcess(Process.myPid())
+                error("Main process termination did not occur")
+            }
             if (interruption == Interruption.TASK_REMOVAL) {
                 var task = -1
                 main { control.close() }
@@ -266,6 +315,7 @@ class WorkspaceLocalLifecycleTest {
                 session.dashboardReadings[widget.id]?.state(SystemClock.elapsedRealtime()) == "Live"
             }
             observe("restart", 3000)
+            recoveryPassed = checkpoint != null
         } finally {
             if (ownsSession) {
                 main { session.stopSession() }
@@ -291,6 +341,7 @@ class WorkspaceLocalLifecycleTest {
                 activity.scenario.moveToState(Lifecycle.State.RESUMED)
             }
             replacement?.close()
+            if (recoveryPassed) check(checkpointFile.delete()) { "Could not remove completed test checkpoint" }
         }
     }
 }

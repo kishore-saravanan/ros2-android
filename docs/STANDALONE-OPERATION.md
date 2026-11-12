@@ -149,7 +149,8 @@ one test before each is understood.
 | Activity background | Fresh results continue with management controller unbound | Five-minute Wi-Fi-off C++ workspace trial passes with both apps allowed background activity |
 | Screen off | Fresh results continue; stop/restart works after normal unlock | 60-second Wi-Fi-off C++ workspace trial passes while USB-connected to PC; unplugged deep idle remains open |
 | Own-task removal | Fresh results continue; controls reconnect after reopening | 30-second C++ fixture test passes with instrumentation/observer alive; vendor Recents swipes remain open |
-| Native child / runner death | Report failure or disconnect, remove workspace children, preserve profile, explicitly restart and verify fresh data | Both SIGKILL cases pass for the C++ fixture; main-app death, Force stop and other backends remain open |
+| Native child / runner death | Report failure or disconnect, remove workspace children, preserve profile, explicitly restart and verify fresh data | Both SIGKILL cases pass for the C++ fixture; Force stop and other backends remain open |
+| Main-app death | Separate workspace survives; reopen, preserve settings and explicitly restore local ROS reception | Two-phase SIGKILL test passes with a 15-second outside process check; no reception claim during the subscriber's absence |
 | App/runner upgrade and control reconnect | Clear unknown/failed state, no automatic command replay, preserved profile | Dedicated physical matrix pending |
 
 For protocol fixture commands and compatibility tests, see [Testing](TESTING.md).

@@ -1,4 +1,6 @@
-# Physical Dashboard switch regression
+# Physical integration tests
+
+## Dashboard switch
 
 This test exercises actual phone-to-PC ROS traffic and UI requests. Use an
 unlocked phone with ROS2 Android foreground, motor power disconnected, and no
@@ -36,3 +38,18 @@ The app-content image is a guarded debug artifact in the app's own cache. Keep
 it and device test reports out of Git. This test does not simulate packet loss,
 late subscriber startup, process death or a powered robot. Pure queue regressions
 run through `setup/build.sh` with the normal unit-test suite.
+
+## Main-app process death
+
+Use the isolated, non-actuator C++ protocol fixture with Wi-Fi off, no active main
+session and ROS2 Android open/unlocked:
+
+```bash
+python3 tests/integration/main_process_recovery.py
+```
+
+The prepare instrumentation intentionally terminates with the main app. The PC
+observes process identity separately, then a fresh process verifies settings and
+ROS recovery. Only the final driver PASS counts. It leaves the fixture stopped and
+keeps raw evidence ignored. See [Testing](../../docs/TESTING.md#main-app-process-death)
+for prerequisites, scope and interrupted-checkpoint recovery.
