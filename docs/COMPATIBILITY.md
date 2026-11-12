@@ -9,8 +9,9 @@ wheel. Tests check it against the app, build pins, contracts and source locks.
 ros2-android compatibility
 ```
 
-From a source checkout, use `PYTHONPATH=python python3 -m ros2android.cli
-compatibility` (or the same prefix with `doctor`). No extra wrapper is needed.
+From a source checkout, prefix any command with `PYTHONPATH=python python3 -m
+ros2android.cli` (for example `... compatibility` or `... doctor`). Workspace and
+project commands then run their backends in place, like the `tools/` wrappers.
 
 This command prints the matrix without extracting the SDK or contacting a phone.
 It describes the client's expected inputs, not what is installed on the phone.

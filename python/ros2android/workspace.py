@@ -118,16 +118,29 @@ def stage(workspace, cache, project_id, launch, launch_arguments, with_shell=Fal
     return project
 
 
-def main(arguments=None, *, tooling_root):
+JOURNEY = """typical journey:
+  inspect      check packages and dependency providers (no build, no phone)
+  build        cross-build the runner APK (--without-shell for C++ only)
+  deploy       install the runner on the USB-connected phone
+  start        start its nodes (blank addresses: phone-local/automatic discovery)
+  status/logs  check state, nodes, background pauses and runner output
+  ros -- ...   observe from this PC, e.g. ros -- topic echo /android_test/result
+  stop         cooperative stop of the supervised nodes
+
+host-build builds the same workspace for this PC; ros then decodes its custom messages."""
+
+
+def main(arguments=None, *, tooling_root, prog=None):
     root = Path(tooling_root)
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(prog=prog, description=__doc__, epilog=JOURNEY,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--workspace', type=Path, required=True)
     parser.add_argument('--id', help='Unique cache/project ID (default: workspace directory name)')
-    parser.add_argument('--serial')
-    commands = parser.add_subparsers(dest='command', required=True)
+    parser.add_argument('--serial', help='ADB serial when several devices are connected')
+    commands = parser.add_subparsers(dest='command', required=True, metavar='command')
     inspect = commands.add_parser('inspect', help='Inspect packages and declared dependency providers without building')
-    commands.add_parser('host-build')
-    build = commands.add_parser('build')
+    commands.add_parser('host-build', help='Build the workspace for this PC (parity checks; message types for ros)')
+    build = commands.add_parser('build', help='Cross-build the workspace into an Android runner APK')
     for options in (inspect, build):
         shell = options.add_mutually_exclusive_group()
         shell.add_argument('--with-shell', dest='with_shell', action='store_true', default=True,
@@ -137,10 +150,19 @@ def main(arguments=None, *, tooling_root):
     build.add_argument('--launch', type=Path)
     build.add_argument('--controller-apk', type=Path, help='Controller main APK for certificate-pinned runner controls')
     build.add_argument('--launch-arg', action='append', default=[])
-    for command in ('deploy', 'start', 'status', 'stop', 'kill', 'logs', 'launch-plan'):
-        commands.add_parser(command, add_help=False)
+    observe = commands.add_parser('ros', help='Run ROS 2 CLI on this PC with matching middleware and message overlay')
+    observe.add_argument('--interface', default='', help='PC IPv4 address to use for discovery (default: automatic)')
+    observe.add_argument('ros_command', nargs=argparse.REMAINDER, help='ros2 arguments after --')
+    forwarded_help = {'deploy': 'Install the built runner APK on the phone (the sensor app is untouched)',
+                      'start': 'Start the deployed workspace; options are forwarded to the project start command',
+                      'status': 'Show runner state, nodes and health', 'stop': 'Request a cooperative stop',
+                      'kill': 'Force-stop only this runner (recovery tests)',
+                      'logs': "Stream this runner's logs; Ctrl+C stops viewing",
+                      'launch-plan': 'Print the resolved launch plan without starting nodes'}
+    for command, description in forwarded_help.items():
+        commands.add_parser(command, add_help=False, help=description)
     args, forward = parser.parse_known_args(arguments)
-    if args.command in ('inspect', 'host-build', 'build') and forward:
+    if args.command in ('inspect', 'host-build', 'build', 'ros') and forward:
         parser.error('Unknown arguments: ' + str(forward))
     if args.command == 'build' and args.with_shell and not (root / 'native-deps/python-packages/composition_interfaces').is_dir():
         parser.error('The standard CLI needs the Python SDK: run ros2-android setup python, or use build --without-shell for C++ only')
@@ -161,6 +183,17 @@ def main(arguments=None, *, tooling_root):
     if owner.exists() and owner.read_text() != str(workspace):
         parser.error('Cache ID belongs to another workspace; choose --id')
     project = cache / 'runner-project'
+    if args.command == 'ros':
+        command = args.ros_command[1:] if args.ros_command[:1] == ['--'] else args.ros_command
+        if not command:
+            parser.error('Provide ros2 arguments after --, e.g. ros -- topic list')
+        overlay = cache / 'host/install/local_setup.bash'
+        if not overlay.is_file():
+            print('Note: no PC build of this workspace; custom message types need host-build first.', file=sys.stderr)
+        wrapper = [str(root / 'tools/pc-ros.sh'), *(['--interface', args.interface] if args.interface else [])]
+        subprocess.run([*wrapper, '--', 'ros2', *command], check=True,
+                       env=dict(os.environ, ROS2_ANDROID_PROJECT_OVERLAY=str(overlay)))
+        return
     if args.command in ('host-build', 'build'):
         cache.mkdir(parents=True, exist_ok=True)
         owner.write_text(str(workspace))
@@ -189,10 +222,10 @@ def main(arguments=None, *, tooling_root):
     subprocess.run([*command, forwarded, *forward], check=True)
 
 
-def run(arguments=None, *, tooling_root):
+def run(arguments=None, *, tooling_root, prog=None):
     """Return a stable CLI failure code without exposing an implementation traceback."""
     try:
-        main(arguments, tooling_root=tooling_root)
+        main(arguments, tooling_root=tooling_root, prog=prog)
         return 0
     except (OSError, ValueError, KeyError, RuntimeError, subprocess.SubprocessError, ET.ParseError) as error:
         print('ros2android-workspace: ' + str(error), file=sys.stderr)

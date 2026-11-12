@@ -77,6 +77,9 @@ platform source or relying on this maintainer's prepared PC.
 - [x] Run isolated installed-wheel CI for Python 3.10/3.12; both hosted jobs pass.
 - [ ] Validate the installed-client journey on a clean Linux machine.
 - [ ] Refine inspect → build → deploy → start → observe → stop errors and guides.
+      Help lists each step and the journey; `workspace ... ros` observes with the
+      matching middleware/message overlay; `status` explains pauses and battery
+      policy. A fresh-machine walkthrough still has to confirm the guide.
 - [x] Document signed runner upgrades, rollback limits and development-key ownership.
 - [x] Compare local APK identity/signature/version before installation without contacting a phone.
 - [ ] Qualify actual same-key upgrades, profile preservation and rollback on devices.

@@ -6,6 +6,12 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Add `workspace ... ros -- <ros2 args>` to observe a deployed workspace from the
+  PC with the project middleware and the workspace's host-build message overlay.
+  Describe every workspace step and the build→observe journey in `--help`, print
+  pause/battery hints with `status`, name the installed commands correctly, and run
+  the module CLI from a source checkout instead of failing on a missing bundled SDK.
+
 - Declare and request notification permission (once, at the first session or
   project start) on Android 13+, where foreground-service notifications and their
   Stop actions are otherwise hidden. Add a pre-release security/privacy review and

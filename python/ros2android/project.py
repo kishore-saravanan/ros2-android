@@ -45,9 +45,9 @@ def validate_start(domain, namespace, peer, local, arguments):
     return result
 
 
-def main(arguments=None, *, tooling_root):
+def main(arguments=None, *, tooling_root, prog=None):
     root = Path(tooling_root)
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(prog=prog, description=__doc__)
     parser.add_argument('--project', type=Path, default=root / 'examples/cpp_talker')
     parser.add_argument('--serial', help='Optional ADB serial; otherwise use the single physical device')
     commands = parser.add_subparsers(dest='command', required=True)
@@ -75,7 +75,7 @@ def main(arguments=None, *, tooling_root):
     start.add_argument('--local', default='')
     start.add_argument('ros_args', nargs=argparse.REMAINDER, help='ROS flags after --, e.g. -- -p message:=Hello')
     commands.add_parser('stop', help='Request cooperative project shutdown')
-    commands.add_parser('status', help='Show installed project source ID and native heartbeat')
+    commands.add_parser('status', help='Show runner state, nodes, health and native heartbeat (JSON)')
     commands.add_parser('kill', help='Force-stop only this generated runner for recovery/isolation tests')
     commands.add_parser('logs', help='Stream only this runner process logs; Ctrl+C stops viewing')
     args = parser.parse_args(arguments)
@@ -251,7 +251,10 @@ def main(arguments=None, *, tooling_root):
             raise RuntimeError('Installed source differs from the local project. Rebuild/deploy or switch --project.')
         print(json.dumps(info, indent=2, ensure_ascii=False))
     elif args.command == 'status':
-        print(json.dumps(control('STATUS'), indent=2, ensure_ascii=False))
+        info = control('STATUS')
+        print(json.dumps(info, indent=2, ensure_ascii=False))
+        for hint in health_hints(info, package):
+            print(hint, file=sys.stderr)
     elif args.command == 'stop':
         info = control('STOP')
         deadline = time.monotonic() + 10
@@ -271,9 +274,25 @@ def main(arguments=None, *, tooling_root):
         device('logcat', '--pid=' + pid, capture=False)
 
 
-def run(arguments=None, *, tooling_root):
+def health_hints(info, package):
+    """Operator hints from the optional runner health object (absent on older runners)."""
+    health = info.get('health') if isinstance(info, dict) else None
+    if not isinstance(health, dict):
+        return []
+    hints = []
+    pauses = health.get('pauses') or 0
+    if pauses:
+        hints.append(f"warning: Android paused {package} {pauses} time(s), longest "
+                     f"{(health.get('longestPauseMs') or 0) / 1000:.1f} s, during its current or last run. "
+                     'Allow background activity for it in Android app settings, restart and check fresh data.')
+    if health.get('batteryOptimized') is True:
+        hints.append(f'note: battery optimization applies to {package}; Android may pause it in the background.')
+    return hints
+
+
+def run(arguments=None, *, tooling_root, prog=None):
     try:
-        main(arguments, tooling_root=tooling_root)
+        main(arguments, tooling_root=tooling_root, prog=prog)
         return 0
     except KeyboardInterrupt:
         return 130

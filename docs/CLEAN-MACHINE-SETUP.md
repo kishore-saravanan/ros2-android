@@ -123,9 +123,23 @@ ros2-android workspace --workspace /absolute/path/my_ws build --without-shell \
 
 The `--controller-apk` file must be the main APK installed on the phone; only its
 public certificate is used. Omit it for the existing same-signature development
-path. Use [workspace build/deployment](COLCON-WORKSPACES.md) for deploy, approval,
-start, status, traffic verification and stop. A diagnostic pass or successful APK
-build does not establish ROS traffic or actuator behavior.
+path. Then deploy, start, observe and stop it. Observation needs the PC on the
+phone's network (USB tethering or the same Wi-Fi) and the same ROS domain:
+
+```bash
+ws=/absolute/path/my_ws
+ros2-android workspace --workspace "$ws" deploy
+ros2-android workspace --workspace "$ws" start --domain 42
+ros2-android workspace --workspace "$ws" status    # JSON; pause/battery hints on stderr
+ROS_DOMAIN_ID=42 ros2-android workspace --workspace "$ws" ros -- topic list
+ros2-android workspace --workspace "$ws" stop
+```
+
+`ros` runs the PC's ROS 2 CLI with the project's Cyclone DDS middleware and, after
+`host-build`, this workspace's message types. `ros2-android workspace --help` lists
+every step. See [workspace build/deployment](COLCON-WORKSPACES.md) for approval,
+launch arguments and traffic probes. A diagnostic pass or successful APK build does
+not establish ROS traffic or actuator behavior.
 
 ## Qualification record still required
 

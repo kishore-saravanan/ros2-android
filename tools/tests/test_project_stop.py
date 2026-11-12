@@ -61,3 +61,15 @@ class ProjectStopTest(unittest.TestCase):
         self.assertEqual(stopped, json.loads(output))
         self.assertEqual("", errors)
         self.assertEqual(1, len(calls))
+
+
+class StatusHealthHintTest(unittest.TestCase):
+    def test_hints_explain_pauses_and_battery_policy_and_ignore_old_runners(self):
+        from ros2android.project import health_hints
+        package = 'dev.ros2android.android.runner.demo'
+        self.assertEqual([], health_hints({'state': 'Running'}, package))  # older runner: unknown, no claim
+        self.assertEqual([], health_hints({'health': {'pauses': 0, 'batteryOptimized': False}}, package))
+        hints = health_hints({'health': {'pauses': 2, 'longestPauseMs': 2200, 'batteryOptimized': True}}, package)
+        self.assertEqual(2, len(hints))
+        self.assertIn('paused dev.ros2android.android.runner.demo 2 time(s), longest 2.2 s', hints[0])
+        self.assertIn('battery optimization applies', hints[1])

@@ -2,6 +2,7 @@
 import contextlib
 import io
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -80,4 +81,55 @@ class WorkspaceCommandTest(unittest.TestCase):
         self.assertEqual(2, code)
         self.assertIn('another workspace', error)
         self.assertEqual('/another/workspace', owner.read_text())
+        self.backend.assert_not_called()
+
+
+class WorkspaceJourneyTest(unittest.TestCase):
+    """Help explains each step; ros observes from the PC with the workspace's own message overlay."""
+
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+        self.home = self.root / 'home'; self.home.mkdir()
+        self.workspace = self.root / 'demo_ws'; (self.workspace / 'src').mkdir(parents=True)
+        self.addCleanup(patch.stopall)
+        patch('ros2android.workspace.Path.home', return_value=self.home).start()
+        self.backend = patch('ros2android.workspace.subprocess.run').start()
+
+    def invoke(self, *arguments):
+        with contextlib.redirect_stdout(io.StringIO()) as output, contextlib.redirect_stderr(io.StringIO()) as error:
+            try:
+                code = run(['--workspace', str(self.workspace), *arguments], tooling_root=self.root / 'sdk',
+                           prog='ros2-android workspace')
+            except SystemExit as failure:
+                code = failure.code
+        return code, output.getvalue(), error.getvalue()
+
+    def test_help_names_every_step_and_the_journey(self):
+        code, output, _ = self.invoke('--help')
+        self.assertEqual(0, code)
+        self.assertIn('usage: ros2-android workspace', output)
+        for step in ('inspect', 'host-build', 'build', 'ros', 'deploy', 'start', 'status', 'stop', 'kill', 'logs', 'launch-plan'):
+            self.assertRegex(output, rf'\n    {re.escape(step)}\s+[A-Z]')
+        self.assertIn('typical journey:', output)
+
+    def test_ros_uses_the_workspace_overlay_and_pc_middleware_wrapper(self):
+        overlay = self.home / '.cache/ros2-android-workspaces/demo_ws/host/install/local_setup.bash'
+        overlay.parent.mkdir(parents=True); overlay.write_text('')
+        code, _, error = self.invoke('ros', '--interface', '192.0.2.10', '--', 'topic', 'echo', '/result')
+        self.assertEqual(0, code); self.assertEqual('', error)
+        command = self.backend.call_args.args[0]
+        self.assertEqual([str(self.root / 'sdk/tools/pc-ros.sh'), '--interface', '192.0.2.10', '--', 'ros2', 'topic', 'echo', '/result'], command)
+        self.assertEqual(str(overlay), self.backend.call_args.kwargs['env']['ROS2_ANDROID_PROJECT_OVERLAY'])
+
+    def test_ros_without_host_build_still_runs_but_explains_custom_types(self):
+        code, _, error = self.invoke('ros', '--', 'topic', 'list')
+        self.assertEqual(0, code)
+        self.assertIn('custom message types need host-build first', error)
+        self.assertFalse((self.home / '.cache').exists())
+
+    def test_ros_requires_a_command(self):
+        code, _, error = self.invoke('ros')
+        self.assertEqual(2, code)
+        self.assertIn('Provide ros2 arguments after --', error)
         self.backend.assert_not_called()

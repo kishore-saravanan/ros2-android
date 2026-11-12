@@ -236,8 +236,17 @@ ros2 topic echo /android_test/input
 ros2 topic echo /android_test/result
 ```
 
-Use the project-local Cyclone wrapper for parameter-service interoperability as
-explained in the earlier guides. Ctrl+C only stops topic viewing.
+The workspace command wraps both steps (matching middleware plus this workspace's
+host-build overlay), from the installed client or the source wrapper:
+
+```bash
+ROS_DOMAIN_ID=42 ros2-android workspace --workspace examples/android_test_ws ros -- topic echo /android_test/result
+ROS_DOMAIN_ID=42 ./tools/ros2android-workspace --workspace examples/android_test_ws ros -- param list
+```
+
+Add `ros --interface PC_IP` to pin discovery to one PC address. Use the project-local
+Cyclone wrapper for parameter-service interoperability as explained in the earlier
+guides. Ctrl+C only stops topic viewing.
 
 The physical child-process failure regression is:
 

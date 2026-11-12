@@ -15,8 +15,19 @@ from . import __version__
 from .diagnostics import PROFILES, compatibility, diagnose
 
 
+class MissingSdk(RuntimeError):
+    pass
+
+
 def sdk_root():
     archive = files('ros2android').joinpath('sdk.zip')
+    if not archive.is_file():
+        # Source checkouts run the backends in place, like the tools/ compatibility wrappers.
+        source = Path(__file__).resolve().parents[2]
+        if (source / 'native/ros-sources.lock.json').is_file():
+            return source
+        raise MissingSdk('This ros2-android installation has no bundled SDK snapshot. Install a wheel built with '
+                         'setup/build-python-package.py; a plain pip build of the source omits it.')
     data = archive.read_bytes()
     digest = hashlib.sha256(data).hexdigest()[:16]
     cache = Path(os.environ.get('XDG_CACHE_HOME', Path.home() / '.cache')) / 'ros2-android' / 'tooling'
@@ -94,13 +105,17 @@ def main():
     if args.command == 'setup' and remaining[:1] == ['build-tools']:
         from .build_tools import run as build_tools
         return build_tools(remaining[1:])  # Host tool environment; needs no bundled SDK.
-    root = sdk_root()
+    try:
+        root = sdk_root()
+    except MissingSdk as error:
+        print('ros2-android: ' + str(error), file=sys.stderr)
+        return 1
     if args.command == 'project':
         from .project import run
-        return run(remaining, tooling_root=root)
+        return run(remaining, tooling_root=root, prog='ros2-android project')
     if args.command == 'workspace':
         from .workspace import run
-        return run(remaining, tooling_root=root)
+        return run(remaining, tooling_root=root, prog='ros2-android workspace')
     if args.command == 'device':
         device_parser = argparse.ArgumentParser(prog='ros2-android device')
         device_parser.add_argument('action', choices=['setup'])

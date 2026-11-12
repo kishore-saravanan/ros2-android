@@ -155,3 +155,18 @@ class HostDiagnosticsTest(unittest.TestCase):
         self.assertEqual({name: list(abis) for name, abis in RUNTIME_ABIS.items()}, matrix['contracts']['runtimeAbis'])
         protocol = (ROOT / 'android/protocol/src/main/java/dev/ros2android/protocol/ProjectProtocol.kt').read_text()
         self.assertIn(f"const val VERSION = {matrix['contracts']['managementProtocol']}", protocol)
+
+
+class SourceCheckoutSdkTest(unittest.TestCase):
+    def test_checkout_runs_backends_in_place_and_broken_installs_fail_clearly(self):
+        with patch.object(cli, 'files') as resources:
+            resources.return_value.joinpath.return_value.is_file.return_value = False
+            self.assertEqual(ROOT, cli.sdk_root())  # this test runs from a source checkout
+            with patch.object(cli.Path, 'is_file', return_value=False), \
+                    self.assertRaisesRegex(cli.MissingSdk, 'no bundled SDK snapshot'):
+                cli.sdk_root()
+            with patch.object(cli, 'sdk_root', side_effect=cli.MissingSdk('no bundled SDK snapshot')), \
+                    patch.object(sys, 'argv', ['ros2-android', 'workspace', '--workspace', '.', 'inspect']), \
+                    contextlib.redirect_stderr(io.StringIO()) as error:
+                self.assertEqual(1, cli.main())
+            self.assertIn('ros2-android: no bundled SDK snapshot', error.getvalue())
