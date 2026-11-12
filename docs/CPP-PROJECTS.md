@@ -63,7 +63,9 @@ Names, namespaces, remaps and initial parameters are supported:
 ```
 
 This creates `/robot/worker` and `/robot/worker_status`. Stop before changing
-startup arguments. `kill` force-stops only the selected project runner if a user
+startup arguments. A stop timeout or cleanup failure returns a nonzero CLI exit
+code; inspect status/logs before deciding how to recover. `kill` force-stops only
+the selected project runner if a user
 callback prevents cooperative shutdown; restart explicitly with `start`.
 
 ## Edit your project

@@ -185,7 +185,10 @@ APK native libraries, rather than a writable data-directory binary.
 ./tools/ros2android-workspace --workspace examples/android_test_ws stop
 ```
 
-Stop terminates this workspace's launched child processes. If a child exits, the
+Stop terminates this workspace's launched child processes. A timed-out backend
+transition or cleanup failure returns a nonzero CLI exit code; inspect `status`
+and `logs` before retrying. Force-stop with `kill` is an explicit recovery action,
+never an automatic fallback. If a child exits, the
 controller reports the component/exit code, stops the remaining group and permits
 an explicit restart. No automatic respawn policy is enabled. The main sensor app
 and other project runner apps are separate.

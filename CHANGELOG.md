@@ -6,6 +6,9 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Return a CLI error when cooperative stop reaches its deadline with a backend
+  still transitioning, or reports a cleanup failure; never force-stop automatically.
+
 - Make the shared runner execution/configuration boundary compiler-checked across
   factory C++, embedded Python and workspace backends, retaining service-owned
   lifecycle and existing execution models.

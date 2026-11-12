@@ -30,10 +30,9 @@ documentation before running it so it participates in the check.
 [Platform checks](../.github/workflows/checks.yml) runs these two groups on hosted
 runners for PRs and pushes to develop/main. Actions are pinned, permissions are
 read-only and no hardware/signing secrets are used, following
-[GitHub workflow security guidance](https://docs.github.com/en/actions/reference/security/secure-use). The hosted host/documentation job passed on 2026-11-11. The Android job failed
-in SDK setup (`sdkmanager` was not on PATH), before tests/lint ran. The workflow
-now resolves it from the Android SDK root. The corrected workflow still needs a
-new hosted run; a clean-source local JVM/lint pass is not a hosted CI result.
+[GitHub workflow security guidance](https://docs.github.com/en/actions/reference/security/secure-use). The Android job resolves `sdkmanager` from the configured Android SDK root.
+Hosted checks cover only their declared jobs; a local source-export check is
+not a hosted CI result or proof of native/device interoperability.
 
 ## Installed client: isolated package checks
 
@@ -72,6 +71,11 @@ does not establish interoperability. Follow [Development](DEVELOPMENT.md) for
 native SDK preparation and [Status](STATUS.md) for qualification boundaries.
 
 ## Runner request regression without hardware
+
+Host `test_project_stop.py` checks CLI stop outcomes with controlled time and
+runner replies: an unfinished backend transition or cleanup failure returns an
+error, successful completion is accepted, and an already stopped runner remains
+idempotent. No failure automatically sends a force-stop command.
 
 `ProjectRequestsTest` uses controlled elapsed times to cover deadline boundaries,
 status-poll replacement by operator commands, no command queue/replay, duplicate

@@ -239,8 +239,10 @@ def main(arguments=None, *, tooling_root):
         deadline = time.monotonic() + 10
         while time.monotonic() < deadline and (info.get('busy') or info.get('native', {}).get('running') or info.get('native', {}).get('transition')):
             time.sleep(.2); info = control('STATUS')
-        if info.get('native', {}).get('running') or info.get('busy'):
-            raise RuntimeError('Cooperative stop did not finish; use kill for a stuck runner: ' + json.dumps(info))
+        if (info.get('native', {}).get('running') or info.get('native', {}).get('transition')
+                or info.get('busy') or info.get('state', '').startswith('Stop failed')):
+            raise RuntimeError('Cooperative stop did not finish; inspect status/logs before retrying. '
+                               'Use kill only to force-stop this runner: ' + json.dumps(info))
         print(json.dumps(info, indent=2))
     elif args.command == 'kill':
         print(remote('am', 'force-stop', package).strip() or ('Force-stopped ' + package))
