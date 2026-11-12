@@ -1,10 +1,12 @@
 package dev.ros2android.android
 
+import android.app.ActivityManager
 import android.app.KeyguardManager
 import android.content.*
 import android.os.*
 import android.provider.Settings
 import androidx.lifecycle.Lifecycle
+import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -26,7 +28,15 @@ class WorkspaceLocalLifecycleTest {
 
     @Test fun offlineResultsContinueInBackgroundAndRecoverAfterRestart() = qualify(background = true)
 
-    private fun qualify(background: Boolean) {
+    @Test fun offlineResultsSurviveOwnTaskRemoval() = qualify(false, Interruption.TASK_REMOVAL)
+
+    @Test fun offlineResultsRecoverAfterNativeChildExit() = qualify(false, Interruption.CHILD_EXIT)
+
+    @Test fun offlineResultsRecoverAfterRunnerDeath() = qualify(false, Interruption.RUNNER_DEATH)
+
+    private enum class Interruption { NONE, TASK_REMOVAL, CHILD_EXIT, RUNNER_DEATH }
+
+    private fun qualify(background: Boolean, interruption: Interruption = Interruption.NONE) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val target = InstrumentationRegistry.getArguments().getString("workspaceLocalTestPackage")
         assumeTrue("Requires the disposable workspace fixture", target != null)
@@ -45,6 +55,32 @@ class WorkspaceLocalLifecycleTest {
         lateinit var session: RobotSessionService
         lateinit var control: ProjectController
         var controlReady = false
+        var disconnected = false
+        var replacement: ActivityScenario<MainActivity>? = null
+        data class OwnProcess(val pid: Int, val parent: Int, val name: String)
+        val fixtureUid = context.packageManager.getApplicationInfo(target, 0).uid
+        fun shell(command: String): String {
+            if (Build.VERSION.SDK_INT >= 31) {
+                val streams = instrumentation.uiAutomation.executeShellCommandRwe(command)
+                streams[1].close()
+                val output = ParcelFileDescriptor.AutoCloseInputStream(streams[0]).bufferedReader().use { it.readText().trim() }
+                val error = ParcelFileDescriptor.AutoCloseInputStream(streams[2]).bufferedReader().use { it.readText().trim() }
+                check(error.isEmpty()) { "Fixture shell command failed: $error" }
+                return output
+            }
+            return ParcelFileDescriptor.AutoCloseInputStream(instrumentation.uiAutomation.executeShellCommand(command))
+                .bufferedReader().use { it.readText().trim() }
+        }
+        fun processes(): List<OwnProcess> = shell("run-as $target ps -u $fixtureUid -o PID,PPID,NAME")
+            .lineSequence().drop(1).filter { it.isNotBlank() }.map {
+                val fields = it.trim().split(Regex("\\s+"), limit = 3)
+                OwnProcess(fields[0].toInt(), fields[1].toInt(), fields[2])
+            }.toList()
+        fun inject(action: String) {
+            val reply = shell("am broadcast --include-stopped-packages -n $target/dev.ros2android.runner.DebugControlReceiver -a dev.ros2android.runner.$action")
+            check(reply.contains("result=0")) { "Fixture rejected failure injection: $reply" }
+        }
+        var injectedChildren = emptyList<OwnProcess>()
         val bound = CountDownLatch(1)
         val connection = object : ServiceConnection {
             override fun onServiceConnected(name: ComponentName, binder: IBinder) {
@@ -63,7 +99,9 @@ class WorkspaceLocalLifecycleTest {
         }
         fun connect() {
             main {
-                control = ProjectController(context, InstalledProjects.list(context).single { it.packageName == target }) {}
+                control = ProjectController(context, InstalledProjects.list(context).single { it.packageName == target }) {
+                    if (control.error != null) disconnected = true
+                }
                 controlReady = true
                 control.connect()
             }
@@ -146,6 +184,63 @@ class WorkspaceLocalLifecycleTest {
                 return previous
             }
             observe("foreground", 3000)
+            if (interruption == Interruption.TASK_REMOVAL) {
+                var task = -1
+                main { control.close() }
+                activity.scenario.onActivity { app ->
+                    check(app.hasWindowFocus() && !keyguard.isKeyguardLocked)
+                    task = app.taskId
+                    app.finishAndRemoveTask()
+                }
+                val removedBy = SystemClock.elapsedRealtime() + 5000
+                while (activity.scenario.state != Lifecycle.State.DESTROYED && SystemClock.elapsedRealtime() < removedBy) {
+                    SystemClock.sleep(100)
+                }
+                assertEquals("Main Activity was not destroyed", Lifecycle.State.DESTROYED, activity.scenario.state)
+                waitFor("Main app task was not removed") {
+                    context.getSystemService(ActivityManager::class.java).appTasks.none { it.taskInfo.taskId == task }
+                }
+                observe("task-removed", 30000)
+                replacement = ActivityScenario.launch(MainActivity::class.java)
+                connect(); state("Running")
+            }
+            if (interruption == Interruption.CHILD_EXIT || interruption == Interruption.RUNNER_DEATH) {
+                val parent = processes().single { it.name == target }
+                injectedChildren = processes().filter { it.parent == parent.pid && it.name.startsWith("libworkspace_exec_") }
+                assertEquals("Expected only the fixture's two workspace children", 2, injectedChildren.size)
+                if (interruption == Interruption.CHILD_EXIT) {
+                    check(injectedChildren.single { it.name.contains("talker") }.parent == parent.pid)
+                    inject("TEST_EXIT_CHILD")
+                    waitFor("Supervisor did not report the node exit") {
+                        control.poll()
+                        control.status?.optString("state")?.let { it.startsWith("Failed:") && it.contains("exited with code") } == true
+                    }
+                } else {
+                    main { disconnected = false }
+                    inject("TEST_EXIT_RUNNER")
+                    waitFor("Runner death did not invalidate the control connection") { disconnected }
+                    main { control.close() }
+                    connect(); state("Stopped")
+                }
+                waitFor("Native workspace processes survived failure") {
+                    processes().none { it.name.startsWith("libworkspace_exec_") }
+                }
+                SystemClock.sleep(6000)
+                main {
+                    assertEquals("Results continued after failure", "Stale", session.dashboardReadings[widget.id]!!.state(SystemClock.elapsedRealtime()))
+                    val config = control.status!!.getJSONObject("config")
+                    assertEquals("87", config.getString("domain"))
+                    assertEquals("/android_test", config.getString("namespace"))
+                    for (key in listOf("peer", "local")) assertEquals(if (key == "local") local else "", config.getString(key))
+                    assertEquals("[]", config.getString("ros_args"))
+                }
+                command(2); state("Running")
+                waitFor("No fresh results after explicit failure recovery") {
+                    session.dashboardReadings[widget.id]?.state(SystemClock.elapsedRealtime()) == "Live"
+                }
+                observe("${interruption.name.lowercase()}-recovery", 3000)
+                return
+            }
             if (background) {
                 if (!keepBound) main { control.close() }
                 activity.scenario.moveToState(Lifecycle.State.CREATED)
@@ -192,9 +287,10 @@ class WorkspaceLocalLifecycleTest {
             if (controlReady) main { control.close() }
             context.unbindService(connection)
             // A timed-out manual trial must not attempt UI work on a locked phone.
-            if (power.isInteractive && !keyguard.isKeyguardLocked) {
+            if (power.isInteractive && !keyguard.isKeyguardLocked && activity.scenario.state != Lifecycle.State.DESTROYED) {
                 activity.scenario.moveToState(Lifecycle.State.RESUMED)
             }
+            replacement?.close()
         }
     }
 }

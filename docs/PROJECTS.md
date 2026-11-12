@@ -28,6 +28,19 @@ robot-wide emergency stop or a per-node kill command.
 Projects start locally without a PC. For automatic/phone-local address settings
 and pending offline qualification, see [Standalone operation](STANDALONE-OPERATION.md).
 
+## Recover a failed workspace
+
+For ordinary C++ workspaces, an unexpected child-node exit makes the supervisor
+report Failed and stop the other supervised nodes. Expand Logs to inspect the
+failure, correct its cause, then explicitly Start project and verify fresh ROS
+data. Runner-process death can instead disconnect controls and lose the in-memory
+log tail. Refresh/reconnect, check the saved profile and start explicitly; a
+reconnected Stopped card does not mean nodes resumed automatically.
+
+Reference fixture tests cover both cases. Removing the main app's own task also
+preserved local traffic in a bounded test, but vendor Recents behavior, Force stop
+and main-app process death still need separate qualification.
+
 ## First workspace
 
 From the repository root on your Linux PC, with DEVELOPMENT.md prerequisites:

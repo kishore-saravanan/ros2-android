@@ -34,14 +34,18 @@ a PC or an external network.
 - [ ] Exercise screen-off, task removal, process death and vendor power management.
       A five-minute Wi-Fi-off C++ workspace background trial passes on the reference
       phone with background activity allowed for both apps. A separate 60-second
-      screen-off trial also passes while USB-connected to the PC. Task removal,
-      process death, unplugged idle, other devices and endurance remain open.
+      screen-off trial also passes while USB-connected to the PC. Own-task removal,
+      native-child exit and runner-process death tests pass for the C++ fixture.
+      Vendor Recents swipes, main-app death, Force stop, unplugged idle, other
+      devices/backends and endurance remain open.
 - [ ] Test Dashboard lost-link/late-subscriber behavior and distinguish local writes
       from remote acknowledgement.
 - [x] Isolate control requests and reject stale replies; unit-test timeout/reconnect rules.
 - [x] Prepare an opt-in stopped-fixture test for legacy requests and version rejection without state changes.
 - [x] Qualify current-service legacy/versioned status and invalid request rejection without state changes.
 - [ ] Complete old-runner, delayed-reply, service-death and update/reconnect qualification.
+      Current runner-process SIGKILL invalidates controls and reconnects to Stopped;
+      the broader compatibility/update matrix remains open.
 - [ ] Review independent signing, update/reinstall, revocation and key rotation.
 
 **Exit gate:** repeatable fault/recovery matrix with independent ROS traffic

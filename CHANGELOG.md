@@ -6,6 +6,11 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Add disposable C++ workspace qualification for own-task removal, native-child
+  failure and abrupt runner death, including profile preservation and explicit
+  restart with verified ROS results. Failure hooks are debug-only, DUMP-protected
+  and restricted to the protocol fixture; release APKs exclude them.
+
 - Add app-specific Android settings shortcuts for main-app and runner background
   operation. Keep battery-policy changes user-controlled. Extend offline workspace
   qualification with longer trials and frozen-observer detection.

@@ -24,6 +24,7 @@ class DebugControlReceiver : BroadcastReceiver() {
                     }.start()
                     return
                 }
+                FixtureFailure.CHILD, FixtureFailure.RUNNER -> FixtureFailure.schedule(context, intent.action!!)
                 ProjectService.STOP -> ProjectService.current?.stopProject()
                 "dev.ros2android.runner.STATUS" -> Unit
                 else -> error("Unknown development command")

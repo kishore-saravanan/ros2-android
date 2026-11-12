@@ -215,8 +215,8 @@ isolated String self-probe distinguishes main-app reception from workspace outpu
 Before the background-policy change, the self-probe remained fresh while
 workspace results stalled; retaining the binding did not prevent the gap.
 
-These are explicit device tests, not unattended CI. Task removal, process death,
-USB coexistence and longer endurance remain separate cases.
+These are explicit device tests, not unattended CI. The bounded interruption
+cases below, USB coexistence and longer endurance require separate qualification.
 
 ### Manual screen-off trial
 
@@ -239,6 +239,45 @@ The reference device passed a 60-second screen-off trial with Wi-Fi off and both
 apps allowed background activity: 301 distinct verified results, followed by
 stop/Stale and restart/fresh recovery after normal unlock. The phone remained
 USB-connected to the development PC; repeat unplugged idle separately.
+
+
+### Task removal and abrupt process failure
+
+Three opt-in methods use the same allowlisted disposable workspace and offline
+ROS result checks:
+
+- `offlineResultsSurviveOwnTaskRemoval`: removes the main app's own task through
+  `finishAndRemoveTask`, checks 30 seconds of fresh results without a project
+  management binding, then reopens the app and checks stop/restart recovery.
+- `offlineResultsRecoverAfterNativeChildExit`: sends SIGKILL to the fixture's
+  talker through a debug-only self-failure hook, requires the supervisor to report
+  failure and remove the sibling, checks Stale, then explicitly starts and verifies fresh results.
+- `offlineResultsRecoverAfterRunnerDeath`: kills the fixture's runner process,
+  requires the control connection to invalidate, checks no workspace children
+  remain, reconnects to Stopped with the saved profile, and verifies fresh data
+  only after an explicit Start.
+
+Select each method using the same `class=...WorkspaceLocalLifecycleTest#METHOD`
+and `workspaceLocalTestPackage` arguments above. Process injection requires a
+**debuggable disposable runner**; never use a real robot workspace. The test reads
+only that fixture UID's processes. Rebuild/install the current debug runner before
+running these methods. Its existing DUMP-protected debug receiver accepts the two
+fixed test actions only for `ws_protocol_workspace` while Running. The runner
+finds its own talker child, or its own PID; callers cannot supply a PID, command
+or component. The hook is absent from release source sets and rejects ordinary
+workspace package names. External `run-as` signals are not required.
+
+The task-removal case leaves instrumentation and the bound observer service
+alive. It does not qualify vendor-specific swiping behavior, main-app process
+death, Force stop or automatic restart. Runner SIGKILL is an abrupt process-death
+case, not a low-memory-killer, native-crash or app-upgrade simulation.
+
+All three methods passed on the reference device with Wi-Fi off. Task removal
+received 151 distinct verified results over 30 seconds and recovered stop/restart
+controls. Child exit reported failure and removed the sibling; runner death
+invalidated the control session and left no workspace children. Both failure cases
+preserved the profile, became Stale and received fresh verified results after an
+explicit restart. This qualifies the disposable C++ fixture, not every backend.
 
 ## Offline network policy
 
