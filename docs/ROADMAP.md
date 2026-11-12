@@ -60,6 +60,9 @@ a PC or an external network.
       Current runner-process SIGKILL invalidates controls and reconnects to Stopped;
       the broader compatibility/update matrix remains open.
 - [ ] Review independent signing, update/reinstall, revocation and key rotation.
+      Reviewed and documented per scenario in [runner authorization](RUNNER-AUTHORIZATION.md):
+      strict current-certificate pins, so a main-app key rotation is a planned runner
+      rebuild. A physical/emulator rotation drill and multi-author trials remain.
 
 **Exit gate:** repeatable fault/recovery matrix with independent ROS traffic
 observations, preserved configuration and clear stop scopes. No UI status label

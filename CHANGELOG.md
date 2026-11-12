@@ -6,6 +6,9 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Document runner authorization behavior for every signer change, reinstall and
+  revocation, and why main-app key rotation requires rebuilding paired runners.
+
 - Verify that updating a running runner while the app is bound fails closed, keeps
   the runner Stopped with its profile and replays nothing (C++ and Python runners);
   the phone qualification batch includes this check.

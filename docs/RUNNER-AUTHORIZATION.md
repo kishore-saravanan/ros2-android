@@ -71,6 +71,39 @@ See [the design decision](decisions/0002-runner-certificate-authorization.md).
 For file-level identity checks and same-key update/rollback procedures, see
 [Upgrading](UPGRADING.md). Comparing APKs does not authorize a runner or install it.
 
+## Signer changes, reinstalls and key rotation
+
+Both checks use the **current** APK signer only (`SigningIdentity.current`): the runner
+compares the main app's current certificate with its compiled pin, and the main app
+compares a runner's current certificate with the locally approved one. Packages with
+several signers are rejected.
+
+| Change | Result | What to do |
+| --- | --- | --- |
+| Runner update signed by the same key | Approval kept; controls reconnect after Refresh | Install updates only from that author |
+| Runner reinstalled after uninstall, same key | Approval kept (stored per package and certificate in the main app) | Revoke first if you no longer trust it |
+| Runner signed by a different key | Approval no longer matches; controls refused | Review the new certificate and authorize again, or reject |
+| Main app reinstalled after uninstall | All approvals are lost with its data | Authorize each runner again |
+| Main app signed by a new key, with or without a v3 rotation lineage | Every paired runner shows **Rebuild runner for this controller APK** and refuses requests | Rebuild runners with the new main APK as `--controller-apk` |
+| Approval revoked | Main app stops controlling the runner; a running project keeps running | Stop first; the runner screen still controls it |
+
+Android 9+ can check a package's signing *history* (`PackageManager.hasSigningCertificate`)
+so that a v3 rotation keeps trusting older keys. The runner deliberately does not: a key is
+usually rotated because it should no longer be trusted, and accepting the history would let
+any APK signed with the old key keep controlling runners. Rotating the main app's key is
+therefore a planned migration:
+
+1. Create the new key and a rotation lineage with `apksigner rotate`, and sign the next
+   main APK with `--lineage` so installed copies can update.
+2. Rebuild and redeploy every independently signed runner with that APK as
+   `--controller-apk`, then authorize them again where their certificates changed.
+3. Keep the old key offline; destroy it once no runner pinned to it remains.
+
+A compromised **runner** key lets its holder ship updates that keep their approval, and a
+compromised **main app** key lets a look-alike app control every runner pinned to it. Both
+need the attacker to install the APK on the phone (ADB or sideloading). Revoke approvals,
+rebuild runners with a new pin and reinstall from trusted sources.
+
 ## Actual verification and remaining work
 
 Reference-device tests used a separate disposable signing key, a three-package
@@ -87,7 +120,7 @@ The test runner used `--without-shell`; full-shell independent-signing and Pytho
 runners still need physical qualification. Their shared Kotlin control code
 compiles, but compilation is not runtime evidence.
 
-Pending: API 26/other Android versions, signer update/reinstall/rotation scenarios,
+Pending: API 26/other Android versions, a rotation drill exercising the table above,
 multiple independently signed authors, adversarial Binder/load review, recovery
 and broader accessibility/theme testing. Keep this a preview until those gates
 are qualified. Reproduction notes are in [Testing](TESTING.md).
