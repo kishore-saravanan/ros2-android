@@ -21,12 +21,14 @@ class ProjectBrowserUiTest {
         return null
     }
     @Test fun deployedRunnerAppearsAndProjectTabSurvivesRecreation() {
-        val target = InstrumentationRegistry.getArguments().getString("expectedProjectPackage")
+        val arguments = InstrumentationRegistry.getArguments()
+        val target = arguments.getString("expectedProjectPackage")
         assumeTrue("Pass an installed project package to verify discovery", target != null)
+        val runtime = arguments.getString("expectedProjectRuntime") ?: "workspace" // cpp, python or workspace
         activity.scenario.onActivity { app ->
             val projects = InstalledProjects.list(app)
             val project = projects.single { it.packageName == target }
-            assertEquals("workspace", project.runtime)
+            assertEquals(runtime, project.runtime)
             assertEquals("dev.ros2android.runner.MainActivity", project.openIntent().component?.className)
             assertEquals(target, project.openIntent().component?.packageName)
             (find(app.window.decorView, "nav:Projects") as Button).performClick()

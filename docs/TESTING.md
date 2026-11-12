@@ -504,6 +504,37 @@ default vendor battery policy, the runner process was frozen for 1–20 seconds
 report) and the test failed, which is the intended result. Both backends passed
 the earlier Activity-hosted run; the strict Python rerun is pending.
 
+## Newer Android on an emulator
+
+The reference phone runs Android 12. To exercise Android 13–15 behavior (notification
+permission, foreground-service rules, edge-to-edge layout and package visibility)
+without another phone, use an x86_64 **Google APIs** emulator image for API 35. Its
+ARM translation runs the ARM64-only APKs. Keep it in its own SDK root and AVD folder,
+and always select it explicitly, because Gradle otherwise tests every connected device:
+
+```bash
+sdkmanager --sdk_root="$HOME/.cache/ros2-android-emulator-sdk" emulator "system-images;android-35;google_apis;x86_64"
+ANDROID_SERIAL=emulator-5584 ./setup/build.sh :app:connectedDebugAndroidTest
+```
+
+The emulator needs a `platform-tools` folder in its SDK root (a link to the existing
+one works). `Ros2AndroidTestRunner` grants the app's own notification permission on
+Android 13+, so the one-time prompt cannot pause an Activity under test; the prompt
+itself is checked by hand. On the emulator you may turn Wi-Fi off and exempt the test
+apps from battery optimization (`dumpsys deviceidle whitelist +<package>`); do not use
+such commands on a personal phone.
+
+Android 15 results: all UI, theme, accessibility, navigation, endpoint, Dashboard
+controls and native ROS session checks pass; the headless Dashboard peer test passes
+for both the C++ and Python fixtures with zero reported pauses; Projects discovery and
+recreation pass for both runtimes. A deliberate 2.5-second `SIGSTOP` of a running
+runner was reported as one pause of 2.27 s, and the project card, runner screen and
+Details showed the expected text in light and dark mode. The two micro-ROS Agent
+executable checks fail only because the emulator's ARM translation ignores
+`LD_LIBRARY_PATH` for standalone ARM executables; the Agent and workspace child
+nodes therefore need ARM hardware. Emulator results are compatibility evidence, not
+phone qualification: there is no vendor power policy, real radio or USB.
+
 ## Core layout and navigation checks
 
 `ResponsiveNavigationTest` rotates only the app Activity between landscape and

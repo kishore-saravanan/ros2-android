@@ -6,6 +6,12 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Qualify Android 15 compatibility on an emulator with ARM translation: UI, native
+  ROS session, headless Dashboard peers for both runner runtimes and project
+  discovery pass. Add a test runner that grants the app's own notification
+  permission on Android 13+, let the project discovery test target any runtime,
+  and show the background-activity instruction only when it is still needed.
+
 - Add `workspace ... ros -- <ros2 args>` to observe a deployed workspace from the
   PC with the project middleware and the workspace's host-build message overlay.
   Describe every workspace step and the build→observe journey in `--help`, print

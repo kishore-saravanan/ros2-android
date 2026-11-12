@@ -14,7 +14,7 @@ android {
         targetSdk = 35
         versionCode = 8
         versionName = "0.1.1-dev6"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "dev.ros2android.android.Ros2AndroidTestRunner"
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild {
             cmake {

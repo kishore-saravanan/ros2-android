@@ -530,9 +530,10 @@ open class MainActivity : Activity() {
     private fun backgroundSettings(box: LinearLayout, targetPackage: String) {
         // Restriction is only readable for this app; battery optimization is readable for any package.
         val restricted = if (targetPackage == packageName) BackgroundPolicy.backgroundRestricted(this) else null
-        box.addView(text(HealthText.policy(BackgroundPolicy.batteryOptimized(this, targetPackage), restricted), 13)
-            .apply { tag = "background_policy:$targetPackage" })
-        box.addView(text("For background ROS operation, allow background activity in this app’s Android battery settings. Names vary by phone.", 13, muted))
+        val optimized = BatteryPolicyState(BackgroundPolicy.batteryOptimized(this, targetPackage), restricted)
+        box.addView(text(HealthText.policy(optimized.batteryOptimized, restricted), 13).apply { tag = "background_policy:$targetPackage" })
+        if (optimized.needsAction) // Already allowed: the policy line says so; skip the instruction.
+            box.addView(text("For background ROS operation, allow background activity in this app’s Android battery settings. Names vary by phone.", 13, muted))
         box.addView(button("Android app settings") {
             try {
                 startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
@@ -740,4 +741,8 @@ open class MainActivity : Activity() {
     private fun TextView.show(value: String) { if (text.toString() != value) text = value }
     private fun android.view.View.heading() { if (Build.VERSION.SDK_INT >= 28) isAccessibilityHeading = true }
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
+}
+
+private data class BatteryPolicyState(val batteryOptimized: Boolean?, val backgroundRestricted: Boolean?) {
+    val needsAction: Boolean get() = batteryOptimized != false || backgroundRestricted == true
 }
