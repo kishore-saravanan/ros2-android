@@ -278,7 +278,7 @@ open class MainActivity : Activity() {
             navButtons[key] = item
             nav.addView(item, if (overflow) LinearLayout.LayoutParams(-2, -2).apply { item.minWidth = dp(88) } else LinearLayout.LayoutParams(0, -2, 1f))
         }
-        navScroll.addView(nav); shell.addView(navScroll); setContentView(shell)
+        navScroll.addView(nav); shell.addView(navScroll); linkFieldLabels(shell); setContentView(shell)
         if (overflow) navScroll.post { navButtons[if (tab == "Help") "Connect" else tab]?.let { navScroll.scrollTo((it.left - (navScroll.width - it.width) / 2).coerceAtLeast(0), 0) } }
         refresh()
         if (oldScroll > 0) scroll.post { scroll.scrollTo(0, oldScroll) }
@@ -304,8 +304,8 @@ open class MainActivity : Activity() {
     private fun homeScreen() {
         connectHomeProjects()
         card("Connection") { box ->
-            homeConnection = text("", 15).apply { tag = "home_connection"; setTextIsSelectable(true) }.also { box.addView(it) }
-            homeNetworks = text("", 14, muted).apply { tag = "home_networks"; setTextIsSelectable(true) }.also { box.addView(it) }
+            homeConnection = text("", 15).apply { tag = "home_connection"; setTextIsSelectable(true); minHeight = dp(48) }.also { box.addView(it) }
+            homeNetworks = text("", 14, muted).apply { tag = "home_networks"; setTextIsSelectable(true); minHeight = dp(48) }.also { box.addView(it) }
             box.addView(button("Connection settings") { navigate("Connect") }.apply { tag = "home_connection_settings" })
         }
         card("ROS activity") { box ->
@@ -342,10 +342,10 @@ open class MainActivity : Activity() {
                 if (resumed) preview?.postOnAnimation(previewTicker)
             }
             box.addView(text("Topic", 13, muted))
-            val topic = field(prefs.getString("${cap.id}.topic", cap.defaultTopic)!!, "topic:${cap.id}").apply { contentDescription = "ROS topic for ${shortName(cap)}" }; box.addView(topic)
+            val topic = field(prefs.getString("${cap.id}.topic", cap.defaultTopic)!!, "topic:${cap.id}"); box.addView(topic)
             box.addView(text(if (cap.kind == 8) "Publish rate (fps, 0 = auto)" else "Publish rate (Hz)", 13, muted))
             val rate = field(prefs.getString("${cap.id}.rate", cap.defaultRate.toString())!!, "rate:${cap.id}").apply {
-                contentDescription = "Publish rate for ${shortName(cap)}"; inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+                inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
             }; box.addView(rate)
             val state = text("", 14, muted); box.addView(state)
             val publish = primaryButton("Publish") { togglePublisher(cap) }; actionHost.addView(publish)
@@ -365,7 +365,7 @@ open class MainActivity : Activity() {
                     rows.getValue(cap.id).resolution = resolution; info.addView(resolution)
                     info.addView(text("JPEG quality (0–100)", 13, muted))
                     val quality = field(prefs.getString("${cap.id}.quality", "65")!!, "quality:${cap.id}").apply {
-                        contentDescription = "JPEG quality"; inputType = android.text.InputType.TYPE_CLASS_NUMBER
+                        inputType = android.text.InputType.TYPE_CLASS_NUMBER
                     }
                     rows.getValue(cap.id).quality = quality; info.addView(quality)
                     val fpsRanges = runCatching { CameraPublisher.fpsRanges(this, cap.cameraId!!).joinToString { "${it.first}–${it.second}" } }.getOrDefault("Unavailable")
@@ -380,11 +380,11 @@ open class MainActivity : Activity() {
         card("Connection") { box ->
             if (connected) box.addView(text("Stop the session to edit.", 13, muted))
             box.addView(text("ROS domain", 13, muted))
-            val domain = field(prefs.getString("domain", "0")!!, "domain").apply { contentDescription = "ROS domain ID, zero to 101"; inputType = android.text.InputType.TYPE_CLASS_NUMBER }
+            val domain = field(prefs.getString("domain", "0")!!, "domain").apply { inputType = android.text.InputType.TYPE_CLASS_NUMBER }
             profileFields["domain"] = domain; box.addView(domain)
             disclosure(box, "connection_advanced", "Advanced connection") { info ->
                 listOf(Triple("namespace", "Namespace", "/phone"), Triple("peer", "PC IPv4 (optional)", ""), Triple("local", "Phone IPv4 (optional)", "")).forEach { (key, label, fallback) ->
-                    info.addView(text(label, 13, muted)); val value = field(prefs.getString(key, fallback)!!, key).apply { contentDescription = label }
+                    info.addView(text(label, 13, muted)); val value = field(prefs.getString(key, fallback)!!, key)
                     profileFields[key] = value; info.addView(value)
                 }
             }
@@ -426,6 +426,7 @@ open class MainActivity : Activity() {
         projects.forEach { project ->
             card(project.id.replace('_', ' ')) { box ->
             val control = projectControllers.controller(project)
+            val spokenName = project.id.replace('_', ' ')
             val state = text("Connecting…", 15).apply { tag = "project_state:${project.id}" }; box.addView(state)
             val warning = text("", 13, getColor(R.color.ros_error)).apply {
                 tag = "project_pause_warning:${project.id}"; visibility = android.view.View.GONE
@@ -438,11 +439,11 @@ open class MainActivity : Activity() {
             val settings: Button
             var logs: TextView? = null
             // Keep the connection action accessible without filling the card with fields.
-            settings = button("Connection settings") { projectSettings(control) }; box.addView(settings)
-            disclosure(box, "logs:${project.id}", "Logs") { info ->
+            settings = button("Connection settings") { projectSettings(control) }.apply { contentDescription = "Connection settings for $spokenName" }; box.addView(settings)
+            disclosure(box, "logs:${project.id}", "Logs", "Logs for $spokenName") { info ->
                 logs = text(control.status?.optString("logs") ?: "Waiting for runner", 12, muted).apply { tag = "project_logs:${project.id}"; setTextIsSelectable(true) }; info.addView(logs)
             }
-            disclosure(box, "project:${project.id}", "Details") { info ->
+            disclosure(box, "project:${project.id}", "Details", "Details for $spokenName") { info ->
                 info.addView(text("${project.runtimeLabel}\n${project.packageName}\nSource ${project.sourceId}", 12, muted))
                 if (control.trust.paired) {
                     val fingerprint = control.trust.fingerprint()
@@ -461,7 +462,7 @@ open class MainActivity : Activity() {
                     info.addView(text("Revoking disconnects app controls; it does not stop a running project. Stop the project first.", 12, muted))
                 }
                 info.addView(text("Background operation", 14))
-                backgroundSettings(info, project.packageName)
+                backgroundSettings(info, project.packageName, spokenName)
                 info.addView(button("Open runner") { runCatching { save(); startActivity(project.openIntent()) }.onFailure { announce("Could not open project. Refresh and try again.") } }.apply { tag = "open_project:${project.id}" })
             }
             projectRows[project.packageName] = ProjectRow(state, warning, nodes, toggle, settings, logs)
@@ -527,7 +528,7 @@ open class MainActivity : Activity() {
         AlertDialog.Builder(this).setTitle(component).setView(ScrollView(this).apply { addView(body) })
             .setPositiveButton("All licenses") { _, _ -> openSourceLicenses() }.setNegativeButton("Close", null).show()
     }
-    private fun backgroundSettings(box: LinearLayout, targetPackage: String) {
+    private fun backgroundSettings(box: LinearLayout, targetPackage: String, spokenName: String? = null) {
         // Restriction is only readable for this app; battery optimization is readable for any package.
         val restricted = if (targetPackage == packageName) BackgroundPolicy.backgroundRestricted(this) else null
         val optimized = BatteryPolicyState(BackgroundPolicy.batteryOptimized(this, targetPackage), restricted)
@@ -539,7 +540,7 @@ open class MainActivity : Activity() {
                 startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                     Uri.fromParts("package", targetPackage, null)))
             } catch (_: ActivityNotFoundException) { announce("Android app settings are unavailable on this device") }
-        }.apply { tag = "app_settings:$targetPackage" })
+        }.apply { tag = "app_settings:$targetPackage"; spokenName?.let { contentDescription = "Android app settings for $it" } })
     }
     private fun openWebLink(url: String) {
         try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)) }
@@ -692,14 +693,15 @@ open class MainActivity : Activity() {
         if (title.isNotEmpty()) box.addView(text(title, 16).apply { heading() })
         content(box)
     }
-    private fun disclosure(parent: LinearLayout, key: String, title: String, content: (LinearLayout) -> Unit) {
+    private fun disclosure(parent: LinearLayout, key: String, title: String, spoken: String = title, content: (LinearLayout) -> Unit) {
         val container = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; background = surface() }
         val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; tag = "body:$key"; setPadding(dp(12), 0, dp(12), dp(12)); visibility = if (key in expanded) android.view.View.VISIBLE else android.view.View.GONE }
         val toggle = button("") {}.apply { tag = "expand:$key"; gravity = android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL; backgroundTintList = ColorStateList.valueOf(getColor(R.color.ros_surface)) }
         fun update() {
             toggle.show("$title    ${if (key in expanded) "⌃" else "⌄"}")
-            toggle.contentDescription = "$title, ${if (key in expanded) "expanded" else "collapsed"}"
-            if (Build.VERSION.SDK_INT >= 30) toggle.stateDescription = if (key in expanded) "Expanded" else "Collapsed"
+            // API 30+ announces state separately; repeating it in the description doubles it.
+            if (Build.VERSION.SDK_INT >= 30) { toggle.contentDescription = spoken; toggle.stateDescription = if (key in expanded) "Expanded" else "Collapsed" }
+            else toggle.contentDescription = "$spoken, ${if (key in expanded) "expanded" else "collapsed"}"
         }
         update(); toggle.setOnClickListener {
             save(); if (!expanded.add(key)) expanded.remove(key)
@@ -722,8 +724,18 @@ open class MainActivity : Activity() {
         }
         page.addView(row, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(2) }); return secondary
     }
+    /** Screen readers name each field by the visible label placed directly before it. */
+    private fun linkFieldLabels(view: android.view.View) {
+        if (view !is android.view.ViewGroup) return
+        for (i in 0 until view.childCount) {
+            val child = view.getChildAt(i)
+            val previous = if (i > 0) view.getChildAt(i - 1) else null
+            if (child is EditText && previous is TextView && previous !is EditText && previous !is Button) previous.labelFor = child.id
+            linkFieldLabels(child)
+        }
+    }
     private fun field(value: String, description: String) = EditText(this).apply {
-        setSingleLine(); setTextColor(ink); setText(value); tag = description; contentDescription = description
+        setSingleLine(); setTextColor(ink); setText(value); tag = description; id = android.view.View.generateViewId()
         minHeight = dp(52); setPadding(dp(8), dp(8), dp(8), dp(8)); backgroundTintList = ColorStateList.valueOf(muted)
         inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
     }

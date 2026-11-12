@@ -6,6 +6,12 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Run Google's Accessibility Test Framework on core screens in light and dark. Fix
+  what it found: text fields are now named by their visible labels instead of
+  machine identifiers, expandable sections no longer announce their state twice,
+  per-project controls name their project, and selectable Home text meets the
+  48 dp touch target.
+
 - Qualify Android 15 compatibility on an emulator with ARM translation: UI, native
   ROS session, headless Dashboard peers for both runner runtimes and project
   discovery pass. Add a test runner that grants the app's own notification

@@ -537,6 +537,15 @@ phone qualification: there is no vendor power policy, real radio or USB.
 
 ## Core layout and navigation checks
 
+`AccessibilityChecksTest` runs Google's Accessibility Test Framework (latest preset:
+touch targets, labels, editable-field naming, contrast with an in-memory screenshot
+and more) on Home, Sensors, the battery detail, Dashboard, Projects and Settings in
+app-local light and dark previews. It fails on errors and logs warnings under
+`ROS2Accessibility`; screenshots are taken only while the app's own window has focus
+without a lock screen, and are never saved. On the Android 15 emulator it passes with
+no errors; remaining warnings are tab names that match their page titles and the
+fixed-size back glyph. A screen-reader walkthrough is still manual.
+
 `ResponsiveNavigationTest` rotates only the app Activity between landscape and
 portrait, verifies all five tab touch targets/labels and restores its orientation.
 `ThemeUiTest` uses app-local light/dark preview contexts; `AccessibilityUiTest`

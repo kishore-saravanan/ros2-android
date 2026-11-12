@@ -145,8 +145,10 @@ package/SDK without editing the platform checkout. No mandatory submodule.
       peer and runner discovery checks; a second physical phone remains next.
 - [ ] Measure sustained operation, memory, thermal behavior and camera latency.
 - [ ] Check portrait/landscape, light/dark mode and accessibility on core journeys.
-      Reference-phone core tabs, app-local light/dark and large-text layouts pass;
-      broader widget/dialog, screen-reader and device coverage remains open.
+      Reference-phone core tabs, app-local light/dark and large-text layouts pass.
+      Automated accessibility checks pass on core screens in light and dark after
+      fixing field labels, disclosure speech and a small touch target; dialogs,
+      a screen-reader walkthrough and wider device coverage remain open.
 - [ ] Produce signed, checksummed APK/client/SDK artifacts and dependency notices.
       Release assembly/verification signs, checksums and records provenance; APKs
       carry license texts for every staged native component, listed in

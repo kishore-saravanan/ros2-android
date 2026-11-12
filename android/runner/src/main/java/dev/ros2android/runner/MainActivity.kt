@@ -95,7 +95,7 @@ class MainActivity : Activity() {
         }
         card(body, "Diagnostics") { box ->
             box.addView(label("${BuildConfig.PROJECT_ID} · ABI ${BuildConfig.PROJECT_RUNTIME_ABI}\nBuild ${BuildConfig.PROJECT_SOURCE_ID}", 14, muted))
-            diagnostic = label("", 12, muted).apply { contentDescription = "project_status"; setTextIsSelectable(true); visibility = View.VISIBLE }
+            diagnostic = label("", 12, muted).apply { tag = "project_status"; setTextIsSelectable(true); visibility = View.VISIBLE }
             box.addView(diagnostic)
             box.addView(label("For live logs use the PC tool's logs command. This screen shows runtime diagnostics; it is not a log viewer.", 13, muted))
             box.addView(label("Background operation", 14))
@@ -175,9 +175,10 @@ class MainActivity : Activity() {
     override fun onPause() { refresh(); save(); main.removeCallbacks(update); super.onPause() }
     override fun onDestroy() { main.removeCallbacks(update); super.onDestroy() }
     private fun field(box: LinearLayout, key: String, title: String, fallback: String): EditText {
-        box.addView(label(title, 13, muted))
+        val caption = label(title, 13, muted); box.addView(caption)
         return EditText(this).apply {
-            setSingleLine(); setTextColor(ink); minHeight = dp(52); contentDescription = title; tag = key
+            setSingleLine(); setTextColor(ink); minHeight = dp(52); tag = key
+            id = View.generateViewId(); caption.labelFor = id // Screen readers announce the visible label.
             setText(prefs.getString(key, fallback)); inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
             fields[key] = this; box.addView(this)
         }
