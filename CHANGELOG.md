@@ -9,6 +9,9 @@ see the [release checklist](docs/RELEASING.md).
 - Add app-specific Android settings shortcuts for main-app and runner background
   operation. Keep battery-policy changes user-controlled. Extend offline workspace
   qualification with longer trials and frozen-observer detection.
+- Add an opt-in manual screen-off workspace test. Reference-device checks cover
+  five-minute background operation and one-minute screen-off reception/recovery
+  with app-specific background activity enabled.
 
 - Add a reviewed, compressed ball-following showcase and real-frame cover to the
   README, with source/edit provenance and recorded-demo qualification limits.

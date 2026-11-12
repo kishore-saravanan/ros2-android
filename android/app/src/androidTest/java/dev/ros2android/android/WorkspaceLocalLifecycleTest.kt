@@ -32,6 +32,10 @@ class WorkspaceLocalLifecycleTest {
         assumeTrue("Requires the disposable workspace fixture", target != null)
         require(target == "dev.ros2android.android.runner.ws_protocol_workspace")
         val context = instrumentation.targetContext
+        val screenOff = InstrumentationRegistry.getArguments().getString("workspaceScreenOff") == "true"
+        require(!screenOff || background) { "Screen-off qualification requires the background method" }
+        val power = context.getSystemService(PowerManager::class.java)
+        val keyguard = context.getSystemService(KeyguardManager::class.java)
         val backgroundSeconds = InstrumentationRegistry.getArguments().getString("workspaceBackgroundSeconds", "10").toLong()
         require(backgroundSeconds in 1..300) { "Use 1–300 seconds for the background trial" }
         val keepBound = InstrumentationRegistry.getArguments().getString("workspaceKeepControllerBound") == "true"
@@ -49,8 +53,8 @@ class WorkspaceLocalLifecycleTest {
             override fun onServiceDisconnected(name: ComponentName) {}
         }
         fun main(action: () -> Unit) = instrumentation.runOnMainSync(action)
-        fun waitFor(label: String, condition: () -> Boolean) {
-            val deadline = SystemClock.elapsedRealtime() + 15000
+        fun waitFor(label: String, timeout: Long = 15000, condition: () -> Boolean) {
+            val deadline = SystemClock.elapsedRealtime() + timeout
             var passed = false
             while (!passed && SystemClock.elapsedRealtime() < deadline) {
                 main { passed = condition() }; if (!passed) SystemClock.sleep(100)
@@ -119,6 +123,9 @@ class WorkspaceLocalLifecycleTest {
                 while (SystemClock.elapsedRealtime() < end) {
                     val observedAt = SystemClock.elapsedRealtime()
                     assertTrue("$label: observer paused for more than two seconds", observedAt - lastObservation < 2000)
+                    if (screenOff && label == "screen-off") {
+                        assertFalse("Keep the screen off for the entire observation interval", power.isInteractive)
+                    }
                     main {
                         assertTrue("Local probe write failed", NativeRuntime.publishControl("qualification_echo", doubleArrayOf(0.0, 0.0), SystemClock.elapsedRealtime().toString()))
                         val reading = checkNotNull(session.dashboardReadings[widget.id])
@@ -142,7 +149,16 @@ class WorkspaceLocalLifecycleTest {
             if (background) {
                 if (!keepBound) main { control.close() }
                 activity.scenario.moveToState(Lifecycle.State.CREATED)
-                observe("background", backgroundSeconds * 1000)
+                if (screenOff) {
+                    // Physical power-button action only: never alter global timeout or lock settings.
+                    android.util.Log.i("ROS2Qualification", "Ready for manual screen-off")
+                    waitFor("Turn the screen off manually within 90 seconds", 90000) { !power.isInteractive }
+                    observe("screen-off", backgroundSeconds * 1000)
+                    android.util.Log.i("ROS2Qualification", "Screen-off observation complete; unlock and return to ROS2 Android")
+                    waitFor("Unlock the phone after the screen-off interval", 120000) {
+                        power.isInteractive && !keyguard.isKeyguardLocked
+                    }
+                } else observe("background", backgroundSeconds * 1000)
                 activity.scenario.moveToState(Lifecycle.State.RESUMED)
                 if (!keepBound) connect()
                 state("Running")
@@ -175,7 +191,10 @@ class WorkspaceLocalLifecycleTest {
             }
             if (controlReady) main { control.close() }
             context.unbindService(connection)
-            activity.scenario.moveToState(Lifecycle.State.RESUMED)
+            // A timed-out manual trial must not attempt UI work on a locked phone.
+            if (power.isInteractive && !keyguard.isKeyguardLocked) {
+                activity.scenario.moveToState(Lifecycle.State.RESUMED)
+            }
         }
     }
 }

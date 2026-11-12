@@ -200,8 +200,8 @@ trial (accepted range 1–300 seconds). Both result freshness and observer timin
 must stay within two seconds; a frozen observer or overlong trial must fail.
 This is a qualification threshold, not a real-time guarantee.
 
-On the reference phone, the 60-second background trial passed with Wi-Fi off
-and background activity allowed for both the main app and runner: 296 distinct
+On the reference phone, the five-minute background trial passed with Wi-Fi off
+and background activity allowed for both the main app and runner: 1,497 distinct
 verified results, followed by stop/Stale and restart/fresh recovery. Observer
 pauses and result ages stayed below the test's two-second threshold.
 Default background policy previously stalled native children even while their
@@ -215,8 +215,30 @@ isolated String self-probe distinguishes main-app reception from workspace outpu
 Before the background-policy change, the self-probe remained fresh while
 workspace results stalled; retaining the binding did not prevent the gap.
 
-These are explicit device tests, not unattended CI. Screen-off, task removal,
-process death, USB coexistence and longer endurance remain separate cases.
+These are explicit device tests, not unattended CI. Task removal, process death,
+USB coexistence and longer endurance remain separate cases.
+
+### Manual screen-off trial
+
+Use the background method with `workspaceScreenOff=true` and, for example,
+`workspaceBackgroundSeconds=60`. Start with the app unlocked and visible, Wi-Fi
+off, and the non-actuator fixture stopped. In a second terminal, follow only the
+qualification tag with `adb logcat -s ROS2Qualification:I '*:S'`. The test logs
+`Ready for manual screen-off` after fresh foreground results arrive. Press the
+phone's power button within 90 seconds, leave the screen off for the full observation interval, then
+wake and unlock the phone within the next two minutes. Return to ROS2 Android.
+No lock-screen or global screen-timeout setting needs to change.
+
+The test requires the screen to remain non-interactive throughout observation,
+fresh calculation results and an observer that does not pause over two seconds.
+After unlock it checks stop/Stale and restart/fresh recovery. A timeout, early
+wake or frozen observer fails the test. This is a short USB-connected screen-off
+case, not forced Doze, unplugged deep idle or endurance qualification.
+
+The reference device passed a 60-second screen-off trial with Wi-Fi off and both
+apps allowed background activity: 301 distinct verified results, followed by
+stop/Stale and restart/fresh recovery after normal unlock. The phone remained
+USB-connected to the development PC; repeat unplugged idle separately.
 
 ## Offline network policy
 

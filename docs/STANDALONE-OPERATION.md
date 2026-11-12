@@ -124,10 +124,11 @@ application merely to perform this test.
 
 Background execution is owned by foreground services, not by whether a card
 appears in Recent apps. Vendor policies can still suspend native children; qualify
-the selected app settings on the target device. A 60-second Wi-Fi-off workspace
+the selected app settings on the target device. A five-minute Wi-Fi-off workspace
 trial passed after background activity was allowed for both apps on the reference
-setup; the default policy previously stalled results. This does not establish
-unattended screen-off endurance or hard real-time scheduling.
+setup; a separate 60-second screen-off trial also passed while USB-connected to
+the PC. The default policy previously stalled results. These checks do not
+establish unplugged deep-idle endurance or hard real-time scheduling.
 No uninstall, app-data reset or global security-setting change is a recovery step.
 
 ## Qualification checklist
@@ -140,12 +141,14 @@ one test before each is understood.
 | Case | Required observation | Current boundary |
 | --- | --- | --- |
 | PC absent, Wi-Fi present | Start deployed talker/processor and receive advancing results on phone | Repeat for current builds |
-| Fresh Wi-Fi-off startup | Two workspace nodes exchange data and Dashboard receives advancing results | Physical test pending |
+| Fresh Wi-Fi-off startup | Two workspace nodes exchange data and Dashboard receives advancing results | C++ workspace physical test passes, including stop/Stale and restart/fresh recovery; other backends remain open |
 | Embedded Python and C++ factory offline | Start/stop without PC and receive application results in phone Dashboard | Physical test pending per backend |
 | Fresh USB Agent startup, Wi-Fi off | Fresh typed MCU replies continue alongside project results | Physical test pending |
 | Wi-Fi off/on after startup | Local sequences continue; remote reception recovers after intended restarts | Earlier USB interruption evidence is narrower than fresh offline startup |
 | USB detach/reattach or denial | Clear status, explicit restart, fresh MCU replies, unchanged project profile | Repeat on current build; permission approval may require operator |
-| Screen off / task removal / process death | Record gaps and distinguish service continuation from deliberate restart | Endurance/recovery pending; test separately |
+| Activity background | Fresh results continue with management controller unbound | Five-minute Wi-Fi-off C++ workspace trial passes with both apps allowed background activity |
+| Screen off | Fresh results continue; stop/restart works after normal unlock | 60-second Wi-Fi-off C++ workspace trial passes while USB-connected to PC; unplugged deep idle remains open |
+| Task removal / process death | Record gaps and distinguish service continuation from deliberate restart | Dedicated recovery tests pending |
 | App/runner upgrade and control reconnect | Clear unknown/failed state, no automatic command replay, preserved profile | Dedicated physical matrix pending |
 
 For protocol fixture commands and compatibility tests, see [Testing](TESTING.md).

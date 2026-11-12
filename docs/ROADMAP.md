@@ -2,7 +2,7 @@
 
 ROS2 Android turns supported Android phones into onboard ROS 2 computers.
 This roadmap prioritizes a dependable platform and a clear developer experience.
-It is ordered by exit gates, not promised release dates. Updated 2026-11-11.
+It is ordered by exit gates, not promised release dates. Updated 2026-11-12.
 
 ## Foundation available today
 
@@ -17,7 +17,7 @@ universal compatibility guarantees. See [Status](STATUS.md) for the boundaries.
 - Independent runner authorization preview and installed-client external C++ build.
 - Contributor docs, architecture decisions, host/JVM tests and baseline CI workflow.
 - Host manifest validation and a version/capability envelope for runner controls;
-  envelope device qualification remains pending.
+  current-service rejection tests pass, with the wider compatibility matrix open.
 
 ## 1. Make core operation dependable — current focus
 
@@ -32,9 +32,10 @@ a PC or an external network.
 - [ ] Qualify network changes and reconnects consistently on devices.
 - [ ] Qualify USB detach/reconnect, permission denial and app-update recovery.
 - [ ] Exercise screen-off, task removal, process death and vendor power management.
-      A 60-second Wi-Fi-off C++ workspace background trial passes on the reference
-      phone with background activity allowed for both apps. Screen-off, task
-      removal, process death, other devices and endurance remain open.
+      A five-minute Wi-Fi-off C++ workspace background trial passes on the reference
+      phone with background activity allowed for both apps. A separate 60-second
+      screen-off trial also passes while USB-connected to the PC. Task removal,
+      process death, unplugged idle, other devices and endurance remain open.
 - [ ] Test Dashboard lost-link/late-subscriber behavior and distinguish local writes
       from remote acknowledgement.
 - [x] Isolate control requests and reject stale replies; unit-test timeout/reconnect rules.
