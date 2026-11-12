@@ -5,10 +5,12 @@ to relative `request` (`std_msgs/msg/Bool`) with volatile durability and publish
 relative `observed` (`std_msgs/msg/String`) every 200 ms:
 
 ```json
-{"tick": 1, "count": 0, "last": null}
+{"trial": "default", "tick": 1, "count": 0, "last": null}
 ```
 
-`tick` advances while running. `count` increments only when a request is received;
+The bounded `trial` string parameter identifies one test run (1–64 letters, digits,
+underscores or hyphens). Set a fresh value on each start to distinguish queued
+telemetry from the previous process. `tick` advances while running. `count` increments only when a request is received;
 `last` becomes that Bool value. Every fresh node starts with count zero/last null.
 There are no camera, file, sensor or actuator operations. These fields are a test
 protocol, not a robot-control API or a real-time performance measurement.

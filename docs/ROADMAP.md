@@ -68,7 +68,7 @@ platform source or relying on this maintainer's prepared PC.
       launch behavior and full dependency resolution remain build-time concerns.
 - [x] Define a bundled compatibility matrix tying CLI, APK, protocol, ABI and SDK locks.
 - [x] Add task-scoped preflight checks and document clean-machine setup order.
-- [x] Define isolated installed-wheel CI for Python 3.10/3.12; hosted runs pending.
+- [x] Run isolated installed-wheel CI for Python 3.10/3.12; both hosted jobs pass.
 - [ ] Validate the installed-client journey on a clean Linux machine.
 - [ ] Refine inspect → build → deploy → start → observe → stop errors and guides.
 - [x] Document signed runner upgrades, rollback limits and development-key ownership.
@@ -88,8 +88,8 @@ messages and lifecycle behavior.
 sensor, Dashboard widget and runtime backend.
 
 - [ ] Extract focused controllers from the main Activity/session service incrementally.
-      Project discovery and UI-scoped bindings now have a focused owner; session
-      and other screen responsibilities remain to be separated.
+      Project discovery/UI bindings and session startup identity now have focused owners;
+      remaining hardware and screen responsibilities are still incremental.
 - [x] Share runner lifecycle/configuration contracts across the three backends.
       One foreground supervisor consumes a compiler-checked backend interface and
       validated project configuration; backend isolation and qualification still differ.

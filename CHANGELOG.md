@@ -6,6 +6,10 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Reject connection-profile changes while a sensor/Dashboard runtime is active.
+  Keep runtime peer-recovery tests headless, with per-start telemetry correlation
+  and automatic cleanup; UI tests retain their own Activity lifecycle.
+
 - Add hardware-free C++ and Python runtime peers and opt-in phone-local Dashboard
   qualification for late subscribers, lost-peer Stale state, explicit recovery and
   no command replay after runner/Dashboard restarts.

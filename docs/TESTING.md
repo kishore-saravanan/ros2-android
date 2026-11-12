@@ -4,6 +4,23 @@ Tests protect platform contracts; robot demonstrations are additional evidence,
 not the main acceptance suite. Run checks for the boundary you changed and record
 what was actually tested. A skipped check is not a pass for its capability.
 
+## Test conventions
+
+- Keep most logic checks in fast host/JVM unit tests. Use device integration tests
+  for JNI, DDS, services and runner boundaries; reserve UI tests for visible user journeys.
+- Each test owns its fixtures, uses explicit inputs and assertions, and restores
+  modified configuration in cleanup even when an assertion fails. Never depend on
+  test order or a previous test leaving a service running.
+- Wait for observable states with bounded deadlines. Correlate messages to the
+  current run so queued samples cannot produce a false pass. Avoid fixed delays
+  as a substitute for a readiness condition.
+- UI tests may launch and close their own Activity for isolation. Batch compatible
+  UI checks, keeping the device unlocked and the project app visible before input
+  or capture. Runtime-only tests should not launch an Activity or require reopening
+  a screen. Headless does not authorize access to other apps or personal data.
+- Hardware and disruptive lifecycle checks are opt-in. Keep harmless test topics
+  separate from robot commands, and report skips, failures and qualification scope.
+
 ## Baseline checks: no phone or native ROS SDK
 
 From the repository root:
@@ -55,7 +72,9 @@ fetch calls. See [host package](HOST-PACKAGE.md) for exact boundaries.
 The workflow now defines Python 3.10 and 3.12 installed-client jobs in addition to
 the source-host and Android JVM/lint jobs. Package tool versions are pinned;
 permissions remain read-only and no phone/signing secret is used. Local Python
-3.12 passed; new hosted jobs are not yet verified. A successful package smoke
+3.12 passed. Both Python 3.10 and 3.12 hosted installed-client jobs passed at
+[a9940cd](https://github.com/kishore-saravanan/ros2-android/actions/runs/43232633359);
+newer revisions still need their own hosted checks. A successful package smoke
 test is not a clean-machine native build, DDS or phone-deployment result.
 
 ## Full Android/native checks
@@ -428,8 +447,9 @@ With the prepared native/Python SDK, build and install the harmless C++ fixture:
 ./setup/run-device.sh --runner dev.ros2android.android.runner.fixture_cpp --install-only
 ```
 
-Leave ROS2 Android open and unlocked, stop the main session and fixture, and turn
-Wi-Fi off manually. No MCU connection or motor power is needed. Run:
+Stop the main session and fixture, and turn Wi-Fi off manually. This test binds
+only project services; it does not launch or close an Activity, enter UI input or
+capture the screen, so the app screen need not remain open. No MCU connection or motor power is needed. Run:
 
 ```bash
 ./setup/build.sh :app:connectedDebugAndroidTest \
@@ -442,16 +462,19 @@ For the embedded Python backend, build/install `:pythonRunner:assembleDebug
 then install with `--python-runner dev.ros2android.android.runner.fixture_python
 --install-only`. Run the same class with method `pythonLateSubscriberAndPeerRecovery`
 and `dashboardRecoveryPackage=dev.ros2android.android.runner.fixture_python`.
-Reopen the app after installation or a previous test if needed.
+The same headless prerequisites apply to both backends.
 
 The opt-in test accepts only those disposable fixture package names. It observes
 actual DDS traffic between the main app and a separate runner process: a volatile
 subscriber joining after a write receives no old command; stopped-peer telemetry
 becomes Stale while Dashboard stays active; runner and Dashboard restarts do not
-replay ON/OFF; fresh explicit commands are counted by the peer. Local write status
+replay ON/OFF; fresh explicit commands are counted by the peer. A per-start trial
+identifier excludes queued telemetry from older peers. A conflicting connection
+profile is rejected without interrupting the active Dashboard. Local write status
 continues to say remote state unknown. It restores the runner profile and stops
-its test sessions without changing saved widgets. Both backends pass on the
-reference phone. To run both methods in one invocation, select the whole class
+its test sessions without changing saved widgets. Both backends passed the earlier
+Activity-hosted reference-phone run. Headless Python passes; repeated headless C++
+runs exposed an intermittent telemetry-progress failure, which remains unresolved. To run both methods in one invocation, select the whole class
 and set `dashboardRecoveryPackage=both`, with both fixtures installed and stopped.
 This qualifies phone-local peer loss, not router isolation,
 Wi-Fi handover, all message types or a remote robot acknowledgement protocol.

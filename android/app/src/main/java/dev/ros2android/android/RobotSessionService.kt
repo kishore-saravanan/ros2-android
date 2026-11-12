@@ -27,7 +27,14 @@ class RobotSessionService : Service() {
     private var foreground = false
     private var foregroundTypes = 0
     @Volatile private var destroyed = false
-    @Volatile var connected = false; private set
+    private val runtime = SessionRuntime<Profile>(
+        startNative = { profile ->
+            check(NativeRuntime.available) { NativeRuntime.diagnostic() }
+            NativeRuntime.start(profile.config.domainId, profile.config.namespace, profile.peer, profile.local, applicationInfo.nativeLibraryDir)
+        },
+        stopNative = { camera.awaitStopped(); if (NativeRuntime.available) NativeRuntime.stop() }
+    )
+    val connected: Boolean get() = runtime.connected
     var busy = false; private set
     val active = mutableSetOf<String>()
     val errors = mutableMapOf<String, String>()
@@ -81,7 +88,7 @@ class RobotSessionService : Service() {
         busy = true; errors.remove("controls"); changed()
         worker.execute {
             val result = runCatching {
-                ensureRuntime(profile)
+                runtime.ensure(profile)
                 widgets.forEach {
                     if (it.subscriber) NativeRuntime.createDashboardSubscription(it.id, it.topic, it.kind)
                     else NativeRuntime.createPublisher("control:${it.id}", it.topic, it.kind)
@@ -238,20 +245,13 @@ class RobotSessionService : Service() {
             .createMulticastLock("ROS2AndroidDDS").apply { setReferenceCounted(false); acquire() }
     }
 
-    private fun ensureRuntime(profile: Profile) {
-        if (connected) return
-        check(NativeRuntime.available) { NativeRuntime.diagnostic() }
-        NativeRuntime.start(profile.config.domainId, profile.config.namespace, profile.peer, profile.local, applicationInfo.nativeLibraryDir)
-        connected = true
-    }
-
     fun startPublisher(cap: PhoneCapability, config: EndpointConfig, profile: Profile) {
         if (busy || cap.id in active) return
         keepRunning(cap.kind == 8)
         val token = generation
         busy = true; state = "Starting ${cap.label}…"; changed()
         worker.execute {
-            val result = runCatching { camera.awaitStopped(); ensureRuntime(profile); NativeRuntime.createPublisher(cap.id, config.topic, cap.kind) }
+            val result = runCatching { camera.awaitStopped(); runtime.ensure(profile); NativeRuntime.createPublisher(cap.id, config.topic, cap.kind) }
             main.post {
                 if (token != generation || destroyed) return@post
                 busy = false
@@ -291,7 +291,7 @@ class RobotSessionService : Service() {
         val token = generation
         busy = true; state = "Starting display subscriber…"; changed()
         worker.execute {
-            val result = runCatching { ensureRuntime(profile); NativeRuntime.subscribeDisplay(topic) }
+            val result = runCatching { runtime.ensure(profile); NativeRuntime.subscribeDisplay(topic) }
             main.post {
                 if (token != generation || destroyed) return@post
                 busy = false
@@ -315,7 +315,7 @@ class RobotSessionService : Service() {
         busy = true; state = "Discovering ROS topics…"; changed()
         worker.execute {
             val result = runCatching {
-                ensureRuntime(profile)
+                runtime.ensure(profile)
                 // ROS graph discovery is asynchronous, so allow an initial discovery window.
                 val deadline = SystemClock.elapsedRealtime() + 1500
                 var names: List<String>
@@ -339,8 +339,7 @@ class RobotSessionService : Service() {
         sensors.stopAll(); battery.stop(); camera.stop(); cameraPreview = null; active.clear(); subscribed = false; cameraStats = null
         changed()
         worker.execute {
-            val result = runCatching { camera.awaitStopped(); if (NativeRuntime.available) NativeRuntime.stop() }
-            connected = false
+            val result = runCatching { runtime.stop() }
             main.post {
                 if (token != generation || destroyed) return@post
                 busy = false; counts = emptyMap()
@@ -361,7 +360,7 @@ class RobotSessionService : Service() {
         stopControls()
         destroyed = true; generation++; onChange = null
         sensors.stopAll(); battery.stop(); camera.stop(); previewDecoder.close(); cameraPreview = null; active.clear()
-        if (connected || busy) worker.execute { runCatching { camera.awaitStopped(); if (NativeRuntime.available) NativeRuntime.stop() } }
+        if (connected || busy) worker.execute { runCatching { runtime.stop() } }
         worker.shutdown(); releaseForeground()
         super.onDestroy()
     }
