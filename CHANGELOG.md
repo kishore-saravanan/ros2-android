@@ -6,6 +6,9 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Canonicalize SDK snapshot archive metadata and package only tracked Python
+  sources; exclude untracked modules and reject tracked source symlinks.
+
 - Extend read-only workspace inspection with optional upstream target-condition
   evaluation, declared provider-version checks and bounded launch syntax warnings.
   Preserve unresolved context instead of silently accepting or dropping it.

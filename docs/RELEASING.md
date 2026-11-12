@@ -19,6 +19,10 @@ not a command that publishes automatically. A release needs explicit authorizati
 - Build APK/SDK/host packages from the recorded source and pinned dependencies.
   Use `setup/build-python-package.py` for the bundled wheel and the documented
   Debian packaging path; ordinary pip wheel alone omits required backend content.
+  Only tracked Python sources enter the host package. SDK ZIP entries use fixed
+  timestamps and canonical executable modes so checkout mtimes do not change
+  their identity. This is not a claim of reproducible APKs or whole wheels across
+  different compilers, Python or compression-library versions.
 - Verify package contents, checksums and supported-device checks. Record source,
   toolchain and SDK provenance. Review dependency licenses, NOTICE and citation.
 - Check that first-topic, external workspace and robot-operation guides match

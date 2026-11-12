@@ -15,6 +15,30 @@ SDK_DIRS = {'android', 'native', 'setup', 'tools', 'examples', 'gradle'}
 SDK_FILES = {'LICENSE', 'NOTICE', 'CITATION.cff', 'gradlew', 'gradlew.bat', 'gradle.properties', 'build.gradle.kts', 'settings.gradle.kts'}
 
 
+def add_sdk_file(archive, source, name):
+    """Canonical metadata makes snapshot identity independent of checkout mtimes."""
+    info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+    info.create_system = 3
+    mode = 0o755 if source.stat().st_mode & 0o111 else 0o644
+    info.external_attr = (0o100000 | mode) << 16
+    info.compress_type = zipfile.ZIP_DEFLATED
+    archive.writestr(info, source.read_bytes())
+
+
+def copy_python_sources(stage, tracked):
+    """Only intentional tracked source files belong in the host distribution."""
+    for name in filter(None, tracked):
+        relative = Path(name)
+        if relative.parts[0] != 'python':
+            continue
+        source = ROOT / relative
+        if source.is_symlink():
+            raise ValueError('Refusing Python source symlink: ' + name)
+        destination = stage / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', type=Path, default=ROOT / 'dist')
@@ -25,7 +49,7 @@ def main():
         stage = Path(temp)
         for name in ('pyproject.toml', 'setup.py', 'README.md', 'LICENSE', 'NOTICE', 'CITATION.cff'):
             shutil.copy2(ROOT / name, stage / name)
-        shutil.copytree(ROOT / 'python', stage / 'python', ignore=shutil.ignore_patterns('__pycache__', '*.egg-info', 'sdk.zip'))
+        copy_python_sources(stage, tracked)
         with zipfile.ZipFile(stage / 'python/ros2android/sdk.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
             for name in sorted(filter(None, tracked)):
                 path = Path(name)
@@ -33,7 +57,7 @@ def main():
                     source = ROOT / path
                     if source.is_symlink():
                         raise ValueError('Refusing SDK symlink: ' + name)
-                    archive.write(source, name)
+                    add_sdk_file(archive, source, name)
         matrix_path = stage / 'python/ros2android/compatibility.json'
         matrix = json.loads(matrix_path.read_text())
         matrix['artifact'] = {'sdkSnapshotSha256': hashlib.sha256((stage / 'python/ros2android/sdk.zip').read_bytes()).hexdigest()}
