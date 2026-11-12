@@ -11,6 +11,8 @@ import android.view.View
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.widget.*
+import dev.ros2android.health.BackgroundPolicy
+import dev.ros2android.health.HealthText
 import org.json.JSONObject
 
 /** Shared operator controls for C++, Python and ordinary-workspace runner APKs. */
@@ -23,6 +25,8 @@ class MainActivity : Activity() {
     private val muted get() = getColor(R.color.ros_muted)
     private val ink get() = getColor(R.color.ros_text)
     private lateinit var status: TextView
+    private lateinit var pauseWarning: TextView
+    private lateinit var policy: TextView
     private lateinit var nodes: TextView
     private lateinit var diagnostic: TextView
     private lateinit var feedback: TextView
@@ -59,6 +63,9 @@ class MainActivity : Activity() {
         titleBar.addView(button("‹") { returnToSensors() }.apply { tag = "return_to_sensors"; contentDescription = "Back to ROS2 Android"; textSize = 24f }, LinearLayout.LayoutParams(dp(48), dp(48)))
         titleBar.addView(label(BuildConfig.PROJECT_NAME, 20), LinearLayout.LayoutParams(0, -2, 1f)); heading.addView(titleBar)
         status = label("Stopped", 16).apply { tag = "project_state" }; heading.addView(status)
+        pauseWarning = label("", 14, getColor(R.color.ros_error)).apply {
+            tag = "project_pause_warning"; visibility = View.GONE; accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
+        }; heading.addView(pauseWarning)
         val actions = LinearLayout(this)
         start = button("Start project") { startProject() }.apply { tag = "start_project"; backgroundTintList = ColorStateList.valueOf(accent); setTextColor(getColor(R.color.ros_on_accent)) }
         stop = button("Stop project") { ProjectService.current?.stopProject(); refresh() }.apply { tag = "stop_project"; backgroundTintList = ColorStateList.valueOf(accent); setTextColor(getColor(R.color.ros_on_accent)) }
@@ -91,6 +98,12 @@ class MainActivity : Activity() {
             diagnostic = label("", 12, muted).apply { contentDescription = "project_status"; setTextIsSelectable(true); visibility = View.VISIBLE }
             box.addView(diagnostic)
             box.addView(label("For live logs use the PC tool's logs command. This screen shows runtime diagnostics; it is not a log viewer.", 13, muted))
+            box.addView(label("Background operation", 14))
+            policy = label("", 13, muted).apply { tag = "project_background_policy" }; box.addView(policy)
+            box.addView(button("Android app settings") {
+                runCatching { startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.fromParts("package", packageName, null))) }
+                    .onFailure { showError("Android app settings are unavailable on this device") }
+            }.apply { tag = "project_app_settings" })
         }
         appliedConfigRevision = prefs.getString("config_revision", null)
         refresh()
@@ -115,7 +128,7 @@ class MainActivity : Activity() {
         }.onFailure { showError("Cannot start: ${it.message}") }
     }
     private fun refresh() {
-        val snapshot = runCatching { JSONObject(ProjectService.statusJson()) }.getOrElse {
+        val snapshot = runCatching { JSONObject(ProjectService.statusJson(this)) }.getOrElse {
             showError("Cannot read runtime state: ${it.message}"); return
         }
         val state = snapshot.optString("state", "Unknown")
@@ -141,6 +154,10 @@ class MainActivity : Activity() {
         val reported = if (names != null) (0 until names.length()).map { names.optString(it) }.filter { it.isNotEmpty() }
             else listOfNotNull(native?.optString("node")?.takeIf { it.isNotEmpty() })
         nodes.show(if (state == "Running" && reported.isNotEmpty()) "${reported.size} node(s) reported\n${reported.joinToString("\n")}" else "No active nodes reported")
+        val health = snapshot.optJSONObject("health")
+        val warning = health?.let { HealthText.pauseWarning("this project", it.optInt("pauses"), it.optLong("longestPauseMs")) }
+        pauseWarning.show(warning.orEmpty()); pauseWarning.visibility = if (warning == null) View.GONE else View.VISIBLE
+        if (policy.isShown) policy.show(HealthText.policy(BackgroundPolicy.batteryOptimized(this), BackgroundPolicy.backgroundRestricted(this)))
         if (diagnostic.isShown) diagnostic.show(snapshot.toString(2).take(16384))
     }
     private fun showError(message: String) { feedback.text = message; feedback.visibility = View.VISIBLE }

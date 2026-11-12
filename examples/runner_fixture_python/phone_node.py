@@ -1,6 +1,7 @@
 """Harmless lifecycle peer with the same wire contract as the C++ fixture."""
 import json
 import re
+import time
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, DurabilityPolicy
 from std_msgs.msg import Bool, String
@@ -25,4 +26,7 @@ class PhoneNode(Node):
 
     def publish(self):
         self.tick += 1
-        self.output.publish(String(data=json.dumps(dict(trial=self.trial, tick=self.tick, count=self.count, last=self.last))))
+        # CLOCK_BOOTTIME matches Android SystemClock.elapsedRealtime() on the same phone.
+        stamp = time.clock_gettime_ns(time.CLOCK_BOOTTIME) // 1_000_000
+        self.output.publish(String(data=json.dumps(dict(trial=self.trial, tick=self.tick, count=self.count,
+                                                        last=self.last, stamp_ms=stamp))))

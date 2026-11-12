@@ -43,7 +43,10 @@ Dashboard, Projects and Settings. Android permissions remain under user control.
 and active hardware resources. Activities display/control that state rather
 than owning its lifetime. Changing tabs does not stop sessions. Foreground
 service and wake resources support active operation, but Android/vendor process
-limits still apply; this is not a hard real-time operating system.
+limits still apply; this is not a hard real-time operating system. The shared
+`android/health` sources let the main app and every runner report process-wide
+execution pauses (for example a vendor app freezer) and Android's battery policy,
+so a stall is explained to the operator rather than looking like silent ROS loss.
 
 JNI is the boundary between Kotlin and the native ROS layer. The main runtime
 uses Jazzy `rcl` with `rmw_cyclonedds_cpp`/Cyclone DDS. Native code owns contexts,

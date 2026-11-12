@@ -73,8 +73,11 @@ those cases separately below. Stop the test widget/publisher when finished.
 
 ## Allow background operation
 
-Some devices suspend native workspace processes when the app leaves the
-foreground. Configure the main app and each runner separately:
+Some devices pause app processes or their native workspace children when the app
+leaves the foreground, even while a foreground service and its notification are
+active. On the reference phone the vendor freezer paused a runner app process with
+its default battery policy; telemetry resumed only when another app contacted it.
+Configure the main app and each runner separately:
 
 1. Open Settings → Background operation → Android app settings for the main app.
 2. For a runner, open Projects → Details → Android app settings.
@@ -87,6 +90,17 @@ These shortcuts open settings for the selected app; they do not change power
 policy automatically. Power Saving being off alone does not establish permission
 for background execution. App-specific settings do not guarantee uninterrupted
 execution or recovery after Force stop, task removal or a reboot.
+
+Settings → Background operation and Projects → Details show whether Android's
+battery optimization still applies to that app. Vendor-specific switches cannot be
+read, so "allowed" means Android's standard exemption is present, not that every
+vendor control is off. While a session or project runs, each app also watches for
+process-wide pauses: a dedicated thread that wakes at least one second late means
+every thread in that process was stopped. Home (main session), the project card and
+the runner screen then say how often and for how long Android paused it. A slow ROS
+callback is not reported as a pause, and a pause shorter than one second can be
+missed. The warning stays until the next start, so recheck fresh data after changing
+the setting.
 
 ## Start without a PC
 
@@ -142,7 +156,7 @@ one test before each is understood.
 | --- | --- | --- |
 | PC absent, Wi-Fi present | Start deployed talker/processor and receive advancing results on phone | Repeat for current builds |
 | Fresh Wi-Fi-off startup | Two workspace nodes exchange data and Dashboard receives advancing results | C++ workspace physical test passes, including stop/Stale and restart/fresh recovery; other backends remain open |
-| Embedded Python and C++ factory offline | Start/stop without PC and receive application results in phone Dashboard | Physical test pending per backend |
+| Embedded Python and C++ factory offline | Start/stop without PC and receive application results in phone Dashboard | Headless Dashboard peer test: C++ factory passes repeated strict trials with background activity allowed and no reported pauses; with default battery policy it fails from vendor pauses. Python passed earlier runs; its strict rerun is pending |
 | Fresh USB Agent startup, Wi-Fi off | Fresh typed MCU replies continue alongside project results | Physical test pending |
 | Wi-Fi off/on after startup | Local sequences continue; remote reception recovers after intended restarts | Earlier USB interruption evidence is narrower than fresh offline startup |
 | USB detach/reattach or denial | Clear status, explicit restart, fresh MCU replies, unchanged project profile | Repeat on current build; permission approval may require operator |

@@ -1,5 +1,7 @@
 package dev.ros2android.android
 
+import dev.ros2android.health.BackgroundPolicy
+import dev.ros2android.health.HealthText
 import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
@@ -44,6 +46,7 @@ open class MainActivity : Activity() {
     private val active: Set<String> get() = session?.active ?: emptySet()
     private var tab = "Overview"
     private var overview: TextView? = null
+    private var sessionWarning: TextView? = null
     private var stopButton: Button? = null
     private var feedback: TextView? = null
     private var preview: ImageView? = null
@@ -80,7 +83,7 @@ open class MainActivity : Activity() {
         override fun run() { if (resumed) { refresh(); if (tab == "Projects" || tab == "Overview") projectControllers.poll(); main.postDelayed(this, 500) } }
     }
     private val projectControllers by lazy { ProjectConnections(this) { updateProjects(); refreshHomeActivity() } }
-    private data class ProjectRow(val state: TextView, val nodes: TextView, val toggle: Button, val settings: Button, val logs: TextView?)
+    private data class ProjectRow(val state: TextView, val warning: TextView, val nodes: TextView, val toggle: Button, val settings: Button, val logs: TextView?)
     private val projectRows = mutableMapOf<String, ProjectRow>()
     private fun closeProjects() = projectControllers.close()
     private fun updateProjects() {
@@ -91,6 +94,10 @@ open class MainActivity : Activity() {
             val busy = value?.optBoolean("busy") == true
             val running = state == "Running"
             row.state.show(control.error ?: control.commandError ?: state)
+            // Optional: older runners do not report health, which means unknown rather than healthy.
+            val health = value?.optJSONObject("health")
+            val warning = health?.let { HealthText.pauseWarning("this project", it.optInt("pauses"), it.optLong("longestPauseMs")) }
+            row.warning.show(warning.orEmpty()); row.warning.visibility = if (warning == null) android.view.View.GONE else android.view.View.VISIBLE
             row.toggle.show(if (running) "Stop project" else "Start project")
             row.toggle.isEnabled = value != null && control.error == null && !busy && control.supports(if (state == "Running") 3 else 2)
             row.settings.isEnabled = value != null && control.error == null && control.supports(4)
@@ -206,7 +213,7 @@ open class MainActivity : Activity() {
         programmingStatus = null; programmingStop = null
         preview?.removeCallbacks(previewTicker)
         previewMetrics = null; previewFramesDisplayed = 0; previewWindowCount = 0; previewWindowStart = SystemClock.elapsedRealtime()
-        overview = null; homeConnection = null; homeNetworks = null; homeNetworkStamp = 0L; preview = null; previewId = null; previewStamp = 0
+        overview = null; sessionWarning = null; homeConnection = null; homeNetworks = null; homeNetworkStamp = 0L; preview = null; previewId = null; previewStamp = 0
         session?.cameraPreviewEnabled = false
         val selected = catalog.firstOrNull { it.id == selectedSensor }
         val detail = tab == "Sensors" && selected != null
@@ -234,6 +241,10 @@ open class MainActivity : Activity() {
         status = text("Loading…", 13, muted).apply { tag = "session_status" }
         if (tab == "Overview") {
             status.setPadding(dp(20), 0, dp(20), dp(8)); shell.addView(status)
+            sessionWarning = text("", 13, getColor(R.color.ros_error)).apply {
+                tag = "session_pause_warning"; visibility = android.view.View.GONE; setPadding(dp(20), 0, dp(20), dp(8))
+                accessibilityLiveRegion = android.view.View.ACCESSIBILITY_LIVE_REGION_POLITE
+            }.also { shell.addView(it) }
         }
         val scroll = ScrollView(this).apply { isFillViewport = false; tag = "page_scroll" }
         page = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), 0, dp(16), dp(16)) }
@@ -416,6 +427,10 @@ open class MainActivity : Activity() {
             card(project.id.replace('_', ' ')) { box ->
             val control = projectControllers.controller(project)
             val state = text("Connecting…", 15).apply { tag = "project_state:${project.id}" }; box.addView(state)
+            val warning = text("", 13, getColor(R.color.ros_error)).apply {
+                tag = "project_pause_warning:${project.id}"; visibility = android.view.View.GONE
+                accessibilityLiveRegion = android.view.View.ACCESSIBILITY_LIVE_REGION_POLITE
+            }; box.addView(warning)
             val nodes = text("", 13, muted); box.addView(nodes)
             val toggle = primaryButton("Start project") { control.send(if (control.status?.optString("state") == "Running") 3 else 2) }.apply {
                 tag = "toggle_project:${project.id}"; contentDescription = "Start or stop ${project.id}"
@@ -449,7 +464,7 @@ open class MainActivity : Activity() {
                 backgroundSettings(info, project.packageName)
                 info.addView(button("Open runner") { runCatching { save(); startActivity(project.openIntent()) }.onFailure { announce("Could not open project. Refresh and try again.") } }.apply { tag = "open_project:${project.id}" })
             }
-            projectRows[project.packageName] = ProjectRow(state, nodes, toggle, settings, logs)
+            projectRows[project.packageName] = ProjectRow(state, warning, nodes, toggle, settings, logs)
             control.connect()
         } }
         updateProjects()
@@ -494,6 +509,10 @@ open class MainActivity : Activity() {
         }
     }
     private fun backgroundSettings(box: LinearLayout, targetPackage: String) {
+        // Restriction is only readable for this app; battery optimization is readable for any package.
+        val restricted = if (targetPackage == packageName) BackgroundPolicy.backgroundRestricted(this) else null
+        box.addView(text(HealthText.policy(BackgroundPolicy.batteryOptimized(this, targetPackage), restricted), 13)
+            .apply { tag = "background_policy:$targetPackage" })
         box.addView(text("For background ROS operation, allow background activity in this app’s Android battery settings. Names vary by phone.", 13, muted))
         box.addView(button("Android app settings") {
             try {
@@ -607,6 +626,10 @@ open class MainActivity : Activity() {
         }) }
         profileFields.values.forEach { it.isEnabled = !connected && !busy }
         status.show(when { session == null -> "Loading…"; busy -> session?.state ?: "Working…"; connected -> "Sensors & dashboard active"; else -> "Sensors & dashboard stopped" })
+        sessionWarning?.let { line ->
+            val warning = session?.pauses?.let { HealthText.pauseWarning("ROS2 Android", it.pauses, it.longestMs) }
+            line.show(warning.orEmpty()); line.visibility = if (warning == null) android.view.View.GONE else android.view.View.VISIBLE
+        }
         refreshHomeActivity()
         homeConnection?.show(buildString {
             append("ROS domain ${prefs.getString("domain", "0")} · ${prefs.getString("namespace", "/phone")}")

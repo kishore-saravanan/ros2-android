@@ -447,9 +447,12 @@ With the prepared native/Python SDK, build and install the harmless C++ fixture:
 ./setup/run-device.sh --runner dev.ros2android.android.runner.fixture_cpp --install-only
 ```
 
-Stop the main session and fixture, and turn Wi-Fi off manually. This test binds
-only project services; it does not launch or close an Activity, enter UI input or
-capture the screen, so the app screen need not remain open. No MCU connection or motor power is needed. Run:
+Stop the main session and fixture, and turn Wi-Fi off manually. Allow background
+activity (battery optimization off) for ROS2 Android and the fixture in their
+Android app settings; the test checks Android's standard exemption first. This
+test binds only project services; it does not launch or close an Activity, enter
+UI input or capture the screen, so the app screen need not remain open. No MCU
+connection or motor power is needed. Run:
 
 ```bash
 ./setup/build.sh :app:connectedDebugAndroidTest \
@@ -471,13 +474,31 @@ becomes Stale while Dashboard stays active; runner and Dashboard restarts do not
 replay ON/OFF; fresh explicit commands are counted by the peer. A per-start trial
 identifier excludes queued telemetry from older peers. A conflicting connection
 profile is rejected without interrupting the active Dashboard. Local write status
-continues to say remote state unknown. It restores the runner profile and stops
-its test sessions without changing saved widgets. Both backends passed the earlier
-Activity-hosted reference-phone run. Headless Python passes; repeated headless C++
-runs exposed an intermittent telemetry-progress failure, which remains unresolved. To run both methods in one invocation, select the whole class
-and set `dashboardRecoveryPackage=both`, with both fixtures installed and stopped.
-This qualifies phone-local peer loss, not router isolation,
-Wi-Fi handover, all message types or a remote robot acknowledgement protocol.
+continues to say remote state unknown. After each peer run it requires zero
+process pauses reported by the runner and by the main app, so a run that merely
+survived a short observation window cannot pass. It restores the runner profile
+and stops its test sessions without changing saved widgets. To run both methods in
+one invocation, select the whole class and set `dashboardRecoveryPackage=both`,
+with both fixtures installed and stopped. This qualifies phone-local peer loss,
+not router isolation, Wi-Fi handover, all message types or a remote robot
+acknowledgement protocol.
+
+Diagnostics: each phase is logged under the `ROS2Qualification` tag with its boot
+clock time. The fixtures' `stamp_ms` lets a failure report whether the publisher
+paused (stamps jump) or delivery stalled (stamps continue). On a telemetry stall
+the test keeps observing for up to ten seconds, records the runner's executor
+heartbeat and `health`, and retries a fresh Dashboard reader, then still fails.
+Passing runs log publish-to-receipt statistics. For a vendor-policy reproduction,
+add `-Pandroid.testInstrumentationRunnerArguments.dashboardRecoveryAllowBatteryOptimized=true`;
+such runs are diagnostics, never qualification. Pair them with
+[own-process observation](../tests/integration/README.md#own-process-observation).
+
+On the reference phone, the C++ factory peer passed six consecutive strict
+headless trials with background activity allowed and no reported pauses. With the
+default vendor battery policy, the runner process was frozen for 1–20 seconds
+(confirmed by independent process observation and by the runner's own pause
+report) and the test failed, which is the intended result. Both backends passed
+the earlier Activity-hosted run; the strict Python rerun is pending.
 
 ## Core layout and navigation checks
 

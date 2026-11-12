@@ -55,3 +55,28 @@ observes process identity separately, then a fresh process verifies settings and
 ROS recovery. Only the final driver PASS counts. It leaves the fixture stopped and
 keeps raw evidence ignored. See [Testing](../../docs/TESTING.md#main-app-process-death)
 for prerequisites, scope and interrupted-checkpoint recovery.
+
+## Own-process observation
+
+`own_process_observer.py` samples the scheduler state and cgroup freezer/cpuset
+paths of named ROS2 Android processes while another command runs. It accepts only
+`dev.ros2android.android` and its `runner.<id>` packages, so no other app is
+queried, and it never signals, freezes, thaws or reconfigures a process. Samples
+use the phone boot clock (`boot_ms`), matching `SystemClock.elapsedRealtime()`,
+instrumentation phase logs and the fixtures' `stamp_ms` publish times:
+
+```bash
+python3 tests/integration/own_process_observer.py \
+  --package dev.ros2android.android \
+  --package dev.ros2android.android.runner.fixture_cpp \
+  --output device-logs/observer/run.jsonl -- \
+  ./setup/build.sh :app:connectedDebugAndroidTest \
+  '-Pandroid.testInstrumentationRunnerArguments.class=dev.ros2android.android.DashboardPeerRecoveryTest#cppLateSubscriberAndPeerRecovery' \
+  -Pandroid.testInstrumentationRunnerArguments.dashboardRecoveryPackage=dev.ros2android.android.runner.fixture_cpp
+```
+
+It writes JSON lines plus a `.summary.json` with contiguous frozen intervals per
+process, and exits with the observed command's status. The sampling interval
+bounds what it can see: a freeze shorter than one interval can be missed.
+Freezer cgroup names are vendor policy details; correlate them with fixture
+timestamps before attributing a gap. Keep the output under ignored `device-logs/`.

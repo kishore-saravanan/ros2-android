@@ -28,6 +28,23 @@ robot-wide emergency stop or a per-node kill command.
 Projects start locally without a PC. For automatic/phone-local address settings
 and pending offline qualification, see [Standalone operation](STANDALONE-OPERATION.md).
 
+## Background pauses
+
+Some phones pause a runner app even while its project and notification are active.
+**Details** shows whether Android's battery optimization still applies to that
+runner, next to its **Android app settings** shortcut. While a project runs, the
+runner records process-wide pauses (its watchdog thread woke at least one second
+late). The card and the runner screen then show a warning such as *Android paused
+this project once (longest 2.2 s)*. Allow background activity for that runner,
+restart the project and check fresh data. Counts reset on the next Start; the
+warning remains visible after Stop until then.
+
+Runner status includes this as an optional `health` object: `monitoring`,
+`pauses`, `longestPauseMs`, `totalPausedMs`, `lastPauseEndedAt` (boot-clock
+milliseconds), `batteryOptimized` and `backgroundRestricted` (`null` when Android
+cannot report it). Older runners omit `health`; treat that as unknown, not healthy.
+The values describe scheduling of the runner process, not ROS message delivery.
+
 ## Recover a failed workspace
 
 For ordinary C++ workspaces, an unexpected child-node exit makes the supervisor

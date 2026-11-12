@@ -29,7 +29,7 @@ class DebugControlReceiver : BroadcastReceiver() {
                 "dev.ros2android.runner.STATUS" -> Unit
                 else -> error("Unknown development command")
             }
-            resultCode = 0; resultData = ProjectService.statusJson()
+            resultCode = 0; resultData = ProjectService.statusJson(context)
         }.onFailure { resultCode = 1; resultData = "${it.javaClass.simpleName}: ${it.message}" }
     }
 }

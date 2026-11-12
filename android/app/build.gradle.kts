@@ -40,6 +40,7 @@ android {
     sourceSets["main"].java.srcDir("../security/src/main/java")
     sourceSets["main"].java.srcDir("../protocol/src/main/java")
     sourceSets["main"].java.srcDir("../network/src/main/java")
+    sourceSets["main"].java.srcDir("../health/src/main/java")
     sourceSets["main"].jniLibs.srcDir("../../native-deps/apk-libs")
     sourceSets["main"].jniLibs.srcDir("../../native-deps/agent-apk-libs")
     sourceSets["main"].assets.srcDir("../../native-deps/agent-assets")

@@ -7,6 +7,8 @@ import android.content.pm.ServiceInfo
 import android.hardware.SensorManager
 import android.net.wifi.WifiManager
 import android.os.*
+import dev.ros2android.health.PauseDetector
+import dev.ros2android.health.PauseMonitor
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
@@ -27,6 +29,9 @@ class RobotSessionService : Service() {
     private var foreground = false
     private var foregroundTypes = 0
     @Volatile private var destroyed = false
+    private val pauseMonitor = PauseMonitor()
+    /** Process-wide execution pauses during the current foreground session (for example a vendor freezer). */
+    val pauses: PauseDetector.Snapshot get() = pauseMonitor.snapshot
     private val runtime = SessionRuntime<Profile>(
         startNative = { profile ->
             check(NativeRuntime.available) { NativeRuntime.diagnostic() }
@@ -229,7 +234,7 @@ class RobotSessionService : Service() {
         val cameraActive = withCamera || catalog.any { it.kind == 8 && it.id in active }
         val types = (if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE else 0) or
             (if (Build.VERSION.SDK_INT >= 30 && cameraActive) ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA else 0)
-        if (!foreground) startForegroundService(Intent(this, RobotSessionService::class.java))
+        if (!foreground) { startForegroundService(Intent(this, RobotSessionService::class.java)); pauseMonitor.start() }
         foregroundTypes = types
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val stop = PendingIntent.getService(this, 1, Intent(this, RobotSessionService::class.java).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
@@ -354,6 +359,7 @@ class RobotSessionService : Service() {
         multicast?.let { if (it.isHeld) it.release() }; multicast = null
         wake?.let { if (it.isHeld) it.release() }; wake = null
         if (foreground) stopForeground(STOP_FOREGROUND_REMOVE)
+        pauseMonitor.stop()
         foreground = false; foregroundTypes = 0
     }
     override fun onDestroy() {

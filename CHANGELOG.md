@@ -6,6 +6,15 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Detect process-wide execution pauses (for example a vendor app freezer) in the
+  main app and all runner backends, and report Android's battery policy. Home,
+  project cards and runner screens show a concise warning with the pause count and
+  longest pause; Details and Settings show whether battery optimization applies.
+  Runner status adds an optional `health` object; older runners omit it.
+- Make the Dashboard peer qualification require background activity and zero
+  reported pauses, add boot-clock fixture timestamps, phase logs and stall
+  diagnostics, and add an own-process freezer/scheduler observer for device tests.
+
 - Reject connection-profile changes while a sensor/Dashboard runtime is active.
   Keep runtime peer-recovery tests headless, with per-start telemetry correlation
   and automatic cleanup; UI tests retain their own Activity lifecycle.

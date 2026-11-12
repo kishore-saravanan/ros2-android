@@ -1,10 +1,13 @@
 package dev.ros2android.runner
 
 import android.app.*
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.net.wifi.WifiManager
 import android.os.*
+import dev.ros2android.health.BackgroundPolicy
+import dev.ros2android.health.PauseMonitor
 import org.json.JSONObject
 import java.util.concurrent.Executors
 
@@ -60,6 +63,7 @@ class ProjectService : Service() {
         lastConfig = profile.toString()
         val token = ++generation
         busy = true; state = "Starting"
+        pauses.start() // Execution pauses are reported for this run until it stops or fails.
         worker.execute {
             val result = runCatching {
                 backend.requireLoaded()
@@ -97,7 +101,7 @@ class ProjectService : Service() {
             main.post {
                 if (destroyed || token != generation) return@post
                 busy = false; state = result.fold({ "Stopped" }, { "Stop failed: ${it.message}" })
-                releaseLocks(); stopForeground(STOP_FOREGROUND_REMOVE); stopSelf()
+                pauses.stop(); releaseLocks(); stopForeground(STOP_FOREGROUND_REMOVE); stopSelf()
             }
         }
     }
@@ -111,7 +115,7 @@ class ProjectService : Service() {
                 if (destroyed || token != generation) return@post
                 busy = false
                 state = "Failed: $reason" + (cleanup.exceptionOrNull()?.let { "; cleanup: ${it.message}" } ?: "")
-                releaseLocks(); stopForeground(STOP_FOREGROUND_REMOVE); stopSelf()
+                pauses.stop(); releaseLocks(); stopForeground(STOP_FOREGROUND_REMOVE); stopSelf()
             }
         }
     }
@@ -121,7 +125,7 @@ class ProjectService : Service() {
     }
     override fun onDestroy() {
         main.removeCallbacks(monitor)
-        destroyed = true; generation++; current = null
+        destroyed = true; generation++; current = null; pauses.stop()
         if (state != "Stopped" || busy) worker.execute { runCatching { backend.stop() } }
         releaseLocks(); super.onDestroy()
     }
@@ -134,9 +138,19 @@ class ProjectService : Service() {
         @Volatile private var lastState = "Stopped"
         @Volatile private var lastConfig: String? = null
         @Volatile var current: ProjectService? = null; private set
-        fun statusJson(): String = JSONObject().put("project", BuildConfig.PROJECT_ID)
+        /** Process-wide so the last run's pauses stay visible after Stop until the next Start. */
+        private val pauses = PauseMonitor()
+        fun statusJson(context: Context): String = JSONObject().put("project", BuildConfig.PROJECT_ID)
             .put("sourceId", BuildConfig.PROJECT_SOURCE_ID).put("state", current?.state ?: lastState).put("busy", current?.busy ?: false)
             .put("config", lastConfig?.let { JSONObject(it) })
-            .put("native", runCatching { JSONObject(backend.diagnostic()) }.getOrElse { JSONObject().put("error", it.message) }).toString()
+            .put("native", runCatching { JSONObject(backend.diagnostic()) }.getOrElse { JSONObject().put("error", it.message) })
+            .put("health", health(context)).toString()
+        /** Additive status object: absent from older runners, so readers must treat it as optional. */
+        private fun health(context: Context): JSONObject = pauses.snapshot.let { pause ->
+            JSONObject().put("monitoring", pauses.monitoring).put("pauses", pause.pauses)
+                .put("longestPauseMs", pause.longestMs).put("totalPausedMs", pause.totalMs).put("lastPauseEndedAt", pause.lastEndedAt)
+                .put("batteryOptimized", BackgroundPolicy.batteryOptimized(context) ?: JSONObject.NULL)
+                .put("backgroundRestricted", BackgroundPolicy.backgroundRestricted(context) ?: JSONObject.NULL)
+        }
     }
 }

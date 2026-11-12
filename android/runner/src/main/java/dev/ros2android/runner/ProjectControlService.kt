@@ -43,7 +43,7 @@ open class ProjectControlService : Service() {
                     3 -> ProjectService.current?.stopProject()
                     else -> error("Unsupported project control request")
                 }
-                JSONObject(ProjectService.statusJson()).apply {
+                JSONObject(ProjectService.statusJson(this@ProjectControlService)).apply {
                     run {
                         val prefs = getSharedPreferences("project_profile", MODE_PRIVATE)
                         put("config", JSONObject().put("domain", prefs.getString("domain", "0"))

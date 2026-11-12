@@ -40,10 +40,16 @@ a PC or an external network.
       Two-phase main-app SIGKILL and Android Force stop tests also pass with outside process observations,
       saved settings and fresh ROS recovery. Vendor Recents swipes,
       unplugged idle, other devices/backends and endurance remain open.
+- [x] Detect and explain vendor pauses. The main app and runners report process-wide
+      execution pauses and Android's battery policy; Home, Projects and the runner
+      screen warn with the affected app. This traced the intermittent headless C++
+      stall to the vendor freezer pausing a battery-optimized runner.
 - [x] Test Dashboard peer loss/late subscribers and distinguish local writes
       from remote acknowledgement. Separate C++ and Python peers pass over
       phone-local DDS with Wi-Fi off: stale data, explicit restart and no replay.
-      Cross-network interruptions remain part of the network qualification gate.
+      Headless C++ passes repeated strict runs with background activity allowed;
+      the strict Python rerun is pending. Cross-network interruptions remain part
+      of the network qualification gate.
 - [x] Isolate control requests and reject stale replies; unit-test timeout/reconnect rules.
 - [x] Prepare an opt-in stopped-fixture test for legacy requests and version rejection without state changes.
 - [x] Qualify current-service legacy/versioned status and invalid request rejection without state changes.

@@ -117,6 +117,13 @@ start/stop/configure request: the runner may have acted before its reply was los
 Unbinding never stops the project. Binding callbacks from a closed connection and
 replies from superseded requests cannot restore controls.
 
+Status JSON is additive. Current runners add an optional `health` object with
+execution-pause counts and Android background policy (fields in
+[project controls](PROJECTS.md#background-pauses)); it needs no protocol-version or
+capability change, and controllers treat its absence as unknown. A vendor pause of
+the runner process that outlasts the four-second request deadline appears as a
+controller timeout; Refresh then reads the actual state and its recorded pauses.
+
 Pure contract/request-state tests and compilation cover these rules. Physical updated/legacy
 Binder interoperability and incompatible-runner presentation still need dedicated
 qualification; existing DDS tests do not establish these new checks.

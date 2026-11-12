@@ -2,8 +2,17 @@
 #include <std_msgs/msg/bool.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <chrono>
+#include <ctime>
 #include <string>
 #include <stdexcept>
+
+// Same clock as Android SystemClock.elapsedRealtime(), so peers on one phone can
+// attribute a telemetry gap to publishing or to delivery.
+static int64_t boot_milliseconds() {
+  timespec now{};
+  clock_gettime(CLOCK_BOOTTIME, &now);
+  return static_cast<int64_t>(now.tv_sec) * 1000 + now.tv_nsec / 1000000;
+}
 
 // Harmless lifecycle peer: no hardware, files, camera or movement topics.
 class Fixture : public rclcpp::Node {
@@ -19,7 +28,7 @@ class Fixture : public rclcpp::Node {
     timer_ = create_wall_timer(std::chrono::milliseconds(200), [this] {
       std_msgs::msg::String value;
       value.data = "{\"trial\":\"" + trial_ + "\",\"tick\":" + std::to_string(++tick_) + ",\"count\":" +
-        std::to_string(count_) + ",\"last\":" + last_ + "}";
+        std::to_string(count_) + ",\"last\":" + last_ + ",\"stamp_ms\":" + std::to_string(boot_milliseconds()) + "}";
       output_->publish(value);
     });
   }
