@@ -6,6 +6,10 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Extract UI-scoped project discovery/bindings into `ProjectConnections`; keep
+  runner execution independent of screen lifetime. Guard packaged host-module
+  boundaries and compatibility wrappers in the host checks.
+
 - Share validated runner version properties across all three backends. Qualify
   a same-key C++ runner update, profile preservation and rejected downgrade.
 

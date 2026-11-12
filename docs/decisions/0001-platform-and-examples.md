@@ -1,7 +1,8 @@
 # ADR 0001: separate platform and robot examples
 
-Status: direction accepted, 2026-11-01. Migration pending; no external repository
-has been created.
+Status: direction accepted, 2026-11-01. A history-preserving local companion and
+installed-client build path are prepared; public publication and final migration
+remain pending.
 
 ## Context
 

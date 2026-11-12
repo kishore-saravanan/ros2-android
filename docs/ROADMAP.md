@@ -83,12 +83,16 @@ messages and lifecycle behavior.
 sensor, Dashboard widget and runtime backend.
 
 - [ ] Extract focused controllers from the main Activity/session service incrementally.
+      Project discovery and UI-scoped bindings now have a focused owner; session
+      and other screen responsibilities remain to be separated.
 - [ ] Share runner lifecycle/configuration contracts across the three backends.
 - [ ] Move host implementation into the Python package behind one CLI family.
       Diagnostics, APK checks, workspace inspection/orchestration and manifest validation
       are packaged. Native build, project/device and launch backends still use
       compatibility scripts.
-- [ ] Test module boundaries and expand package/artifact checks in CI.
+- [x] Guard installed host-module boundaries and expand package/artifact checks in CI.
+      Thin compatibility wrappers and package imports have host regressions; Android
+      feature-module extraction remains incremental.
 - [ ] Add native SDK build automation separately from lightweight PR checks.
 
 **Exit gate:** focused modules with clear owners, unchanged supported journeys and
@@ -100,6 +104,9 @@ or large rewrite solely for architectural patterns.
 **Outcome:** robot demos demonstrate the public SDK instead of defining it.
 
 - [ ] Create the companion examples repository after its SDK consumption path works.
+      A local companion preserves application history and builds with the installed
+      pinned client/SDK. Generated-image tests and standalone USB firmware build
+      pass. Public repository publication and separate deployment remain pending.
 - [ ] Move ball following and robot-specific firmware/configuration with history,
       licensing, citation and a recoverable working baseline.
 - [ ] Keep minimal compatibility fixtures in this platform repository.

@@ -77,12 +77,12 @@ open class MainActivity : Activity() {
     private val expanded = mutableSetOf<String>()
     private val navButtons = mutableMapOf<String, Button>()
     private val ticker = object : Runnable {
-        override fun run() { if (resumed) { refresh(); if (tab == "Projects" || tab == "Overview") projectControllers.values.toList().forEach { it.poll() }; main.postDelayed(this, 500) } }
+        override fun run() { if (resumed) { refresh(); if (tab == "Projects" || tab == "Overview") projectControllers.poll(); main.postDelayed(this, 500) } }
     }
-    private val projectControllers = mutableMapOf<String, ProjectController>()
+    private val projectControllers by lazy { ProjectConnections(this) { updateProjects(); refreshHomeActivity() } }
     private data class ProjectRow(val state: TextView, val nodes: TextView, val toggle: Button, val settings: Button, val logs: TextView?)
     private val projectRows = mutableMapOf<String, ProjectRow>()
-    private fun closeProjects() { projectControllers.values.forEach { it.close() }; projectControllers.clear() }
+    private fun closeProjects() = projectControllers.close()
     private fun updateProjects() {
         projectRows.forEach { (pkg, row) ->
             val control = projectControllers[pkg] ?: return@forEach
@@ -273,19 +273,8 @@ open class MainActivity : Activity() {
         if (oldScroll > 0) scroll.post { scroll.scrollTo(0, oldScroll) }
     }
 
-    private var homeProjectsUnavailable = false
     private fun connectHomeProjects() {
-        val projects = runCatching { InstalledProjects.list(this) }
-        homeProjectsUnavailable = projects.isFailure
-        val installed = projects.getOrDefault(emptyList())
-        val packages = installed.map { it.packageName }.toSet()
-        projectControllers.keys.filter { it !in packages }.forEach { projectControllers.remove(it)?.close() }
-        installed.forEach { project ->
-            if (projectControllers[project.packageName]?.project != project) projectControllers.remove(project.packageName)?.close()
-            projectControllers.getOrPut(project.packageName) {
-                ProjectController(this, project) { updateProjects(); refreshHomeActivity() }
-            }.connect()
-        }
+        projectControllers.discover().forEach { project -> projectControllers.controller(project).connect() }
     }
     private fun refreshHomeActivity() {
         val running = projectControllers.values.count { it.error == null && it.status?.optString("state") == "Running" }
@@ -296,7 +285,7 @@ open class MainActivity : Activity() {
             append("Sensor topics: ${active.size} publishing")
             val robot = session
             append("\nDashboard topics: ${robot?.dashboardPublisherCount ?: 0} publishing · ${robot?.dashboardSubscriberCount ?: 0} subscribed")
-            append(if (homeProjectsUnavailable) "\nProjects: status unavailable" else "\nProjects: $running running / ${projectControllers.size} installed · $nodes nodes")
+            append(if (projectControllers.discoveryError != null) "\nProjects: status unavailable" else "\nProjects: $running running / ${projectControllers.size} installed · $nodes nodes")
             if (unknown > 0) append(" · $unknown awaiting status")
             append("\nMicro-ROS agent: ${MicroRosAgentService.state}")
         })
@@ -420,14 +409,12 @@ open class MainActivity : Activity() {
     }
     private fun projectsScreen() {
         projectRows.clear()
-        val projects = runCatching { InstalledProjects.list(this) }.getOrElse { announce("Cannot load projects: ${it.message}"); emptyList() }
-        val packages = projects.map { it.packageName }.toSet()
-        projectControllers.keys.filter { it !in packages }.forEach { projectControllers.remove(it)?.close() }
+        val projects = projectControllers.discover()
+        projectControllers.discoveryError?.let { announce("Cannot load projects: ${it.message}") }
         if (projects.isEmpty()) card("No projects yet") { box -> box.addView(text("Deploy a runner from your PC.", 14, muted)) }
         projects.forEach { project ->
-            if (projectControllers[project.packageName]?.project != project) projectControllers.remove(project.packageName)?.close()
             card(project.id.replace('_', ' ')) { box ->
-            val control = projectControllers.getOrPut(project.packageName) { ProjectController(this, project) { updateProjects() } }
+            val control = projectControllers.controller(project)
             val state = text("Connecting…", 15).apply { tag = "project_state:${project.id}" }; box.addView(state)
             val nodes = text("", 13, muted); box.addView(nodes)
             val toggle = primaryButton("Start project") { control.send(if (control.status?.optString("state") == "Running") 3 else 2) }.apply {

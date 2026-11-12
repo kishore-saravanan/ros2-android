@@ -16,7 +16,9 @@ See the [workspace guide](../docs/COLCON-WORKSPACES.md),
 Folder names and dependencies are described by each example's manifest/source;
 these examples do not establish arbitrary Linux workspace compatibility.
 
-The planned companion examples repository has not been created. Before moving
-robot applications, prove that they build from an external checkout against the
-installed/pinned platform client and SDK. Keep small compatibility fixtures here.
+Companion extraction is in progress. A separate local checkout preserves the
+application history, builds the ball-follower APK with an installed pinned client
+and prepared SDK, and builds its USB robot firmware independently. Publication
+and separate on-device deployment remain pending; retain these working application
+copies until that migration gate passes. Keep small compatibility fixtures here.
 See [ADR 0001](../docs/decisions/0001-platform-and-examples.md).

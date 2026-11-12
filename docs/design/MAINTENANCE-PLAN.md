@@ -9,6 +9,9 @@ one host CLI. Prefer small changes that preserve supported workflows. The
 - Android UI presents configuration and observed state; services own hardware and
   ROS sessions independently of screen navigation.
 - Sensor, Dashboard, project and MCU controllers own their respective resources.
+  `ProjectConnections` owns discovery reconciliation and UI management bindings;
+  `ProjectController` owns each IPC connection and runners retain execution.
+  Closing the UI binding collection never sends a Stop command.
   Streaming paths use bounded queues and discard stale frames.
 - Runner backends share lifecycle and configuration contracts while retaining
   backend-specific execution code.
@@ -54,7 +57,8 @@ remaining compatibility limits.
 Run host and documentation checks plus Android JVM tests and lint on ordinary
 changes. Keep pinned native SDK builds separate from lightweight checks. A missing
 SDK is not a passing integration test. Installed-package tests must exercise the
-installed client outside its source checkout.
+installed client outside its source checkout. Host boundary checks reject imports
+of checkout wrappers and prevent migrated wrappers from accumulating new logic.
 
 Physical qualification covers offline startup, network and USB recovery, runtime
 lifetimes and supported upgrade paths. Tests involving actuators require explicit
