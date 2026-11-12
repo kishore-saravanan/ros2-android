@@ -6,6 +6,9 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Add an operator-guided USB Agent recovery test: unplug, replug, deny and allow USB
+  access, with the sensor session surviving and only explicit restarts.
+
 - Link GitHub Sponsors from the README and the repository's Sponsor button.
 
 - Document runner authorization behavior for every signer change, reinstall and

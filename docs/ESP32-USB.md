@@ -78,6 +78,27 @@ Higher baud rates need joint board/driver/firmware qualification. This profile i
 for control/status/small sensors rather than video. Full-speed USB's headline rate
 is not the rate of the UART behind this bridge.
 
+## Guided recovery check
+
+`UsbAgentRecoveryTest` qualifies the recovery paths above with an operator. The ESP32
+occupies the phone's USB port, so connect ADB over Wi-Fi first (`adb tcpip 5555` while
+still on USB, then `adb connect PHONE_IP:5555`; `adb usb` restores USB mode afterwards).
+With ROS2 Android open and unlocked and motor power off, run:
+
+```bash
+ANDROID_SERIAL=PHONE_IP:5555 ./setup/build.sh :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=dev.ros2android.android.UsbAgentRecoveryTest \
+  -Pandroid.testInstrumentationRunnerArguments.usbRecoveryGuided=true
+```
+
+Toasts on the phone (and `ROS2Guided` log lines) say when to unplug, replug, **deny**
+and then **allow** USB access. The test requires the Disconnected state on detach, the
+battery publisher and Dashboard to keep running, no automatic Agent restart after
+reattach, the denial to be reported without a crash, and fresh battery replies only
+after an explicit start. If Android remembers access for the board, the denial step is
+recorded as not exercised rather than passed. It uses the reference serial firmware's
+battery reply and heartbeat; no motion topic is published.
+
 ## Verification boundary
 
 See [compatibility and validation](STATUS.md) for actual
