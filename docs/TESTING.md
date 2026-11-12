@@ -417,3 +417,51 @@ requires control disconnection, no remaining native workspace processes, stale R
 readings, unchanged runner profile, and fresh correct results after explicit
 restart. This passes on the reference C++ fixture; it does not qualify other
 backends, vendor Recents behavior, reboot or automatic restart.
+
+## Dashboard peer recovery
+
+With the prepared native/Python SDK, build and install the harmless C++ fixture:
+
+```bash
+./setup/build.sh :runner:assembleDebug :runner:lintDebug \
+  -ProbotProjectDir=examples/runner_fixture_cpp
+./setup/run-device.sh --runner dev.ros2android.android.runner.fixture_cpp --install-only
+```
+
+Leave ROS2 Android open and unlocked, stop the main session and fixture, and turn
+Wi-Fi off manually. No MCU connection or motor power is needed. Run:
+
+```bash
+./setup/build.sh :app:connectedDebugAndroidTest \
+  '-Pandroid.testInstrumentationRunnerArguments.class=dev.ros2android.android.DashboardPeerRecoveryTest#cppLateSubscriberAndPeerRecovery' \
+  -Pandroid.testInstrumentationRunnerArguments.dashboardRecoveryPackage=dev.ros2android.android.runner.fixture_cpp
+```
+
+For the embedded Python backend, build/install `:pythonRunner:assembleDebug
+:pythonRunner:lintDebug` with `-ProbotProjectDir=examples/runner_fixture_python`,
+then install with `--python-runner dev.ros2android.android.runner.fixture_python
+--install-only`. Run the same class with method `pythonLateSubscriberAndPeerRecovery`
+and `dashboardRecoveryPackage=dev.ros2android.android.runner.fixture_python`.
+Reopen the app after installation or a previous test if needed.
+
+The opt-in test accepts only those disposable fixture package names. It observes
+actual DDS traffic between the main app and a separate runner process: a volatile
+subscriber joining after a write receives no old command; stopped-peer telemetry
+becomes Stale while Dashboard stays active; runner and Dashboard restarts do not
+replay ON/OFF; fresh explicit commands are counted by the peer. Local write status
+continues to say remote state unknown. It restores the runner profile and stops
+its test sessions without changing saved widgets. Both backends pass on the
+reference phone. To run both methods in one invocation, select the whole class
+and set `dashboardRecoveryPackage=both`, with both fixtures installed and stopped.
+This qualifies phone-local peer loss, not router isolation,
+Wi-Fi handover, all message types or a remote robot acknowledgement protocol.
+
+## Core layout and navigation checks
+
+`ResponsiveNavigationTest` rotates only the app Activity between landscape and
+portrait, verifies all five tab touch targets/labels and restores its orientation.
+`ThemeUiTest` uses app-local light/dark preview contexts; `AccessibilityUiTest`
+uses a large-text preview context and checks stable status rendering. None changes
+global appearance or accessibility settings. These and the ordinary navigation
+checks pass on the reference phone. They do not qualify every dialog, image widget,
+screen reader, display size or Android version. Camera navigation remains opt-in.

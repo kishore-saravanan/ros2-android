@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "runner_fixture_python",
+  "applicationId": "dev.ros2android.android.runner.fixture_python",
+  "name": "PYTHON runtime fixture",
+  "runtimeAbi": 1,
+  "runtime": "python"
+}

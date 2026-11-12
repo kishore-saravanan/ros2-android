@@ -26,8 +26,8 @@ a PC or an external network.
 
 - [ ] Qualify fresh startup without Wi-Fi across runner backends and USB Agent.
       Battery/Dashboard and workspace Live/Stale checks have operator confirmation;
-      a physical C++ workspace result/stop/restart test also passes. Other backends
-      and USB coexistence remain open.
+      physical factory-C++, embedded-Python and C++-workspace startup, traffic and
+      stop/restart checks also pass. USB Agent coexistence remains open.
 - [x] Share phone-local Cyclone startup settings across app, runners and shell; reject stale pins with recovery guidance.
 - [ ] Qualify network changes and reconnects consistently on devices.
 - [ ] Qualify USB detach/reconnect, permission denial and app-update recovery.
@@ -40,8 +40,10 @@ a PC or an external network.
       Two-phase main-app SIGKILL and Android Force stop tests also pass with outside process observations,
       saved settings and fresh ROS recovery. Vendor Recents swipes,
       unplugged idle, other devices/backends and endurance remain open.
-- [ ] Test Dashboard lost-link/late-subscriber behavior and distinguish local writes
-      from remote acknowledgement.
+- [x] Test Dashboard peer loss/late subscribers and distinguish local writes
+      from remote acknowledgement. Separate C++ and Python peers pass over
+      phone-local DDS with Wi-Fi off: stale data, explicit restart and no replay.
+      Cross-network interruptions remain part of the network qualification gate.
 - [x] Isolate control requests and reject stale replies; unit-test timeout/reconnect rules.
 - [x] Prepare an opt-in stopped-fixture test for legacy requests and version rejection without state changes.
 - [x] Qualify current-service legacy/versioned status and invalid request rejection without state changes.
@@ -131,6 +133,8 @@ package/SDK without editing the platform checkout. No mandatory submodule.
 - [ ] Test an additional phone/Android version and publish the compatibility matrix.
 - [ ] Measure sustained operation, memory, thermal behavior and camera latency.
 - [ ] Check portrait/landscape, light/dark mode and accessibility on core journeys.
+      Reference-phone core tabs, app-local light/dark and large-text layouts pass;
+      broader widget/dialog, screen-reader and device coverage remains open.
 - [ ] Produce signed, checksummed APK/client/SDK artifacts and dependency notices.
 - [ ] Verify installation, upgrade and rollback from clean environments.
 - [ ] Complete public-history/privacy and security review before wider publication.

@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "id": "runner_fixture_cpp",
+  "applicationId": "dev.ros2android.android.runner.fixture_cpp",
+  "name": "CPP runtime fixture",
+  "runtimeAbi": 1
+}

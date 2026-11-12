@@ -6,6 +6,10 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Add hardware-free C++ and Python runtime peers and opt-in phone-local Dashboard
+  qualification for late subscribers, lost-peer Stale state, explicit recovery and
+  no command replay after runner/Dashboard restarts.
+
 - Package shell connection, phone-mediated ESP32 programming and pinned native-source
   preparation behind the installed CLI, retaining thin source-checkout wrappers.
   Reject unbuilt shell caches, invalid cache IDs and unknown source-fetch options
