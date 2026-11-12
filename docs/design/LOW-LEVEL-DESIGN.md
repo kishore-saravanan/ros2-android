@@ -87,11 +87,10 @@ from user-selected capture rates/resolution.
 
 ## Dashboard command versus observed state
 
-The recent OFF incident remains unresolved: the robot reported ON, no OFF sample
-was observed during diagnosis, and a PC-issued OFF was processed correctly.
-Reproduce the full UI-to-ROS path before attributing the fault to a particular
-layer. Trace widget event, enabled/generation guard, queue, native publish, DDS
-matching, subscriber callback, application state and UI readback.
+A command publication and the receiving application’s observed state are separate
+facts. Diagnose failures across widget event, session generation, publication
+queue, native publish, DDS matching, subscriber callback and application state.
+A local publish result cannot confirm that a remote application processed it.
 
 Generic Switch publication shows requested value only. Optional state-topic
 binding can display Observed ON/OFF/Stale/Unknown separately. Never label an
@@ -112,6 +111,15 @@ Dashboard session, owned project jobs and Agent. A coordinated robot-session sto
 operates on explicitly associated components and reports partial failure. Existing
 Stop all behavior currently excludes projects/Agent; do not silently expand it
 without changing the UI contract and tests.
+
+The implemented `RunnerBackend` boundary is shared by the factory C++, embedded
+Python and workspace backends. `ProjectService` owns serialized lifecycle work,
+accepted-profile persistence, foreground notification, wake/multicast locks,
+generation guards and failure cleanup. It passes the same validated `ProjectConfig`
+to each backend. Backends own execution and diagnostics, using the common
+`CycloneNetwork` startup policy. C++ maps nodes to native factories; workspace
+runners launch packaged child processes; Python starts its packaged runtime.
+The contract does not add per-node control or change supported launch formats.
 
 Backends report capabilities such as process isolation, launch support and owned
 node control. A Python multi-node process cannot promise the same crash isolation

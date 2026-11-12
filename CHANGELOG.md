@@ -6,6 +6,10 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Make the shared runner execution/configuration boundary compiler-checked across
+  factory C++, embedded Python and workspace backends, retaining service-owned
+  lifecycle and existing execution models.
+
 - Package project orchestration, bounded launch validation and controller identity
   inspection. Bundle matching helper sources for system-Python launch compilation;
   retain existing command entry points as compatibility wrappers.

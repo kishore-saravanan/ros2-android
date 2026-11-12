@@ -88,7 +88,9 @@ sensor, Dashboard widget and runtime backend.
 - [ ] Extract focused controllers from the main Activity/session service incrementally.
       Project discovery and UI-scoped bindings now have a focused owner; session
       and other screen responsibilities remain to be separated.
-- [ ] Share runner lifecycle/configuration contracts across the three backends.
+- [x] Share runner lifecycle/configuration contracts across the three backends.
+      One foreground supervisor consumes a compiler-checked backend interface and
+      validated project configuration; backend isolation and qualification still differ.
 - [ ] Move host implementation into the Python package behind one CLI family.
       Diagnostics, APK checks, workspace/project orchestration, manifest validation
       and bounded launch validation are packaged. Native setup/build, MCU and shell

@@ -11,7 +11,7 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /** Owns only the packaged ROS executables launched for this workspace. */
-object ProjectNative {
+object ProjectNative : RunnerBackend {
     private lateinit var app: Context
     private val lifecycle = ReentrantLock()
     private data class Worker(val name: String, val component: String, val process: Process)
@@ -19,9 +19,9 @@ object ProjectNative {
     private var started = 0L
     private var running = false
     private var error = ""
-    fun prepare(context: Context) { app = context.applicationContext }
-    fun prepareShell(): String = ShellEnvironment.prepare(app)
-    fun requireLoaded() {}
+    override fun prepare(context: Context) { app = context.applicationContext }
+    override fun prepareShell(): String = ShellEnvironment.prepare(app)
+    override fun requireLoaded() {}
     private fun extract(path: String, destination: File) {
         val children = app.assets.list(path).orEmpty()
         if (children.isNotEmpty()) {
@@ -31,11 +31,13 @@ object ProjectNative {
             app.assets.open(path).use { input -> destination.outputStream().use { input.copyTo(it) } }
         }
     }
-    fun start(domain: Int, namespace: String, peer: String, local: String, libraryDir: String,
-              arguments: Array<String>, components: Array<String>, nodeArguments: Array<Array<String>>) = lifecycle.withLock {
+    override fun start(config: ProjectConfig, libraryDir: String): Unit = lifecycle.withLock {
+        val namespace = config.namespace
+        val components = config.nodes.map { it.component }
+        val nodeArguments = config.nodes.map { it.arguments }
         check(workers.isEmpty()) { "Stop the current workspace before starting" }
         require(components.size == nodeArguments.size && components.size in 1..16)
-        val xml = dev.ros2android.network.CycloneNetwork.current(peer, local)
+        val xml = dev.ros2android.network.CycloneNetwork.current(config.peer, config.local)
         val prefix = File(app.filesDir, "ros2-workspace")
         extract("ros2-workspace", prefix)
         error = ""; started = SystemClock.elapsedRealtime()
@@ -45,11 +47,11 @@ object ProjectNative {
                 require(component.matches(Regex("[A-Za-z_][A-Za-z0-9_]*")))
                 val executable = File(libraryDir, "libworkspace_exec_$component.so")
                 check(executable.isFile && executable.canExecute()) { "Packaged executable unavailable: $component" }
-                val command = listOf(executable.path, "--ros-args") + nodeArguments[i] + listOf("-r", "__ns:=$namespace") + arguments
+                val command = listOf(executable.path, "--ros-args") + nodeArguments[i] + listOf("-r", "__ns:=$namespace") + config.arguments
                 val builder = ProcessBuilder(command).redirectErrorStream(true)
                 builder.environment().apply {
                     put("LD_LIBRARY_PATH", libraryDir); put("AMENT_PREFIX_PATH", prefix.path)
-                    put("RMW_IMPLEMENTATION", "rmw_cyclonedds_cpp"); put("ROS_DOMAIN_ID", domain.toString())
+                    put("RMW_IMPLEMENTATION", "rmw_cyclonedds_cpp"); put("ROS_DOMAIN_ID", config.domain.toString())
                     put("CYCLONEDDS_URI", xml); put("ROS_LOG_DIR", File(app.filesDir, "ros-logs").path)
                 }
                 builder.directory(prefix)
@@ -83,8 +85,8 @@ object ProjectNative {
         }
         workers.clear()
     }
-    fun stop() = lifecycle.withLock { stopLocked() }
-    fun diagnostic(): String {
+    override fun stop() = lifecycle.withLock { stopLocked() }
+    override fun diagnostic(): String {
         if (!lifecycle.tryLock()) return "{\"transition\":true}"
         try {
             if (running) workers.firstOrNull { !it.process.isAlive }?.let {

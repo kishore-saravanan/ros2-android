@@ -21,7 +21,7 @@ class ProjectService : Service() {
     private val monitor = object : Runnable {
         override fun run() {
             if (destroyed || busy || state != "Running") return
-            val diagnostic = runCatching { JSONObject(ProjectNative.diagnostic()) }
+            val diagnostic = runCatching { JSONObject(backend.diagnostic()) }
             val failure = diagnostic.fold({
                 if (it.optBoolean("transition") || it.optBoolean("running")) null
                 else it.optString("error").ifEmpty { "Native executor stopped" }
@@ -33,7 +33,7 @@ class ProjectService : Service() {
 
     override fun onCreate() {
         super.onCreate(); current = this
-        ProjectNative.prepare(applicationContext)
+        backend.prepare(applicationContext)
         getSystemService(NotificationManager::class.java).createNotificationChannel(
             NotificationChannel(CHANNEL, "ROS project runtime", NotificationManager.IMPORTANCE_LOW))
     }
@@ -62,9 +62,8 @@ class ProjectService : Service() {
         busy = true; state = "Starting"
         worker.execute {
             val result = runCatching {
-                ProjectNative.requireLoaded()
-                val value = config.getOrThrow()
-                ProjectNative.start(value.domain, value.namespace, value.peer, value.local, applicationInfo.nativeLibraryDir, value.arguments, value.nodes.map { it.component }.toTypedArray(), value.nodes.map { it.arguments }.toTypedArray())
+                backend.requireLoaded()
+                backend.start(accepted, applicationInfo.nativeLibraryDir)
             }
             main.post {
                 if (destroyed || token != generation) return@post
@@ -94,7 +93,7 @@ class ProjectService : Service() {
         val token = ++generation
         busy = true; state = "Stopping"
         worker.execute {
-            val result = runCatching { ProjectNative.stop() }
+            val result = runCatching { backend.stop() }
             main.post {
                 if (destroyed || token != generation) return@post
                 busy = false; state = result.fold({ "Stopped" }, { "Stop failed: ${it.message}" })
@@ -107,7 +106,7 @@ class ProjectService : Service() {
         val token = ++generation
         busy = true; state = "Failing: $reason"
         worker.execute {
-            val cleanup = runCatching { ProjectNative.stop() }
+            val cleanup = runCatching { backend.stop() }
             main.post {
                 if (destroyed || token != generation) return@post
                 busy = false
@@ -123,7 +122,7 @@ class ProjectService : Service() {
     override fun onDestroy() {
         main.removeCallbacks(monitor)
         destroyed = true; generation++; current = null
-        if (state != "Stopped" || busy) worker.execute { runCatching { ProjectNative.stop() } }
+        if (state != "Stopped" || busy) worker.execute { runCatching { backend.stop() } }
         releaseLocks(); super.onDestroy()
     }
     companion object {
@@ -131,12 +130,13 @@ class ProjectService : Service() {
         const val STOP = "dev.ros2android.runner.STOP"
         private const val CHANNEL = "project_runtime"
         private val control = Executors.newSingleThreadExecutor()
+        private val backend: RunnerBackend = ProjectNative
         @Volatile private var lastState = "Stopped"
         @Volatile private var lastConfig: String? = null
         @Volatile var current: ProjectService? = null; private set
         fun statusJson(): String = JSONObject().put("project", BuildConfig.PROJECT_ID)
             .put("sourceId", BuildConfig.PROJECT_SOURCE_ID).put("state", current?.state ?: lastState).put("busy", current?.busy ?: false)
             .put("config", lastConfig?.let { JSONObject(it) })
-            .put("native", runCatching { JSONObject(ProjectNative.diagnostic()) }.getOrElse { JSONObject().put("error", it.message) }).toString()
+            .put("native", runCatching { JSONObject(backend.diagnostic()) }.getOrElse { JSONObject().put("error", it.message) }).toString()
     }
 }
