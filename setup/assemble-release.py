@@ -87,22 +87,30 @@ def require_contents(apk):
         raise RuntimeError('Release APK lacks required native/license content: ' + ', '.join(problems))
 
 
+def _bundled_apk(tar_stream, deb):
+    with tarfile.open(fileobj=tar_stream) as tar:
+        for member in tar.getmembers():
+            if member.name.endswith('ros2android/artifacts/main.apk'):
+                return hashlib.sha256(tar.extractfile(member).read()).hexdigest()
+    raise RuntimeError(f'{deb} has no bundled main APK')
+
+
 def deb_apk_sha256(deb):
-    """SHA-256 of the main APK bundled inside a Debian package (ar archive with data.tar.*)."""
+    """SHA-256 of the main APK bundled inside a Debian package."""
     data = Path(deb).read_bytes()
     if not data.startswith(b'!<arch>\n'):
         raise RuntimeError(f'{deb} is not a Debian archive')
+    if shutil.which('dpkg-deb'):  # handles every dpkg compression, including zstd
+        tar = subprocess.run(['dpkg-deb', '--fsys-tarfile', str(deb)], check=True, capture_output=True).stdout
+        return _bundled_apk(io.BytesIO(tar), deb)
     offset = 8
     while offset < len(data):
         header = data[offset:offset + 60]
         name, size = header[:16].decode().strip().rstrip('/'), int(header[48:58].decode().strip())
-        body = data[offset + 60:offset + 60 + size]
         if name.startswith('data.tar'):
-            with tarfile.open(fileobj=io.BytesIO(body)) as tar:
-                for member in tar.getmembers():
-                    if member.name.endswith('ros2android/artifacts/main.apk'):
-                        return hashlib.sha256(tar.extractfile(member).read()).hexdigest()
-            raise RuntimeError(f'{deb} has no bundled main APK')
+            if name.endswith('.zst'):
+                raise RuntimeError(f'{deb} uses zstd; install dpkg to inspect it')
+            return _bundled_apk(io.BytesIO(data[offset + 60:offset + 60 + size]), deb)
         offset += 60 + size + (size % 2)
     raise RuntimeError(f'{deb} has no data archive')
 

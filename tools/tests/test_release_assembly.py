@@ -68,6 +68,12 @@ class ReleaseAssemblyTest(unittest.TestCase):
     def test_debian_cross_check_reads_the_bundled_apk(self):
         deb = self.root / 'package.deb'; deb_with_apk(deb, b'apk-bytes')
         self.assertEqual(hashlib.sha256(b'apk-bytes').hexdigest(), release.deb_apk_sha256(deb))
+        with patch.object(release.shutil, 'which', return_value=None):  # pure-Python fallback without dpkg
+            self.assertEqual(hashlib.sha256(b'apk-bytes').hexdigest(), release.deb_apk_sha256(deb))
+            zstd = self.root / 'zstd.deb'
+            zstd.write_bytes(deb.read_bytes().replace(b'data.tar.gz/   ', b'data.tar.zst/  '))
+            with self.assertRaisesRegex(RuntimeError, 'zstd'):
+                release.deb_apk_sha256(zstd)
         (self.root / 'bad.deb').write_bytes(b'not an archive')
         with self.assertRaisesRegex(RuntimeError, 'not a Debian archive'):
             release.deb_apk_sha256(self.root / 'bad.deb')
