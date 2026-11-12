@@ -53,12 +53,30 @@ The JSON retains `packages` and `sourceHash` and adds `inspection` version 1:
 | `android-sdk` | A package marker exists in a selected target SDK prefix |
 | `host-only` | A marker exists only in a Linux ROS prefix; inspect the guidance |
 | `not-found` | No marker was found; this may also be a non-ament/system dependency |
-| `not-used` | Test/documentation dependency outside this build workflow |
+| `not-used` | Test/documentation dependency or a false target condition |
 | `group-unresolved` | A dependency group needs build-system resolution |
 
 Each row names the requesting package, dependency tag and evidence location.
-Conditions and version constraints are preserved, not evaluated. Summary counts
-refer to declarations, not unique packages. `unsupportedPackages` identifies
+`conditionEvaluation` reports active/inactive/unresolved conditions. The optional
+upstream `catkin-pkg` evaluator uses the target values `ROS_VERSION=2`,
+`ROS_DISTRO=jazzy`, `ROS_PYTHON_VERSION=3`; it does not inherit a different host
+ROS distribution. Unknown variables or an unavailable parser stay unresolved.
+A false target condition marks that declaration `not-used`. Install the evaluator
+in the same environment as the client if needed:
+
+```bash
+python3 -m pip install 'catkin-pkg>=1.0,<2'
+```
+
+Wheels also declare the `inspection` extra for this dependency. No public client
+release is assumed by this command. The evaluator is optional; ordinary client
+commands and inspection still work without it.
+
+`versionCheck` compares standard three-part numeric constraints against the first
+selected provider's `package.xml`. It reports satisfied/unsatisfied/unresolved,
+plus the provider version and manifest. A missing/mismatched manifest or unknown
+condition stays unresolved. Satisfying a declared host-only version does not
+supply an Android binary. Summary counts refer to declarations, not unique packages. `unsupportedPackages` identifies
 package types such as `ament_python`; inspection reports them, while build still
 rejects unsupported types. Invalid XML/names fail with the manifest path.
 
@@ -69,8 +87,13 @@ setup prefix (`ROBOT_ROS_SETUP`, default `/opt/ros/jazzy/setup.bash`) and inheri
 `AMENT_PREFIX_PATH`; Linux markers never become Android evidence.
 
 This is an advisory manifest scan, not a portability verdict or dependency solver.
-It does not check transitive dependencies, version satisfaction, ELF binaries or
-launch semantics. Source presence does not prove that a dependency can cross-build.
+It does not check transitive dependencies or ELF binaries. `launchAnalysis`
+parses up to 128 `.launch.py` files, at most 1 MiB each, without importing or
+executing them. Known unsupported actions and Node fields include source lines;
+dynamic keyword arguments and syntax errors receive diagnostics. No findings
+still means `requires-build-time-resolution`: imports, aliases, includes and
+conditions can generate actions the static scan cannot determine. The normal
+launch adapter remains authoritative at build time. Source presence does not prove that a dependency can cross-build.
 SDK markers do not prove that its binaries match this target. Conversely, bundled
 Python assets and the supported host-side launch adapter can satisfy requirements
 without target ament markers: the reference example may report `launch_ros` as

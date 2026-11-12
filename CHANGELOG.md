@@ -6,6 +6,10 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Extend read-only workspace inspection with optional upstream target-condition
+  evaluation, declared provider-version checks and bounded launch syntax warnings.
+  Preserve unresolved context instead of silently accepting or dropping it.
+
 - Extract UI-scoped project discovery/bindings into `ProjectConnections`; keep
   runner execution independent of screen lifetime. Guard packaged host-module
   boundaries and compatibility wrappers in the host checks.

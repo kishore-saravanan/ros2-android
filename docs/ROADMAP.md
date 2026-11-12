@@ -60,7 +60,10 @@ alone counts as proof of a working robot.
 platform source or relying on this maintainer's prepared PC.
 
 - [x] Inspect declared dependency providers and unsupported package types.
-- [ ] Resolve dependency/version conditions and report unsupported launch features.
+- [x] Report target dependency conditions, declared provider versions and known
+      unsupported launch syntax without executing workspace code. Conditions use
+      the optional upstream evaluator; unknown context remains unresolved. Dynamic
+      launch behavior and full dependency resolution remain build-time concerns.
 - [x] Define a bundled compatibility matrix tying CLI, APK, protocol, ABI and SDK locks.
 - [x] Add task-scoped preflight checks and document clean-machine setup order.
 - [x] Define isolated installed-wheel CI for Python 3.10/3.12; hosted runs pending.

@@ -22,3 +22,6 @@ where = ["python"]
 
 [tool.setuptools.package-data]
 ros2android = ["sdk.zip", "compatibility.json"]
+
+[project.optional-dependencies]
+inspection = ["catkin-pkg>=1.0,<2"]

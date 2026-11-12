@@ -100,6 +100,7 @@ def verify(wheel):
             require('usage:' in run(command, '--help'), 'Missing help for ' + command)
         package = root / 'External workspace/src/demo'; package.mkdir(parents=True)
         (package / 'package.xml').write_text('<package><name>demo</name><depend>missing_driver</depend>'
+            '<depend condition="$ROS_VERSION == 1">optional_driver</depend>'
             '<export><build_type>ament_cmake</build_type></export></package>')
         (package / 'CMakeLists.txt').write_text('message(FATAL_ERROR "Inspection must not execute build code")\n')
         workspace = package.parents[1]
@@ -107,7 +108,10 @@ def verify(wheel):
         for _ in range(2):
             result = json.loads(run('workspace', '--workspace', str(workspace), 'inspect', '--without-shell'))
             require(result['packages'][0]['name'] == 'demo', 'External workspace missing')
-            require(result['inspection']['summary']['not-found'] == 1, 'Expected missing dependency report')
+            require(result['inspection']['summary']['not-found'] == 2, 'Expected missing dependency report')
+            conditional = next(r for r in result['inspection']['dependencies'] if r['dependency'] == 'optional_driver')
+            require(conditional['conditionEvaluation']['state'] == 'unresolved', 'Missing optional evaluator must not silently drop dependencies')
+            require('launchAnalysis' in result['inspection'], 'Missing bounded syntax-only launch diagnostics')
             require(not any(p['indexPresent'] for p in result['inspection']['targetPrefixes']), 'Unexpected prepared SDK')
         for command in ('start', 'status', 'stop'):
             run('workspace', '--workspace', str(workspace), '--id', 'external_test', command, code=2)

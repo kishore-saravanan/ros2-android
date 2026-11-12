@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from workspace_inspection import inventory, inspect_dependencies
@@ -71,7 +72,7 @@ class WorkspaceInspectionTest(unittest.TestCase):
         self.assertEqual('not-used', rows['gtest']['provider'])
         self.assertEqual('not-used', rows['doxygen']['provider'])
 
-    def test_conditions_versions_and_groups_are_preserved_not_evaluated(self):
+    def test_conditions_versions_and_groups_preserve_declared_metadata(self):
         self.package('one', body='<depend condition="$ROS_VERSION == 2" version_gte="9.0">driver</depend>'
                      '<group_depend>interface_group</group_depend>')
         self.marker(self.target, 'interface_group') # Not evidence of group members.
@@ -82,6 +83,57 @@ class WorkspaceInspectionTest(unittest.TestCase):
         self.assertEqual('group-unresolved', rows['interface_group']['provider'])
         self.assertEqual(1, report['summary']['conditional'])
         self.assertEqual(1, report['summary']['versionConstrained'])
+
+    def test_unknown_condition_context_and_absent_optional_parser_stay_unresolved(self):
+        self.package('one', body='<depend condition="$BOARD == mobile">driver</depend>'
+                     '<depend condition="$ROS_VERSION == 2">other</depend>')
+        with patch.dict(sys.modules, {'catkin_pkg.condition': None}):
+            rows = {r['dependency']: r for r in self.report()['dependencies']}
+        self.assertEqual('unresolved', rows['driver']['conditionEvaluation']['state'])
+        self.assertIn('BOARD', rows['driver']['conditionEvaluation']['reason'])
+        self.assertIn('inspection extra', rows['other']['conditionEvaluation']['reason'])
+        self.assertEqual('not-found', rows['driver']['provider'])
+
+    def test_upstream_conditions_use_target_context_instead_of_host_environment(self):
+        try:
+            import catkin_pkg.condition
+        except ImportError:
+            self.skipTest('Optional upstream condition evaluator is not installed')
+        self.package('one', body='<depend condition="$ROS_VERSION == 1">roscpp</depend>'
+                     '<depend condition="$ROS_DISTRO == jazzy and $ROS_PYTHON_VERSION == 3">rclcpp</depend>'
+                     '<depend condition="__import__(bad)">invalid</depend>')
+        with patch.dict(os.environ, ROS_VERSION='1', ROS_DISTRO='humble'):
+            report = self.report()
+        rows = {r['dependency']: r for r in report['dependencies']}
+        self.assertEqual('not-used', rows['roscpp']['provider'])
+        self.assertEqual('active', rows['rclcpp']['conditionEvaluation']['state'])
+        self.assertEqual('unresolved', rows['invalid']['conditionEvaluation']['state'])
+        self.assertEqual(1, report['summary']['inactive'])
+
+    def test_version_checks_compare_numeric_components_and_all_bounds(self):
+        self.package('one', body='<depend version_gte="1.2.0" version_lt="2.0.0">driver</depend>'
+                     '<depend version_eq="1.2.0">local</depend>')
+        self.package('two', name='local', body='<version>1.10.0</version>')
+        self.marker(self.target, 'driver')
+        manifest = self.target / 'share/driver/package.xml'
+        manifest.parent.mkdir(parents=True)
+        manifest.write_text('<package><name>driver</name><version>1.10.0</version></package>')
+        report = self.report()
+        rows = {r['dependency']: r for r in report['dependencies']}
+        self.assertEqual('satisfied', rows['driver']['versionCheck']['state'])
+        self.assertEqual('1.10.0', rows['driver']['versionCheck']['providerVersion'])
+        self.assertEqual('unsatisfied', rows['local']['versionCheck']['state'])
+        self.assertEqual(1, report['summary']['versionUnsatisfied'])
+
+    def test_version_checks_do_not_guess_from_missing_wrong_or_nonstandard_metadata(self):
+        self.package('one', body='<depend version_eq="1.0.0">driver</depend>')
+        self.marker(self.target, 'driver')
+        self.assertEqual('unresolved', self.report()['dependencies'][0]['versionCheck']['state'])
+        manifest = self.target / 'share/driver/package.xml'
+        manifest.parent.mkdir(parents=True)
+        for name, version in [('other', '1.0.0'), ('driver', 'rolling')]:
+            manifest.write_text(f'<package><name>{name}</name><version>{version}</version></package>')
+            self.assertEqual('unresolved', self.report()['dependencies'][0]['versionCheck']['state'])
 
     def test_inspect_reports_unsupported_package_without_admitting_it_to_build(self):
         self.package('python', build_type='ament_python')
