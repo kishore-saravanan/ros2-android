@@ -6,6 +6,9 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Add an opt-in endurance test and resource monitor (memory, CPU, battery, thermal),
+  and a phone qualification driver and guide for checking additional phones.
+
 - Fix fresh native SDK builds: `rcl`'s test dependency `test_msgs` was skipped
   rather than ignored, so colcon required an earlier install of it and a new
   machine failed. Add a scripted installed-client journey (wheel to external

@@ -36,7 +36,8 @@ is identification, not a signature or proof of binary provenance.
 | Ordinary C++ workspace | ABI 2; native process runner; optional shell bundle |
 | Native inputs | Exact hashes for checked-in ROS, Python, shell and PC-Cyclone lock files |
 
-An API minimum is not a tested-device list. Physical evidence comes from one Android
+An API minimum is not a tested-device list. To add a phone, follow
+[qualify a phone](PHONE-QUALIFICATION.md). Physical evidence comes from one Android
 12 reference phone; an Android 15 emulator run with ARM translation adds UI, ROS
 session and runner compatibility checks, not phone qualification. Reference traffic/device evidence,
 including limits of the independent-signing preview and new protocol envelopes,

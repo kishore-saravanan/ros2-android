@@ -100,3 +100,31 @@ env -i HOME=/fresh/home GRADLE_USER_HOME=/fresh/home/.gradle PATH=/usr/bin:/bin 
 
 Set `PIP_ZIPAPP` to pip's standalone `pip.pyz` when the system Python lacks `ensurepip`.
 Same-OS isolation does not replace a clean OS install: system packages are reused.
+
+## Endurance monitoring
+
+`endurance_monitor.py` samples resident memory and CPU time of named ROS2 Android
+processes plus device battery and thermal state every `--interval` seconds while a
+command runs, then writes `.summary.json` with peak/mean RSS, RSS growth, mean CPU,
+battery levels and peak temperatures. Pair it with the opt-in `EnduranceTest`:
+
+```bash
+python3 tests/integration/endurance_monitor.py --serial SERIAL \
+  --package dev.ros2android.android --package dev.ros2android.android.runner.fixture_cpp \
+  --output device-logs/endurance/run.jsonl -- \
+  env ANDROID_SERIAL=SERIAL ./setup/build.sh :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=dev.ros2android.android.EnduranceTest \
+  -Pandroid.testInstrumentationRunnerArguments.enduranceRunnerPackage=dev.ros2android.android.runner.fixture_cpp \
+  -Pandroid.testInstrumentationRunnerArguments.enduranceMinutes=60
+```
+
+`EnduranceTest` keeps a fixture publishing at 5 Hz to a Dashboard subscriber, logs a
+per-minute summary under `ROS2Endurance`, and fails on a receipt gap over 2 s, more than
+10% missing samples, or any pause reported by the runner or main app. Emulator thermal
+values are synthetic; measure temperature on phones.
+
+## Phone qualification batch
+
+`phone_qualification.py --serial SERIAL --label NAME` checks preconditions, installs the
+current app and fixtures, and runs the suite, the Dashboard peer test and optionally an
+endurance run on that phone only. See [qualify a phone](../../docs/PHONE-QUALIFICATION.md).

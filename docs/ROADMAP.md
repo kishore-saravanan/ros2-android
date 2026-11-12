@@ -144,9 +144,13 @@ package/SDK without editing the platform checkout. No mandatory submodule.
 **Outcome:** a documented, installable release with honest support boundaries.
 
 - [ ] Test an additional phone/Android version and publish the compatibility matrix.
+      [Qualify a phone](PHONE-QUALIFICATION.md) runs the standard batch on any phone.
       An Android 15 emulator with ARM translation passes UI, ROS session, Dashboard
       peer and runner discovery checks; a second physical phone remains next.
 - [ ] Measure sustained operation, memory, thermal behavior and camera latency.
+      An opt-in endurance test with a resource monitor is ready and passed a short
+      emulator run (5 Hz, 211 ms largest gap, no pauses); hour-long phone runs and
+      camera latency remain.
 - [ ] Check portrait/landscape, light/dark mode and accessibility on core journeys.
       Reference-phone core tabs, app-local light/dark and large-text layouts pass.
       Automated accessibility checks pass on core screens in light and dark after
