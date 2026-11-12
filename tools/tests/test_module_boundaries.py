@@ -30,7 +30,7 @@ class HostModuleBoundaryTest(unittest.TestCase):
                                          'Installed modules must not modify import paths')
 
     def test_migrated_compatibility_wrappers_do_not_grow_implementations(self):
-        for name in ('project_manifest.py', 'workspace_inspection.py', 'ros2android-workspace', 'ros2android', 'robot_launch.py', 'controller_identity.py', 'connect-shell', 'esp32-via-phone', '../setup/fetch-native-ros.py'):
+        for name in ('project_manifest.py', 'workspace_inspection.py', 'ros2android-workspace', 'ros2android', 'robot_launch.py', 'controller_identity.py', 'connect-shell', 'esp32-via-phone', '../setup/fetch-native-ros.py', '../setup/prepare-build-tools.py'):
             path = ROOT / 'tools' / name
             with self.subTest(wrapper=name):
                 tree = ast.parse(path.read_text(), filename=str(path))

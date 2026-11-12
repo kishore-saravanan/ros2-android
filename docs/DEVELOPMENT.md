@@ -43,15 +43,21 @@ On an Ubuntu machine with ROS 2 Jazzy and its Python build dependencies installe
 prepare the colcon tool environment with:
 
 ```bash
-python3 -m venv --system-site-packages "$HOME/.local/share/ros2-android-tools/build-venv"
-"$HOME/.local/share/ros2-android-tools/build-venv/bin/python" -m pip install \
-  colcon-common-extensions==0.3.0 vcstool==0.3.0
+python3 setup/prepare-build-tools.py
 python3 setup/fetch-native-ros.py
 ./setup/build-native-ros.sh
 ```
 
-If the OS lacks `python3-venv`, install that prerequisite locally or bootstrap
-pip into a `--without-pip` venv; do not change the system Python environment.
+`prepare-build-tools.py` (installed client: `ros2-android setup build-tools`)
+creates `~/.local/share/ros2-android-tools/build-venv` with system site packages
+and installs `colcon-common-extensions==0.3.0` and `vcstool==0.3.0`. When the host
+already provides colcon/vcstool, for example through ROS's `ros-dev-tools` APT
+packages, pip treats the pins as satisfied and would create no `colcon` command in
+the venv; the helper then reinstalls only `colcon-core` and `vcstool` at the
+versions already visible, without dependencies. Use `--venv` for another location
+and set `COLCON_BIN` accordingly. If the OS lacks `python3-venv`, install that
+prerequisite locally or bootstrap pip into a `--without-pip` venv, then run the
+helper with `--venv`; do not change the system Python environment.
 The native build sources the PC's Jazzy environment for build-time generators.
 It cross-compiles the pinned ROS dependencies with the NDK, selects Cyclone DDS introspection
 typesupport, uses no-op file logging and disables desktop tracing/security

@@ -6,6 +6,12 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Add `ros2-android setup build-tools` (source checkout:
+  `setup/prepare-build-tools.py`) to prepare the managed colcon/vcstool venv. On
+  hosts that already provide colcon through APT, it adds the missing venv commands
+  without replacing host dependencies. The native SDK workflow and setup guides
+  use it, and doctor points to it.
+
 - Detect process-wide execution pauses (for example a vendor app freezer) in the
   main app and all runner backends, and report Android's battery policy. Home,
   project cards and runner screens show a concise warning with the pause count and

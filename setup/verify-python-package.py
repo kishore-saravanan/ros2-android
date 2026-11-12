@@ -127,6 +127,9 @@ def verify(wheel):
         run('shell', '--workspace', str(workspace), '--id', 'external_test', code=2)
         run('esp32', 'status', 'extra', code=2)
         run('setup', 'sources', '--typo', code=2)
+        require('usage:' in run('setup', 'build-tools', '--help'), 'Missing build-tools help')
+        run('setup', 'build-tools', '--typo', code=2)
+        require(not (root / 'home/.local/share/ros2-android-tools').exists(), 'Invalid build-tools arguments created a venv')
         require(not (root / 'home/.cache/ros2-android-workspaces').exists(), 'Unbuilt shell created workspace state')
         require(not (root / 'home/.cache/ros2-android-native').exists(), 'Invalid source arguments created native state')
         inspected = json.loads(run('project', '--project', str(project), 'inspect'))
@@ -149,7 +152,7 @@ def verify(wheel):
                 'unbuilt operations and invalid build flags fail without cache writes',
                 'packaged project inspection and isolated system-Python launch-helper imports',
                 'invalid start profiles rejected before device access',
-                'unbuilt shell and invalid programming/source arguments rejected before tool access',
+                'unbuilt shell and invalid programming/source/build-tools arguments rejected before tool access',
                 'no guarded tool invocation'],
             'limits': 'No native SDK build, ROS traffic, signing upgrade, phone deployment or full clean-machine qualification.'}
 

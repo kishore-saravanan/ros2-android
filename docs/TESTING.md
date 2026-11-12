@@ -97,7 +97,11 @@ Jazzy and the pinned Android tools, fetches locked sources into a fresh build
 cache, cross-builds the C++ ROS SDK, and packages `android_test_ws` without the
 Python shell. It checks required library hashes and the resulting workspace APK.
 There is no restored native cache, phone connection, signing secret or publishing
-step. The first hosted execution remains pending.
+step. Its managed colcon venv is prepared with `setup/prepare-build-tools.py`,
+because the hosted ROS setup already installs APT colcon and plain pip would then
+create no venv `colcon` command; a hosted run that stopped there is what exposed
+this. A successful hosted execution remains pending. `tools/tests/test_build_tools.py`
+covers the host-provided and fresh cases without network access.
 
 Run it from **Actions → Native Android SDK build → Run workflow** on the intended
 branch once that branch contains the workflow. A successful job establishes build

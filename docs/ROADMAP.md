@@ -102,14 +102,15 @@ sensor, Dashboard widget and runtime backend.
 - [ ] Move host implementation into the Python package behind one CLI family.
       Diagnostics, APK checks, workspace/project orchestration, manifest validation
       bounded launch validation, shell entry and phone-mediated MCU programming are
-      packaged. Pinned native-source preparation is packaged too; native compiler,
+      packaged. Pinned native-source and managed build-tool preparation are packaged too; native compiler,
       staging and platform-specific installation adapters remain SDK scripts.
 - [x] Guard installed host-module boundaries and expand package/artifact checks in CI.
       Thin compatibility wrappers and package imports have host regressions; Android
       feature-module extraction remains incremental.
 - [x] Add native SDK build automation separately from lightweight PR checks.
-      A manual hosted workflow builds locked ARM64 sources and a C++ workspace APK;
-      its first hosted execution remains pending.
+      A manual hosted workflow builds locked ARM64 sources and a C++ workspace APK.
+      Its first hosted run exposed a managed-colcon bootstrap gap, now fixed by the
+      packaged build-tools command; a successful hosted execution remains pending.
 
 **Exit gate:** focused modules with clear owners, unchanged supported journeys and
 regression coverage. Keep the modular app and isolated runners; no microservices

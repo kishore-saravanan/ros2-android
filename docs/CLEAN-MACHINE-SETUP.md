@@ -18,28 +18,31 @@ Use the reference Ubuntu 24.04 x86_64/Jazzy environment from the
 C++/CMake/Ninja/Git, Python development and colcon prerequisites described in
 [Development](DEVELOPMENT.md). Do not install ROS's Linux binaries into Android.
 
-The current backends use a managed build venv, unless `COLCON_BIN` explicitly
-selects another executable:
-
-```bash
-python3 -m venv --system-site-packages "$HOME/.local/share/ros2-android-tools/build-venv"
-"$HOME/.local/share/ros2-android-tools/build-venv/bin/python" -m pip install \
-  colcon-common-extensions==0.3.0 vcstool==0.3.0
-```
-
-If venv/pip support is absent, install the OS's Python venv prerequisite first.
-Keep project Python dependencies out of system pip. The reference build uses
-`/usr/bin/python3` 3.12 and the host ROS build generators, even when the client
-itself runs in a separate environment.
-
 Install the supplied wheel using pipx:
 
 ```bash
 pipx install /absolute/path/ros2_android-0.1.0a1-py3-none-any.whl
 ros2-android --version
 ros2-android compatibility
+```
+
+The build backends use a managed colcon/vcstool venv, unless `COLCON_BIN`
+explicitly selects another executable. Prepare it, then check the host:
+
+```bash
+ros2-android setup build-tools
 ros2-android doctor --profile host
 ```
+
+This creates `~/.local/share/ros2-android-tools/build-venv` from `/usr/bin/python3`
+with system site packages and installs `colcon-common-extensions==0.3.0` and
+`vcstool==0.3.0`. If your host already has colcon/vcstool (for example ROS's
+`ros-dev-tools` packages), it reuses those versions and only adds the venv's
+`colcon`/`vcs` commands. It needs the OS Python venv package (Ubuntu 24.04:
+`python3.12-venv`) and reports clearly when that is missing. Keep project Python
+dependencies out of system pip. The reference build uses `/usr/bin/python3` 3.12
+and the host ROS build generators, even when the client itself runs in a separate
+environment.
 
 Fix failed checks before proceeding. Doctor does not source a shell: source
 `/opt/ros/jazzy/setup.bash` separately when using PC ROS commands. Most build

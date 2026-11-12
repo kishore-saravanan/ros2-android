@@ -91,6 +91,9 @@ def main():
         argparse.ArgumentParser(prog='ros2-android compatibility', description='Print the bundled preview compatibility matrix.').parse_args(remaining)
         print(json.dumps(compatibility(), indent=2))
         return 0
+    if args.command == 'setup' and remaining[:1] == ['build-tools']:
+        from .build_tools import run as build_tools
+        return build_tools(remaining[1:])  # Host tool environment; needs no bundled SDK.
     root = sdk_root()
     if args.command == 'project':
         from .project import run
@@ -115,7 +118,7 @@ def main():
         return subprocess.call(command)
     if args.command == 'setup':
         setup_parser = argparse.ArgumentParser(prog='ros2-android setup')
-        setup_parser.add_argument('action', choices=['sources', 'app-build', 'app-install', 'native', 'python', 'agent'])
+        setup_parser.add_argument('action', choices=['build-tools', 'sources', 'app-build', 'app-install', 'native', 'python', 'agent'])
         selected, extra = setup_parser.parse_known_args(remaining)
         if selected.action == 'sources':
             from .native_sources import run

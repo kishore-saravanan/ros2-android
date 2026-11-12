@@ -57,7 +57,7 @@ def diagnose(profile='android', tooling_root=None):
     add('ros_setup', setup.is_file(), str(setup), 'Install ROS 2 Jazzy and its build dependencies; configure ROBOT_ROS_SETUP for an alternative workspace setup script.')
     requested = os.environ.get('COLCON_BIN') or str(home / '.local/share/ros2-android-tools/build-venv/bin/colcon')
     colcon = Path(shutil.which(requested) or requested if '/' not in requested else requested).expanduser()
-    add('colcon', executable(colcon), str(colcon), 'Prepare the documented colcon build venv, or set COLCON_BIN to its executable. A different colcon on PATH is not used by these backends.')
+    add('colcon', executable(colcon), str(colcon), 'Run ros2-android setup build-tools (source checkout: python3 setup/prepare-build-tools.py), or set COLCON_BIN to another colcon executable. A different colcon on PATH is not used by these backends.')
     for name in ('cmake', 'git', 'c++'):
         tool(name, f'Install the Linux {name} build prerequisite; see the development guide.')
     if profile != 'host':
