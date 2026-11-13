@@ -165,8 +165,9 @@ signing key. The repository becomes public with its full history.
 - [ ] Measure sustained operation, memory, thermal behavior and camera latency.
       A 60-minute run on the reference phone (USB power, Wi-Fi off) delivered all 18,000
       runner samples with a 219 ms largest gap, 7 ms mean latency and no pauses. A
-      continuous memory/thermal record, unplugged runs, other phones and camera
-      latency remain.
+      one-hour unplugged run (battery, Wi-Fi off, USB ESP32 plus a project) passed with a
+      per-minute temperature and memory record: 32-33 °C, 92% to 80% battery, memory
+      108-119 MB. Screen-off runs, other phones and camera latency remain.
 - [ ] Check portrait/landscape, light/dark mode and accessibility on core journeys.
       Reference-phone core tabs, app-local light/dark and large-text layouts pass.
       Automated accessibility checks pass on core screens in light and dark after

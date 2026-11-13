@@ -135,7 +135,12 @@ adb shell "nohup am instrument -w -r -e class dev.ros2android.android.RobotRelia
 Reference result (Android 12, phone on battery powering the board, Wi-Fi off and no PC
 link during the run): five Agent restarts recovered in 2.9–3.9 s; for the whole 180-s
 soak there was no Wi-Fi network, MCU replies were never older than about 1 s, and all
-901 fixture messages arrived with a largest gap of 219 ms and no runner pauses.
+901 fixture messages arrived with a largest gap of 219 ms and no runner pauses. A one-hour
+run (`soakSeconds=3600`) under the same conditions passed: MCU replies never older than
+1.2 s, restarts in 2.9–4.0 s, all 18,001 fixture messages (largest gap 227 ms), no runner
+pauses; battery temperature 32–33 °C, charge 92% to 80% with the screen on. Android
+reported thermal status *severe* throughout while its thermal headroom stayed at 0.80–0.86
+and the battery stayed cool, so treat that vendor status as unreliable on this phone.
 
 ## Verification boundary
 
