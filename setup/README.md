@@ -12,6 +12,8 @@ workspace/interface builds, library staging, Android builds and device
 installation. `setup-adb-udev.sh` is the optional Linux USB permissions helper.
 See [development prerequisites](../docs/DEVELOPMENT.md) before the first build;
 `prepare-build-tools.py` prepares the managed colcon/vcstool venv those builds use.
+`package-native-sdk.py` packages a built SDK as the release archive that
+`ros2-android setup sdk` installs; release archives come from the native CI workflow.
 
 The project commands in `tools/ros2android` and `tools/ros2android-workspace`
 delegate build/install work here. Camera viewers and diagnostics remain in

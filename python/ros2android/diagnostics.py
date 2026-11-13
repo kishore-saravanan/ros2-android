@@ -108,7 +108,8 @@ def diagnose(profile='android', tooling_root=None):
         for name, relative in artifacts.items():
             path = root / relative if root else None
             add(name, bool(path and path.is_file()), str(path) if path else None,
-                'Prepare the native SDK with setup native --with-cpp; shell also needs setup python, app needs setup agent. See clean-machine setup order.')
+                'Install the release SDK with setup sdk --archive FILE, or build it with setup native --with-cpp; '
+                'shell also needs setup python, app needs setup agent. See clean-machine setup order.')
     failures = [name for name, row in checks.items() if row['status'] != 'ok']
     return {'schemaVersion': 1, 'version': matrix['hostClientVersion'], 'profile': profile,
             'toolingRoot': str(tooling_root) if tooling_root else None, 'checks': checks,

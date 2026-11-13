@@ -4,6 +4,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import tarfile
 import tempfile
@@ -22,6 +23,7 @@ def load(name, relative):
 
 release = load('assemble_release', 'setup/assemble-release.py')
 verifier = load('verify_release', 'setup/verify-release.py')
+native_sdk = release.native_sdk
 
 APKSIGNER_OUTPUT = '''Verifies
 Verified using v1 scheme (JAR signing): false
@@ -123,6 +125,45 @@ class ReleaseAssemblyTest(unittest.TestCase):
                                                                    subprocess.CompletedProcess([], 0, ' M file\n', '')]):
             with self.assertRaisesRegex(RuntimeError, 'commit first'):
                 release.source_state(allow_dirty=False)
+
+    def sdk_archive(self, **overrides):
+        """A minimal SDK archive whose manifest is the first member, as the packager writes it."""
+        matrix = json.loads((ROOT / 'python/ros2android/compatibility.json').read_text())
+        manifest = {'format': native_sdk.FORMAT, 'abi': native_sdk.ABI, 'version': matrix['hostClientVersion'],
+                    'inputsDigest': native_sdk.inputs_digest(ROOT), 'source': {'revision': 'abc', 'clean': True}, 'prefix': '/build'}
+        manifest.update(overrides)
+        archive = self.root / 'ros2-android-native-sdk-test-arm64-v8a.tar.xz'
+        with tarfile.open(archive, 'w:xz') as tar:
+            data = json.dumps(manifest).encode()
+            info = tarfile.TarInfo(native_sdk.MANIFEST); info.size = len(data)
+            tar.addfile(info, io.BytesIO(data))
+        return archive, manifest, matrix
+
+    def test_sdk_archive_must_match_this_release(self):
+        archive, manifest, matrix = self.sdk_archive()
+        self.assertEqual(manifest, release.sdk_manifest(archive, matrix))
+        for change, message in (({'inputsDigest': '0' * 64}, 'different pinned inputs'), ({'version': '9.9'}, 'client 9.9'),
+                                ({'source': {'revision': 'abc', 'clean': False}}, 'dirty tree'), ({'abi': 'x86_64'}, 'Unsupported')):
+            with self.subTest(change=change):
+                archive, _, _ = self.sdk_archive(**change)
+                with self.assertRaisesRegex(RuntimeError, message):
+                    release.sdk_manifest(archive, matrix)
+
+    def test_verify_cross_checks_the_sdk_archive(self):
+        signature = {'certificateSha256': 'ab' * 32, 'schemes': ['v2', 'v3']}
+        folder, identity = self.folder(signature)
+        archive, manifest, matrix = self.sdk_archive()
+        shutil.copyfile(archive, folder / archive.name)
+        data = json.loads((folder / release.MANIFEST).read_text())
+        data['versions']['hostClient'] = matrix['hostClientVersion']
+        data['artifacts']['sdk'] = {'file': archive.name, **{key: manifest[key] for key in ('version', 'abi', 'inputsDigest', 'source')}}
+        def save():
+            (folder / release.MANIFEST).write_text(json.dumps(data)); release.write_checksums(folder)
+        save()
+        report = self.verify(folder, identity, signature)
+        self.assertTrue(report['verified'], report['problems'])
+        data['artifacts']['sdk']['inputsDigest'] = '0' * 64; save()
+        self.assertIn('SDK archive inputsDigest differs from manifest', self.verify(folder, identity, signature)['problems'])
 
 
 if __name__ == '__main__':

@@ -44,13 +44,16 @@ The existing compatibility restrictions and backup/flash rules still apply.
 See COLCON-WORKSPACES.md, ANDROID-SHELL.md and ESP32-PROGRAMMING.md.
 
 `ros2-android project --help` exposes the older component/Python project backend.
-`ros2-android setup --help` lists explicit setup operations: sources, native,
-python, agent, app-build and app-install. They may download/build dependencies or
+`ros2-android setup --help` lists explicit setup operations: build-tools, sdk, sources,
+native, python, agent, app-build and app-install. They may download/build dependencies or
 install project APKs only when explicitly invoked. Full prerequisites remain in
 DEVELOPMENT.md. For example `setup build-tools` prepares the managed colcon venv,
 `setup sources` fetches pinned native sources and links the shared SDK cache, and
-`setup native --with-cpp` builds the native SDK.
-Python/shell dependencies need their separate documented preparation.
+`setup native --with-cpp` builds the native SDK. `setup sdk --archive FILE` instead
+installs the prebuilt SDK published with a release (native C++, Python/shell and
+micro-ROS Agent parts) after checking its checksum and pinned inputs; see
+[clean-machine setup](CLEAN-MACHINE-SETUP.md#3-prepare-the-project-sdk).
+When building from source, Python/shell dependencies need their separate documented preparation.
 
 For read-only APK identity, signature and replacement checks, use
 `ros2-android apk inspect APK` or `ros2-android apk compare PREVIOUS REPLACEMENT`.

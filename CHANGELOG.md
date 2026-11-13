@@ -6,6 +6,14 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Prebuilt native SDK: `ros2-android setup sdk --archive FILE` installs the release's
+  native C++, Python/shell and micro-ROS Agent SDK instead of building it from source
+  for hours. It verifies the checksum and that the archive was built from the client's
+  pinned inputs, refuses unsafe archive paths, rewrites the build path in text files and
+  keeps existing sources. `setup/package-native-sdk.py` makes the archive; the native CI
+  workflow now builds the full SDK, packages it, installs it in a fresh home and builds
+  a workspace APK with it, and uploads it. Release assembly accepts it with `--sdk`.
+
 - Home's ROS activity card names each running project with its node count, so the
   operator sees what is active without opening Projects.
 

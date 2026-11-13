@@ -133,10 +133,13 @@ def main():
         return subprocess.call(command)
     if args.command == 'setup':
         setup_parser = argparse.ArgumentParser(prog='ros2-android setup')
-        setup_parser.add_argument('action', choices=['build-tools', 'sources', 'app-build', 'app-install', 'native', 'python', 'agent'])
+        setup_parser.add_argument('action', choices=['build-tools', 'sdk', 'sources', 'app-build', 'app-install', 'native', 'python', 'agent'])
         selected, extra = setup_parser.parse_known_args(remaining)
         if selected.action == 'sources':
             from .native_sources import run
+            return run(extra, tooling_root=root)
+        if selected.action == 'sdk':  # Prebuilt alternative to sources + native + python + agent.
+            from .native_sdk import run
             return run(extra, tooling_root=root)
         script = {'sources': 'fetch-native-ros.py', 'app-build': 'build.sh',
                   'app-install': 'run-device.sh', 'native': 'build-native-ros.sh',

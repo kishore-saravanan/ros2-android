@@ -2,7 +2,7 @@
 """Verify an assembled release folder without network or phone access.
 
 Checks SHA256SUMS against every file, the manifest against the actual APK identity,
-signer certificate and schemes, and optional wheel/Debian cross-references. Pass
+signer certificate and schemes, and optional wheel/Debian/SDK cross-references. Pass
 --expect-certificate with the maintainer's published certificate digest; a matching
 checksum alone only proves the files were not changed after assembly.
 """
@@ -59,6 +59,14 @@ def verify(folder, expect_certificate=None, allow_unsigned=False):
             problems.append('Wheel SDK snapshot differs from manifest')
         if bundled['app'] != manifest['versions']['app']:
             problems.append('Wheel compatibility matrix expects a different app version')
+    if 'sdk' in manifest['artifacts']:
+        entry = manifest['artifacts']['sdk']
+        sdk = release.native_sdk.read_manifest(folder / entry['file'])
+        for key in ('version', 'abi', 'inputsDigest', 'source'):
+            if sdk.get(key) != entry[key]:
+                problems.append(f'SDK archive {key} differs from manifest')
+        if sdk.get('version') != manifest['versions']['hostClient']:
+            problems.append('SDK archive is for a different client version')
     if 'deb' in manifest['artifacts']:
         if release.deb_apk_sha256(folder / manifest['artifacts']['deb']['file']) != release.sha256(apk):
             problems.append('Debian package bundles a different APK')

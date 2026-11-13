@@ -4,6 +4,9 @@
 # run stops at the first failure.
 #
 # Usage: tests/integration/installed_client_journey.sh WHEEL WORK_DIR
+# With SDK_ARCHIVE=ros2-android-native-sdk-*.tar.xz (and its .sha256 beside it), the journey installs
+# that prebuilt SDK instead of fetching sources and building it, as release users do.
+# With FULL_SDK=1 it also builds the Python and micro-ROS Agent parts needed to package an SDK.
 # Needs: ROS 2 Jazzy and host build tools, JDK 21 (JAVA_HOME), and ANDROID_HOME containing the
 # pinned SDK packages. For an isolated run on a prepared machine, also set a fresh HOME and
 # GRADLE_USER_HOME (Gradle otherwise uses the account's home, not $HOME). If the system Python
@@ -35,8 +38,16 @@ managed="${HOME}/.local/share/ros2-android-tools/build-venv"
 if [[ -n "${PIP_ZIPAPP:-}" && ! -x "$managed/bin/python" ]]; then step build-venv venv_with_pip "$managed" --system-site-packages; fi
 step setup-build-tools ros2-android setup build-tools
 step doctor-host ros2-android doctor --profile host
-step setup-sources ros2-android setup sources
-step setup-native ros2-android setup native --with-cpp
+if [[ -n "${SDK_ARCHIVE:-}" ]]; then
+  step setup-sdk ros2-android setup sdk --archive "$(realpath "$SDK_ARCHIVE")"
+else
+  step setup-sources ros2-android setup sources
+  step setup-native ros2-android setup native --with-cpp
+  if [[ "${FULL_SDK:-}" == 1 ]]; then
+    step setup-python ros2-android setup python
+    step setup-agent ros2-android setup agent
+  fi
+fi
 step doctor-android ros2-android doctor --profile android
 rm -rf "$work/external_ws"; cp -r "$repo/examples/android_test_ws" "$work/external_ws"
 rm -rf "$work/external_ws/build" "$work/external_ws/install" "$work/external_ws/log"

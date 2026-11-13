@@ -315,7 +315,7 @@ phone; the runner checks an explicit local address against its current interface
   an unbuilt workspace.
 - **Cache ID belongs to another workspace:** choose a different `--id`; the client
   preserves the existing cache rather than overwriting its owner.
-- **Standard CLI needs the Python SDK:** prepare it with `ros2-android setup python`,
+- **Standard CLI needs the Python SDK:** install the release SDK (`ros2-android setup sdk`) or prepare it with `ros2-android setup python`,
   or select `build --without-shell` when only native C++ processes are needed.
 - **Unknown arguments:** correct the option before retrying. Build argument errors
   are rejected before workspace cache creation or build-tool execution.

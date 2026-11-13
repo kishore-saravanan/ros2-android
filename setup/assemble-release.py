@@ -22,6 +22,8 @@ import tarfile
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'python'))
+from ros2android import native_sdk  # noqa: E402
 PACKAGE = 'dev.ros2android.android'
 DOCUMENTS = ('LICENSE', 'NOTICE', 'THIRD-PARTY-NOTICES.md', 'CHANGELOG.md')
 CHECKSUMS = 'SHA256SUMS'
@@ -126,6 +128,20 @@ def write_checksums(folder):
     return files
 
 
+def sdk_manifest(archive, matrix, release=True):
+    """Accept a prebuilt native SDK only if it was built from this release's pinned inputs."""
+    sdk = native_sdk.read_manifest(archive)
+    if sdk.get('format') != native_sdk.FORMAT or sdk.get('abi') != native_sdk.ABI:
+        raise RuntimeError(f"Unsupported SDK archive format {sdk.get('format')} / ABI {sdk.get('abi')}")
+    if sdk.get('version') != matrix['hostClientVersion']:
+        raise RuntimeError(f"SDK archive is for client {sdk.get('version')}, not {matrix['hostClientVersion']}")
+    if sdk.get('inputsDigest') != native_sdk.inputs_digest(ROOT):
+        raise RuntimeError('SDK archive was built from different pinned inputs; rebuild it from this revision')
+    if release and not sdk.get('source', {}).get('clean'):
+        raise RuntimeError('SDK archive was packaged from a dirty tree; use a clean CI build')
+    return sdk
+
+
 def source_state(allow_dirty):
     revision = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], check=True, capture_output=True, text=True).stdout.strip()
     dirty = bool(subprocess.run(['git', '-C', str(ROOT), 'status', '--porcelain', '--untracked-files=no'],
@@ -179,6 +195,11 @@ def assemble(args):
         shutil.copyfile(args.wheel, out / args.wheel.name)
         artifacts['wheel'] = {'file': args.wheel.name, 'version': bundled['hostClientVersion'],
                               'sdkSnapshotSha256': bundled['artifact']['sdkSnapshotSha256']}
+    if args.sdk:
+        sdk = sdk_manifest(args.sdk, matrix, release=not args.unsigned_dry_run)
+        shutil.copyfile(args.sdk, out / args.sdk.name)
+        artifacts['sdk'] = {'file': args.sdk.name, 'version': sdk['version'], 'abi': sdk['abi'],
+                            'inputsDigest': sdk['inputsDigest'], 'source': sdk['source']}
     if args.deb:
         if deb_apk_sha256(args.deb) != sha256(apk):
             raise RuntimeError('The Debian package does not bundle this release APK; rebuild it with setup/build-deb.py --apk ' + str(apk))
@@ -204,6 +225,7 @@ def main(arguments=None):
     parser.add_argument('--out', type=Path, required=True, help='New, empty release folder')
     parser.add_argument('--wheel', type=Path, help='Bundled host wheel from setup/build-python-package.py')
     parser.add_argument('--deb', type=Path, help='Debian package built from the signed APK')
+    parser.add_argument('--sdk', type=Path, help='Prebuilt native SDK archive from setup/package-native-sdk.py (CI artifact)')
     signing = parser.add_mutually_exclusive_group(required=True)
     signing.add_argument('--keystore', type=Path, help='Release keystore held by the maintainer, outside the repository')
     signing.add_argument('--unsigned-dry-run', action='store_true', help='Exercise the flow without signing; never publish')

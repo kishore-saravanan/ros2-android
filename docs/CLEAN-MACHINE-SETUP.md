@@ -71,8 +71,22 @@ pinned one.
 
 ## 3. Prepare the project SDK
 
-These commands explicitly download pinned source/build inputs and compile native
-ROS for Android. They may take substantial time and disk space:
+**From a release (recommended):** download `ros2-android-native-sdk-VERSION-arm64-v8a.tar.xz`
+and `SHA256SUMS` from the same release as your `ros2-android` client into one folder, then:
+
+```bash
+ros2-android setup sdk --archive ~/Downloads/ros2-android-native-sdk-VERSION-arm64-v8a.tar.xz
+ros2-android doctor --profile android
+```
+
+This verifies the checksum and that the SDK was built from the same pinned inputs as
+your client, then installs the native C++, Python/shell and micro-ROS Agent SDK (about
+450 MB unpacked) into `~/.cache/ros2-android-native`. It replaces every build command
+below; skip to step 4. An SDK from another release is refused. To swap an installed SDK,
+add `--replace`; your sources and build trees are kept.
+
+**From source:** these commands explicitly download pinned source/build inputs and
+compile native ROS for Android. They may take substantial time and disk space:
 
 ```bash
 ros2-android setup sources

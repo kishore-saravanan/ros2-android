@@ -43,9 +43,12 @@ python3 setup/stage-licenses.py            # also part of setup/build-native-ros
 python3 setup/generate-notices.py --check  # THIRD-PARTY-NOTICES.md matches the locks
 ./setup/build.sh :app:assembleRelease :app:lintVitalRelease
 python3 setup/build-python-package.py      # bundled host wheel, from a venv with pip
+# Prebuilt native SDK: run the "Native Android SDK build" workflow on the release commit and
+# download its ros2-android-native-sdk artifact (built on a clean runner, install-tested there).
 export ROS2_ANDROID_KEYSTORE_PASSWORD=...  # never on the command line
 python3 setup/assemble-release.py --apk android/app/build/outputs/apk/release/app-release-unsigned.apk \
   --wheel dist/ros2_android-0.1.0a1-py3-none-any.whl \
+  --sdk ~/Downloads/ros2-android-native-sdk/ros2-android-native-sdk-0.1.0a1-arm64-v8a.tar.xz \
   --keystore /offline/ros2-android-release.jks --key-alias ros2-android --out dist/release-0.1.1
 python3 setup/verify-release.py dist/release-0.1.1 --expect-certificate <published SHA-256>
 ```
@@ -57,6 +60,11 @@ API 26+), checks the single signer, copies LICENSE, NOTICE,
 [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md) and CHANGELOG, and writes
 `release-manifest.json` (source revision, versions, toolchain pins, SDK snapshot,
 signer digest and schemes) plus `SHA256SUMS`, which `sha256sum -c` also accepts.
+With `--sdk`, the assembler accepts the prebuilt SDK archive only when it was packaged
+from a clean tree, for the same client version and from this revision's pinned build
+inputs, and records its source revision; the verifier re-checks the archive manifest.
+Use the CI archive: binaries keep their build path in debug strings, and CI's path is
+neutral where a maintainer's home folder is not.
 To include a Debian package, build it from the signed APK in the release folder
 and pass `--deb` in a second assembly; the assembler rejects a package bundling any
 other APK. `--unsigned-dry-run` exercises the flow without a key and is marked as

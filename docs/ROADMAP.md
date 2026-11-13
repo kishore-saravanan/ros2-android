@@ -151,10 +151,17 @@ package/SDK without editing the platform checkout. No mandatory submodule.
 
 **Outcome:** a documented, installable release with honest support boundaries.
 
+Owner decisions (2026-11-13): ship a minimal alpha and let the community extend it.
+Every item below is completed before the alpha, including a prebuilt native SDK
+download so workspace users skip the multi-hour SDK build. The owner holds the release
+signing key. The repository becomes public with its full history.
+
 - [ ] Test an additional phone/Android version and publish the compatibility matrix.
       [Qualify a phone](PHONE-QUALIFICATION.md) runs the standard batch on any phone.
       An Android 15 emulator with ARM translation passes UI, ROS session, Dashboard
       peer and runner discovery checks; a second physical phone remains next.
+- [ ] Publish a prebuilt, checksummed native SDK archive with its license notices, and
+      let the host tool install it instead of building the SDK from source.
 - [ ] Measure sustained operation, memory, thermal behavior and camera latency.
       A 60-minute run on the reference phone (USB power, Wi-Fi off) delivered all 18,000
       runner samples with a 219 ms largest gap, 7 ms mean latency and no pauses. A
