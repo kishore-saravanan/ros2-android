@@ -6,6 +6,13 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- The USB reliability test can also run a disposable fixture project on the same
+  domain (`robotRunnerPackage`) and requires its telemetry to stay fresh through every
+  Agent restart and the soak; it now stops the Agent when finished. Fixture control
+  shared by the endurance, runner-update and USB tests lives in one test helper. On the
+  reference phone it passes with Wi-Fi off and no PC link (901 of 901 project messages
+  through five Agent restarts and a 3-minute soak).
+
 - Runner status (app controls, debug control and `ros2-android project status`) now
   reports the saved profile as `config` and the profile of the current or last run as
   `runConfig`; the debug path previously showed only the last run, which looked like
@@ -13,7 +20,9 @@ see the [release checklist](docs/RELEASING.md).
   commands and verify that the runner profile is restored.
 
 - Add an operator-guided USB Agent recovery test: unplug, replug, deny and allow USB
-  access, with the sensor session surviving and only explicit restarts.
+  access, with the sensor session surviving and only explicit restarts. It stops at once
+  if access is allowed at the deny step and asks again if it is denied at the allow step.
+  It passes on the reference phone.
 
 - Link GitHub Sponsors from the README and the repository's Sponsor button.
 

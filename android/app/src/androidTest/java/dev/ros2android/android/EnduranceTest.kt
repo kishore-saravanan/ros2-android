@@ -29,18 +29,16 @@ class EnduranceTest {
         val arguments = InstrumentationRegistry.getArguments()
         val target = arguments.getString("enduranceRunnerPackage")
         assumeTrue("Opt in with enduranceRunnerPackage", target != null)
-        assertTrue("Only disposable fixtures are allowed",
-            target in setOf("dev.ros2android.android.runner.fixture_cpp", "dev.ros2android.android.runner.fixture_python"))
         val minutes = arguments.getString("enduranceMinutes")?.toIntOrNull() ?: 10
         assertTrue("enduranceMinutes must be 1..240", minutes in 1..240)
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
+        val project = FixtureProject(instrumentation, target!!)
         if (arguments.getString("enduranceAllowWifi") != "true")
             assertEquals("Phone-local endurance requires Wi-Fi off", 0, Settings.Global.getInt(context.contentResolver, Settings.Global.WIFI_ON, -1))
-        for (pkg in listOf(context.packageName, target!!))
+        for (pkg in listOf(context.packageName, target))
             assertEquals("Allow background activity for $pkg first", false, BackgroundPolicy.batteryOptimized(context, pkg))
         lateinit var session: RobotSessionService
-        lateinit var control: ProjectController
         val bound = CountDownLatch(1)
         val connection = object : ServiceConnection {
             override fun onServiceConnected(name: ComponentName, binder: IBinder) { session = (binder as RobotSessionService.LocalBinder).session; bound.countDown() }
@@ -53,38 +51,18 @@ class EnduranceTest {
             while (!passed && SystemClock.elapsedRealtime() < end) { main { passed = predicate() }; if (!passed) SystemClock.sleep(100) }
             assertTrue(label, passed)
         }
-        fun command(value: Int, extras: Bundle = Bundle()) {
-            var previous: JSONObject? = null
-            main { previous = control.status; control.send(value, extras) }
-            waitFor("No reply for $value") {
-                check(control.error == null) { control.error.orEmpty() }
-                check(control.commandError == null) { "Runner rejected $value: ${control.commandError}" }
-                control.status != null && control.status !== previous
-            }
-        }
-        fun state(expected: String) = waitFor("Runner did not become $expected") { control.poll(); control.status?.optString("state") == expected }
         val observed = ControlWidget("endurance_observed", "Endurance", "Subscribed value", "/endurance/observed")
         val trial = java.util.UUID.randomUUID().toString()
-        var original: JSONObject? = null
-        var ownsFixture = false; var ownsSession = false; var controllerReady = false
+        var ownsSession = false
         main { assertTrue(context.bindService(Intent(context, RobotSessionService::class.java), connection, Context.BIND_AUTO_CREATE)) }
         var failure: Throwable? = null
         try {
             assertTrue(bound.await(5, TimeUnit.SECONDS))
-            main {
-                assertFalse("Stop the main session first", session.connected || session.busy || session.controlsEnabled)
-                control = ProjectController(context, InstalledProjects.list(context).single { it.packageName == target }) {}
-                controllerReady = true; control.connect()
-            }
-            waitFor("Runner unavailable") { control.poll(); control.status != null }
-            main { assertEquals("Stop the fixture first", "Stopped", control.status!!.getString("state")); original = JSONObject(control.status!!.getJSONObject("config").toString()); ownsFixture = true }
-            command(4, Bundle().apply {
-                putString("domain", "86"); putString("namespace", "/endurance"); putString("peer", ""); putString("local", "")
-                putString("ros_args", org.json.JSONArray(listOf("-p", "trial:=$trial")).toString())
-            })
+            main { assertFalse("Stop the main session first", session.connected || session.busy || session.controlsEnabled) }
+            project.claim(86, "/endurance", listOf("-p", "trial:=$trial"))
             main { ownsSession = true; session.startControls(listOf(observed), RobotSessionService.Profile(SessionConfig("/endurance", 86), "", "")) }
             waitFor("Dashboard not ready") { session.controlsEnabled && !session.busy }
-            command(2); state("Running")
+            project.start()
             waitFor("No first sample") { session.dashboardReadings[observed.id]?.let { JSONObject(it.value).optString("trial") == trial } == true }
             // Observation: sample every 100 ms; record the largest receipt gap and publish-to-receipt latency.
             val end = SystemClock.elapsedRealtime() + minutes * 60_000L
@@ -106,16 +84,15 @@ class EnduranceTest {
                 val now = SystemClock.elapsedRealtime()
                 assertTrue("Telemetry stopped for over 5 s at minute $minute", lastReceipt == 0L || now - lastReceipt < 5000)
                 if (now >= nextReport) {
-                    minute++; var health: JSONObject? = null
-                    main { control.poll(); health = control.status?.optJSONObject("health") }
+                    minute++
+                    val health = project.status()?.optJSONObject("health")
                     Log.i("ROS2Endurance", "minute=$minute at=$now samples=$minuteSamples largestGapMs=$minuteGap runnerPauses=${health?.optInt("pauses")} mainPauses=${session.pauses.pauses}")
                     minuteSamples = 0; minuteGap = 0; nextReport += 60_000L
                 }
                 SystemClock.sleep(100)
             }
-            var runnerHealth: JSONObject? = null
-            main { control.poll() }
-            waitFor("Final status unavailable") { runnerHealth = control.status?.optJSONObject("health"); runnerHealth != null }
+            val runnerHealth = project.freshStatus().optJSONObject("health")
+            assertNotNull("Runner health unavailable", runnerHealth)
             val summary = "minutes=$minutes samples=$samples largestGapMs=$largestGap largestPublishToReceiptMs=$largestLatency " +
                 "meanPublishToReceiptMs=${if (samples > 0) latencyTotal / samples else -1} runnerHealth=$runnerHealth mainPauses=${session.pauses}"
             Log.i("ROS2Endurance", "summary $summary")
@@ -130,26 +107,13 @@ class EnduranceTest {
             // Try every cleanup; report the first problem unless the test body already failed.
             fun cleanup(label: String, action: () -> Unit) {
                 try { action() } catch (error: Throwable) {
-                    android.util.Log.e("ROS2Qualification", "cleanup failed: $label", error)
+                    Log.e("ROS2Qualification", "cleanup failed: $label", error)
                     if (failure == null) failure = error else failure!!.addSuppressed(error)
                 }
             }
             val bodyFailed = failure != null
             cleanup("main session") { if (ownsSession) { main { session.stopSession() }; waitFor("Session did not stop") { !session.connected && !session.busy } } }
-            cleanup("runner profile") {
-                if (ownsFixture) {
-                    if (control.status == null || control.error != null) { main { control.close(); control.connect() }; waitFor("Runner unavailable") { control.poll(); control.status != null } }
-                    main { control.poll() }
-                    waitFor("Runner did not stop", 30) { control.poll(); control.status?.optString("state") in setOf("Stopped", "Running") }
-                    if (control.status?.optString("state") == "Running") { command(3); waitFor("Runner did not stop", 30) { control.poll(); control.status?.optString("state") == "Stopped" } }
-                    command(4, Bundle().apply { for (key in listOf("domain", "namespace", "peer", "local", "ros_args")) putString(key, original!!.getString(key)) })
-                    main {
-                        val restored = control.status!!.getJSONObject("config")
-                        for (key in listOf("domain", "namespace", "peer", "local", "ros_args")) assertEquals("Runner profile not restored: $key", original!!.getString(key), restored.getString(key))
-                    }
-                }
-            }
-            cleanup("controller") { if (controllerReady) main { control.close() } }
+            cleanup("runner profile") { project.release() }
             cleanup("binding") { main { context.unbindService(connection) } }
             if (!bodyFailed) failure?.let { throw it }
         }

@@ -28,13 +28,12 @@ class RunnerUpdateTest {
         val target = arguments.getString("runnerUpdatePackage")
         val apk = arguments.getString("runnerUpdateApk")
         assumeTrue("Opt in with runnerUpdatePackage and runnerUpdateApk", target != null && apk != null)
-        assertTrue("Disposable fixtures only", target in setOf("dev.ros2android.android.runner.fixture_cpp", "dev.ros2android.android.runner.fixture_python"))
-        assertTrue("Push the update APK to /data/local/tmp first", apk!!.matches(Regex("/data/local/tmp/[A-Za-z0-9_.-]+\\.apk")))
         val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val project = FixtureProject(instrumentation, target!!)
+        assertTrue("Push the update APK to /data/local/tmp first", apk!!.matches(Regex("/data/local/tmp/[A-Za-z0-9_.-]+\\.apk")))
         val context = instrumentation.targetContext
         assertEquals("Phone-local check requires Wi-Fi off", 0, Settings.Global.getInt(context.contentResolver, Settings.Global.WIFI_ON, -1))
         lateinit var session: RobotSessionService
-        lateinit var control: ProjectController
         val bound = CountDownLatch(1)
         val connection = object : ServiceConnection {
             override fun onServiceConnected(name: ComponentName, binder: IBinder) { session = (binder as RobotSessionService.LocalBinder).session; bound.countDown() }
@@ -47,65 +46,42 @@ class RunnerUpdateTest {
             while (!passed && SystemClock.elapsedRealtime() < end) { main { passed = predicate() }; if (!passed) SystemClock.sleep(100) }
             assertTrue(label, passed)
         }
-        fun command(value: Int, extras: Bundle = Bundle()) {
-            var previous: JSONObject? = null
-            main { previous = control.status; control.send(value, extras) }
-            waitFor("No reply for $value") {
-                check(control.error == null) { control.error.orEmpty() }
-                check(control.commandError == null) { "Runner rejected $value: ${control.commandError}" }
-                control.status != null && control.status !== previous
-            }
-        }
-        fun state() = control.status?.optString("state").orEmpty()
-        fun connectAndWait() { main { control.close(); control.connect() }; waitFor("Runner unavailable") { control.poll(); control.status != null } }
         val observed = ControlWidget("update_observed", "Update", "Subscribed value", "/update/observed")
         fun fresh(trial: String) = waitFor("No fresh telemetry for $trial") {
             session.dashboardReadings[observed.id]?.let { JSONObject(it.value).optString("trial") == trial } == true
         }
-        var original: JSONObject? = null
-        var ownsFixture = false; var ownsSession = false; var controllerReady = false
+        var ownsSession = false
         main { assertTrue(context.bindService(Intent(context, RobotSessionService::class.java), connection, Context.BIND_AUTO_CREATE)) }
         var failure: Throwable? = null
         try {
             assertTrue(bound.await(5, TimeUnit.SECONDS))
-            main {
-                assertFalse("Stop the main session first", session.connected || session.busy || session.controlsEnabled)
-                control = ProjectController(context, InstalledProjects.list(context).single { it.packageName == target }) {}
-                controllerReady = true
-            }
-            connectAndWait()
-            main { assertEquals("Stop the fixture first", "Stopped", state()); original = JSONObject(control.status!!.getJSONObject("config").toString()); ownsFixture = true }
+            main { assertFalse("Stop the main session first", session.connected || session.busy || session.controlsEnabled) }
             val before = java.util.UUID.randomUUID().toString()
-            val profile = Bundle().apply {
-                putString("domain", "85"); putString("namespace", "/update"); putString("peer", ""); putString("local", "")
-                putString("ros_args", org.json.JSONArray(listOf("-p", "trial:=$before")).toString())
-            }
-            command(4, profile)
+            project.claim(85, "/update", listOf("-p", "trial:=$before"))
             main { ownsSession = true; session.startControls(listOf(observed), RobotSessionService.Profile(SessionConfig("/update", 85), "", "")) }
             waitFor("Dashboard not ready") { session.controlsEnabled && !session.busy }
-            command(2); waitFor("Runner did not start") { control.poll(); state() == "Running" }
+            project.start()
             fresh(before)
             // Update while bound and running, as a PC deploy would.
             val output = instrumentation.uiAutomation.executeShellCommand("pm install -r $apk").let { descriptor ->
                 ParcelFileDescriptor.AutoCloseInputStream(descriptor).bufferedReader().use { it.readText() }
             }
             assertTrue("Update failed: $output", output.contains("Success"))
-            waitFor("Controls stayed valid after the update") { control.poll(); control.error != null }
-            main { assertTrue("Unexpected controller message: ${control.error}", control.error!!.contains("Runner")) }
+            val reason = project.awaitControlError()
+            assertTrue("Unexpected controller message: $reason", reason.contains("Runner"))
             waitFor("Old telemetry must become Stale", 15) { session.dashboardReadings[observed.id]?.state(SystemClock.elapsedRealtime()) == "Stale" }
-            connectAndWait()
-            main {
-                assertEquals("Update must not leave the project running", "Stopped", state())
-                val saved = control.status!!.getJSONObject("config")
+            project.connect()
+            project.freshStatus().let { status ->
+                assertEquals("Update must not leave the project running", "Stopped", status.optString("state"))
+                val saved = status.getJSONObject("config")
                 assertEquals("Profile not preserved", "85", saved.getString("domain"))
                 assertEquals("Profile not preserved", "/update", saved.getString("namespace"))
             }
             SystemClock.sleep(3000) // No replayed START may arrive.
-            main { control.poll() }; SystemClock.sleep(500)
-            main { assertEquals("Start was replayed after the update", "Stopped", state()) }
+            assertEquals("Start was replayed after the update", "Stopped", project.freshStatus().optString("state"))
             val after = java.util.UUID.randomUUID().toString()
-            command(4, Bundle(profile).apply { putString("ros_args", org.json.JSONArray(listOf("-p", "trial:=$after")).toString()) })
-            command(2); waitFor("Updated runner did not start") { control.poll(); state() == "Running" }
+            project.configure(85, "/update", listOf("-p", "trial:=$after"))
+            project.start()
             fresh(after)
             android.util.Log.i("ROS2Qualification", "runner update: invalidated, Stopped with profile, no replay, explicit restart fresh")
         } catch (error: Throwable) {
@@ -120,20 +96,7 @@ class RunnerUpdateTest {
             }
             val bodyFailed = failure != null
             cleanup("main session") { if (ownsSession) { main { session.stopSession() }; waitFor("Session did not stop") { !session.connected && !session.busy } } }
-            cleanup("runner profile") {
-                if (ownsFixture) {
-                    if (control.status == null || control.error != null) connectAndWait()
-                    main { control.poll() }
-                    waitFor("Runner did not stop", 30) { control.poll(); control.status?.optString("state") in setOf("Stopped", "Running") }
-                    if (control.status?.optString("state") == "Running") { command(3); waitFor("Runner did not stop", 30) { control.poll(); control.status?.optString("state") == "Stopped" } }
-                    command(4, Bundle().apply { for (key in listOf("domain", "namespace", "peer", "local", "ros_args")) putString(key, original!!.getString(key)) })
-                    main {
-                        val restored = control.status!!.getJSONObject("config")
-                        for (key in listOf("domain", "namespace", "peer", "local", "ros_args")) assertEquals("Runner profile not restored: $key", original!!.getString(key), restored.getString(key))
-                    }
-                }
-            }
-            cleanup("controller") { if (controllerReady) main { control.close() } }
+            cleanup("runner profile") { project.release() }
             cleanup("binding") { main { context.unbindService(connection) } }
             if (!bodyFailed) failure?.let { throw it }
         }

@@ -97,7 +97,44 @@ battery publisher and Dashboard to keep running, no automatic Agent restart afte
 reattach, the denial to be reported without a crash, and fresh battery replies only
 after an explicit start. If Android remembers access for the board, the denial step is
 recorded as not exercised rather than passed. It uses the reference serial firmware's
-battery reply and heartbeat; no motion topic is published.
+battery reply and heartbeat; no motion topic is published. If **Allow** is tapped at the
+deny step the test stops at once and asks for a rerun; if **Cancel** is tapped at the
+final allow step it asks again, up to three times.
+
+On the reference phone (Android 12, Wi-Fi on, board powered only by the phone's USB-C
+port, so each unplug also power-cycles it) the guided run passed: Disconnected status
+on unplug with the sensor session and Dashboard alive and the board's readings Stale, no
+automatic Agent restart on replug, *Failed: USB permission denied* without a crash, and
+fresh heartbeat and battery replies 3.9 s after the explicit start that followed Allow.
+
+## Repeated restarts and soak
+
+`RobotReliabilityTest` (`robotUsbConnected=true`) restarts the USB Agent
+`recoveryCycles` times (1–30, default 5) and then requires fresh heartbeat and battery
+replies every second for `soakSeconds` (30–7200, default 180). Add
+`robotRunnerPackage=dev.ros2android.android.runner.fixture_cpp` (or `fixture_python`) to also
+run that disposable fixture project on the same domain before the Agent starts. Its
+telemetry must then stay fresh through every restart and the soak, with at least 90%
+delivery and no runner pauses. Allow background activity for the fixture first. The test
+restores the fixture's saved profile and stops the Agent afterwards. It records the number
+of soak seconds without a Wi-Fi network, so a run started with Wi-Fi off shows offline
+operation. Results are written to the app's own `cache/robot-reliability.json`.
+
+The ESP32 occupies the phone's only USB port, so for an offline run start the test
+detached on the phone over Wi-Fi ADB and then turn Wi-Fi off; the result stays on the
+phone until you reconnect:
+
+```bash
+adb shell "nohup am instrument -w -r -e class dev.ros2android.android.RobotReliabilityTest \
+  -e robotUsbConnected true -e robotRunnerPackage dev.ros2android.android.runner.fixture_cpp \
+  dev.ros2android.android.test/dev.ros2android.android.Ros2AndroidTestRunner \
+  > /data/local/tmp/ros2android-robot.txt 2>&1 &"
+```
+
+Reference result (Android 12, phone on battery powering the board, Wi-Fi off and no PC
+link during the run): five Agent restarts recovered in 2.9–3.9 s; for the whole 180-s
+soak there was no Wi-Fi network, MCU replies were never older than about 1 s, and all
+901 fixture messages arrived with a largest gap of 219 ms and no runner pauses.
 
 ## Verification boundary
 

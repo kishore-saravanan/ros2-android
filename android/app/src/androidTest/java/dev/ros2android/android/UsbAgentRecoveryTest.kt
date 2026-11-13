@@ -121,14 +121,31 @@ class UsbAgentRecoveryTest {
             val prompted = startExpectingPrompt("Tap CANCEL (deny) on the USB permission dialog")
             if (prompted) {
                 waitFor("Denial was not reported", 120, "Tap CANCEL (deny) on the USB permission dialog") {
-                    MicroRosAgentService.state == "Failed: USB permission denied"
+                    val state = MicroRosAgentService.state
+                    check(!state.startsWith("Starting") && !state.startsWith("Running")) {
+                        "USB access was allowed at the deny step; rerun and tap CANCEL when asked to deny"
+                    }
+                    state == "Failed: USB permission denied"
                 }
                 assertTrue("Sensor/Dashboard session must survive the denial", inspect { sessionAlive() })
                 record("deny", "state='${MicroRosAgentService.state}', session alive, no crash")
-                startExpectingPrompt("Tap ALLOW on the USB permission dialog")
             } else record("deny", "not exercised: Android did not ask (access already granted for this device)")
 
-            val start = SystemClock.elapsedRealtime()
+            // Explicit start after the denial. If the operator taps CANCEL again, ask again (three tries).
+            var start = SystemClock.elapsedRealtime()
+            if (prompted) for (attempt in 1..3) {
+                start = SystemClock.elapsedRealtime()
+                startExpectingPrompt(if (attempt == 1) "Tap ALLOW on the USB permission dialog" else "That was CANCEL. Tap ALLOW this time")
+                var deniedAgain = false
+                waitFor("No answer to the USB permission dialog", 120, "Tap ALLOW on the USB permission dialog") {
+                    val state = MicroRosAgentService.state
+                    deniedAgain = state == "Failed: USB permission denied"
+                    deniedAgain || state.startsWith("Starting") || state.startsWith("Running")
+                }
+                if (!deniedAgain) break
+                check(attempt < 3) { "USB access was denied at every allow prompt" }
+                record("allow-retry", "operator denied the allow prompt; asking again")
+            }
             waitFor("No fresh MCU data after allowing access", 120, null) { fresh(start) }
             record("recover", "fresh heartbeat and battery reply ${SystemClock.elapsedRealtime() - start} ms after explicit start")
             assertTrue("Recovery must follow the detach", start > detachedAt)

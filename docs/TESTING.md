@@ -263,7 +263,9 @@ Before the background-policy change, the self-probe remained fresh while
 workspace results stalled; retaining the binding did not prevent the gap.
 
 These are explicit device tests, not unattended CI. The bounded interruption
-cases below, USB coexistence and longer endurance require separate qualification.
+cases below and longer endurance require separate qualification. USB micro-ROS
+coexistence with a running project has its own test; see
+[repeated restarts and soak](ESP32-USB.md#repeated-restarts-and-soak).
 
 ### Manual screen-off trial
 
