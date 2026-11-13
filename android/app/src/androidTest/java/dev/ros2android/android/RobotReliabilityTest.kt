@@ -129,18 +129,10 @@ class RobotReliabilityTest {
             var withoutWifiSamples = 0
             var nextCheck = start + 1000
             val connectivity = context.getSystemService(ConnectivityManager::class.java)
-            // Once a minute: battery temperature/level, Android thermal status and this app's memory.
-            val power = context.getSystemService(PowerManager::class.java)
+            // Once a minute: temperature, thermal status, screen/idle state and this app's memory.
             val conditions = JSONArray(); evidence.put("conditions", conditions)
             fun recordConditions(second: Int) {
-                val battery = context.registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-                val entry = JSONObject().put("s", second)
-                    .put("batteryTempC", (battery?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, Int.MIN_VALUE) ?: Int.MIN_VALUE).takeIf { it != Int.MIN_VALUE }?.let { it / 10.0 })
-                    .put("batteryLevel", battery?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1))
-                    .put("charging", battery?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0)?.let { it != 0 })
-                    .put("appPssKb", Debug.getPss())
-                if (Build.VERSION.SDK_INT >= 29) entry.put("thermalStatus", power.currentThermalStatus)
-                if (Build.VERSION.SDK_INT >= 30) power.getThermalHeadroom(10).takeIf { !it.isNaN() }?.let { entry.put("thermalHeadroom", it.toDouble()) }
+                val entry = RunConditions.sample(context, second)
                 conditions.put(entry)
                 Log.i("ROS2Qualification", "conditions $entry")
             }

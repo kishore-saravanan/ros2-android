@@ -544,7 +544,10 @@ phone qualification: there is no vendor power policy, real radio or USB.
 ## Endurance on the reference phone
 
 Start long runs on the phone itself so they survive the PC session; the result is
-written on the phone and `ROS2Endurance` logs a per-minute summary:
+written on the phone and `ROS2Endurance` logs a per-minute summary. Each summary and
+the start/end lines include battery temperature and level, charging, Android thermal
+status and headroom, screen-on and Doze-idle state and the app's memory; the final
+summary counts screen-off and idle minutes, so a screen-off run shows it really was:
 
 ```bash
 adb shell "nohup am instrument -w -r -e class dev.ros2android.android.EnduranceTest \

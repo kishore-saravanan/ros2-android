@@ -118,7 +118,8 @@ telemetry must then stay fresh through every restart and the soak, with at least
 delivery and no runner pauses. Allow background activity for the fixture first. The test
 restores the fixture's saved profile and stops the Agent afterwards. It records the number
 of soak seconds without a Wi-Fi network, so a run started with Wi-Fi off shows offline
-operation. Results are written to the app's own `cache/robot-reliability.json`.
+operation. Results are written to the app's own `cache/robot-reliability.json`, including
+a once-a-minute record of battery temperature, thermal status, screen/idle state and memory.
 
 The ESP32 occupies the phone's only USB port, so for an offline run start the test
 detached on the phone over Wi-Fi ADB and then turn Wi-Fi off; the result stays on the

@@ -69,6 +69,11 @@ class EnduranceTest {
             var lastTick = -1L; var lastReceipt = 0L; var samples = 0L; var minuteSamples = 0L
             var largestGap = 0L; var largestLatency = 0L; var latencyTotal = 0L; var minuteGap = 0L
             var nextReport = SystemClock.elapsedRealtime() + 60_000L; var minute = 0
+            var screenOffMinutes = 0; var idleMinutes = 0; var hottestC = Double.NaN
+            fun conditions(second: Int) = RunConditions.sample(context, second).also { entry ->
+                entry.optDouble("batteryTempC").takeIf { !it.isNaN() }?.let { hottestC = if (hottestC.isNaN()) it else maxOf(hottestC, it) }
+            }
+            Log.i("ROS2Endurance", "start conditions=${conditions(0)}")
             while (SystemClock.elapsedRealtime() < end) {
                 main {
                     val reading = session.dashboardReadings[observed.id] ?: return@main
@@ -86,15 +91,20 @@ class EnduranceTest {
                 if (now >= nextReport) {
                     minute++
                     val health = project.status()?.optJSONObject("health")
-                    Log.i("ROS2Endurance", "minute=$minute at=$now samples=$minuteSamples largestGapMs=$minuteGap runnerPauses=${health?.optInt("pauses")} mainPauses=${session.pauses.pauses}")
+                    val conditions = conditions(minute * 60)
+                    if (!conditions.optBoolean("screenOn", true)) screenOffMinutes++
+                    if (conditions.optBoolean("deviceIdle")) idleMinutes++
+                    Log.i("ROS2Endurance", "minute=$minute at=$now samples=$minuteSamples largestGapMs=$minuteGap runnerPauses=${health?.optInt("pauses")} mainPauses=${session.pauses.pauses} conditions=$conditions")
                     minuteSamples = 0; minuteGap = 0; nextReport += 60_000L
                 }
                 SystemClock.sleep(100)
             }
+            val finalConditions = conditions(minutes * 60)
             val runnerHealth = project.freshStatus().optJSONObject("health")
             assertNotNull("Runner health unavailable", runnerHealth)
             val summary = "minutes=$minutes samples=$samples largestGapMs=$largestGap largestPublishToReceiptMs=$largestLatency " +
-                "meanPublishToReceiptMs=${if (samples > 0) latencyTotal / samples else -1} runnerHealth=$runnerHealth mainPauses=${session.pauses}"
+                "meanPublishToReceiptMs=${if (samples > 0) latencyTotal / samples else -1} runnerHealth=$runnerHealth mainPauses=${session.pauses} " +
+                "screenOffMinutes=$screenOffMinutes idleMinutes=$idleMinutes hottestBatteryC=$hottestC end conditions=$finalConditions"
             Log.i("ROS2Endurance", "summary $summary")
             // 5 Hz for the whole window; allow 10% loss for best-effort delivery and polling.
             assertTrue("Too few samples: $summary", samples >= minutes * 60L * 5 * 9 / 10)
