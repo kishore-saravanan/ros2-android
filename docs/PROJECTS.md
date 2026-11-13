@@ -2,6 +2,7 @@
 
 Open **ROS2 Android → Projects**. Each compatible installed runner has a card
 with live state, runtime-reported node names and **Start project / Stop project**.
+Home → ROS activity lists the projects that are running, with their node counts.
 You can operate it without opening a second app. Runner APKs have no launcher
 entry: ROS2 Android is the only project app shown in the app drawer. Runners
 remain listed in Android Settings as installed apps. Rebuild/redeploy existing

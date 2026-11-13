@@ -48,7 +48,8 @@ process as an independently supervised robot session.
 
 Sensors & dashboard active/stopped describes only the main app's ROS session.
 It does not describe the whole robot computer. Projects and the micro-ROS Agent
-have independent states in Home → ROS activity. Read fresh topic data to verify
+have independent states in Home → ROS activity, which names each running project
+with its node count. Read fresh topic data to verify
 communication; active status alone is not evidence of delivery.
 
 ## What each Stop does

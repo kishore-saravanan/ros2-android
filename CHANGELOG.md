@@ -6,6 +6,9 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Home's ROS activity card names each running project with its node count, so the
+  operator sees what is active without opening Projects.
+
 - The USB reliability test can also run a disposable fixture project on the same
   domain (`robotRunnerPackage`) and requires its telemetry to stay fresh through every
   Agent restart and the soak; it now stops the Agent when finished. Fixture control

@@ -288,16 +288,19 @@ open class MainActivity : Activity() {
         projectControllers.discover().forEach { project -> projectControllers.controller(project).connect() }
     }
     private fun refreshHomeActivity() {
-        val running = projectControllers.values.count { it.error == null && it.status?.optString("state") == "Running" }
+        val running = projectControllers.values.filter { it.error == null && it.status?.optString("state") == "Running" }
         val unknown = projectControllers.values.count { it.error != null || it.status == null }
-        val nodes = projectControllers.values.filter { it.error == null && it.status?.optString("state") == "Running" }
-            .sumOf { it.status?.optJSONObject("native")?.optJSONArray("nodes")?.length() ?: 0 }
+        fun nodes(control: ProjectController) = control.status?.optJSONObject("native")?.optJSONArray("nodes")?.length() ?: 0
+        fun nodeText(count: Int) = if (count == 1) "1 node" else "$count nodes"
         overview?.show(buildString {
             append("Sensor topics: ${active.size} publishing")
             val robot = session
             append("\nDashboard topics: ${robot?.dashboardPublisherCount ?: 0} publishing · ${robot?.dashboardSubscriberCount ?: 0} subscribed")
-            append(if (projectControllers.discoveryError != null) "\nProjects: status unavailable" else "\nProjects: $running running / ${projectControllers.size} installed · $nodes nodes")
+            append(if (projectControllers.discoveryError != null) "\nProjects: status unavailable"
+                else "\nProjects: ${running.size} running / ${projectControllers.size} installed · ${nodeText(running.sumOf { nodes(it) })}")
             if (unknown > 0) append(" · $unknown awaiting status")
+            // Name what is running so the operator sees it without opening Projects.
+            running.forEach { append("\nRunning: ${it.project.id.replace('_', ' ')} · ${nodeText(nodes(it))}") }
             append("\nMicro-ROS agent: ${MicroRosAgentService.state}")
         })
     }

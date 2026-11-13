@@ -97,5 +97,12 @@ class ProjectControlUiTest {
         }
         toggle(); waitFor("Stop after recreation failed") { state() == "Stopped" }
         toggle(); waitFor("Restart failed") { state() == "Running" }
+        // Home names running projects so the operator need not open Projects.
+        activity.scenario.onActivity { app -> (find(app.window.decorView, "nav:Overview") as Button).performClick() }
+        waitFor("Home does not name the running project") {
+            var summary = ""
+            activity.scenario.onActivity { summary = (find(it.window.decorView, "home_endpoints") as? TextView)?.text?.toString().orEmpty() }
+            summary.contains("Running: ${id.replace('_', ' ')} · ")
+        }
     }
 }
