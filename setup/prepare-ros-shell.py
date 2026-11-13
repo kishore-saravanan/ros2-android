@@ -120,7 +120,7 @@ def main():
     compiler = sdk / 'ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android26-clang'
     subprocess.run([str(compiler), '-O2', '-fPIE', '-pie', '-I' + str(target / 'include/python3.12'),
                     str(ROOT / 'native/shell/python_main.c'), '-L' + str(libs), '-lpython3.12',
-                    '-Wl,-rpath,$ORIGIN', '-Wl,-z,max-page-size=16384', '-o', str(libs / 'libros2_python_exec.so')], check=True)
+                    '-Wl,-rpath,$ORIGIN', '-Wl,-z,max-page-size=16384,-z,common-page-size=16384', '-o', str(libs / 'libros2_python_exec.so')], check=True)
     (assets / 'provenance.json').write_text(json.dumps({'python': '3.12.15', 'stdlibSha256': STDLIB_SHA,
                                                        'hostRosCli': provenance, 'androidPatches': ['direct-discovery', 'lazy-daemon-imports']}, indent=2) + '\n')
     print('Staged native Android ROS CLI:', json.dumps(provenance))

@@ -18,6 +18,7 @@ import tarfile
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'python'))
+from ros2android.elf_alignment import check_elf
 from ros2android.native_sdk import ABI, CONTENT, FORMAT, MANIFEST, NOTICES, REQUIRED, inputs_digest, sha256_file  # noqa: E402
 
 
@@ -59,6 +60,14 @@ def package(native, out, allow_dirty=False):
     if missing or absent:
         raise RuntimeError('Build the SDK first (setup native --with-cpp, setup python, setup agent). Missing: '
                            + ', '.join(missing + absent))
+    # Check only archive contents, never host tools in the surrounding build cache.
+    paths = files_under(native)
+    for path in paths:
+        if path.is_file() and not path.is_symlink():
+            with path.open('rb') as stream:
+                magic = stream.read(4)
+            if magic == b'\x7fELF':
+                check_elf(path.read_bytes(), str(path.relative_to(native)))
     revision = git('rev-parse', 'HEAD')
     dirty = bool(git('status', '--porcelain', '--untracked-files=no'))
     if dirty and not allow_dirty:
@@ -66,7 +75,6 @@ def package(native, out, allow_dirty=False):
     epoch = int(os.environ.get('SOURCE_DATE_EPOCH') or git('log', '-1', '--format=%ct'))
     matrix = json.loads((ROOT / 'python/ros2android/compatibility.json').read_text())
     prefix = str(native).encode()
-    paths = files_under(native)
     text, binary = [], 0
     for path in paths:
         if path.is_file() and not path.is_symlink():
@@ -112,7 +120,7 @@ def main(arguments=None):
     args = parser.parse_args(arguments)
     try:
         archive, digest, manifest = package(args.native_root, args.out, args.allow_dirty)
-    except (OSError, RuntimeError, subprocess.CalledProcessError) as error:
+    except (OSError, RuntimeError, ValueError, subprocess.CalledProcessError) as error:
         print('package-native-sdk: ' + str(error), file=sys.stderr)
         return 1
     print(json.dumps({'archive': str(archive), 'sha256': digest, 'bytes': archive.stat().st_size,

@@ -43,11 +43,11 @@ while queue:
 for name, source in closure.items():
     target = destination / name
     shutil.copy2(source, target)
-    if source != executable: subprocess.run([patchelf, '--set-soname', name, str(target)], check=True)
+    if source != executable: subprocess.run([patchelf, '--page-size', '16384', '--set-soname', name, str(target)], check=True)
     for soname in by_soname:
         plain = soname.split('.so')[0] + '.so'
         if plain in closure and soname != plain:
-            subprocess.run([patchelf, '--replace-needed', soname, plain, str(target)], check=True)
+            subprocess.run([patchelf, '--page-size', '16384', '--replace-needed', soname, plain, str(target)], check=True)
 sdk = Path(os.environ.get('ANDROID_HOME') or os.environ.get('ANDROID_SDK_ROOT') or Path.home() / 'Android/Sdk')
 strip = sdk / 'ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip'
 for name in closure:

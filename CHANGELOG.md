@@ -6,6 +6,12 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Build YAML and micro-ROS Agent dependencies with explicit 16 KB memory-page
+  alignment and reject incompatible native libraries in release APKs/SDK archives.
+- Add optional camera capture-stamp-to-PC-callback latency measurement with explicit
+  clock calibration uncertainty, without saving images.
+- Preserve per-batch phone qualification results and reject missing or skipped opt-in evidence.
+
 - Accessibility checks now cover dialogs. The Add widget and Project connection
   dialogs' fields are named by their visible labels instead of a description that
   could hide the typed value, and Add widget fields are 48 dp tall.

@@ -52,6 +52,8 @@ jobs:
         env:
           FULL_SDK: '1'
         run: tests/integration/installed_client_journey.sh dist/ros2_android-*.whl "$RUNNER_TEMP/journey"
+      - name: Check workspace APK native alignment
+        run: python3 setup/check-native-alignment.py --apk "$RUNNER_TEMP/journey/workspace-runner.apk"
       - name: Package the prebuilt native SDK
         run: python3 setup/package-native-sdk.py --native-root "$HOME/.cache/ros2-android-native" --out "$RUNNER_TEMP/sdk"
       - name: Journey with the prebuilt SDK in a fresh home (release-user path)

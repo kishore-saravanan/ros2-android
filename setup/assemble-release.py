@@ -73,6 +73,8 @@ AGENT_LICENSES = ('micro-xrce-agent', 'fastdds', 'fastcdr', 'foonathan-memory', 
 
 def require_contents(apk):
     """Native runtime plus a license text for every staged component (ROS index and Agent stack)."""
+    from ros2android.elf_alignment import check_apk
+    check_apk(apk)
     with zipfile.ZipFile(apk) as archive:
         names = set(archive.namelist())
         index = json.loads(archive.read('assets/licenses/index.json')) if 'assets/licenses/index.json' in names else []
@@ -241,7 +243,7 @@ def main(arguments=None):
         parser.error('Keep the release keystore outside the repository')
     try:
         manifest, files = assemble(args)
-    except (OSError, RuntimeError, subprocess.SubprocessError, KeyError, zipfile.BadZipFile, json.JSONDecodeError) as error:
+    except (OSError, RuntimeError, ValueError, subprocess.SubprocessError, KeyError, zipfile.BadZipFile, json.JSONDecodeError) as error:
         print('assemble release: ' + str(error), file=sys.stderr)
         return 1
     print(json.dumps({'release': str(args.out), 'files': files, 'apk': manifest['artifacts']['apk']['file'],

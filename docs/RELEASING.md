@@ -42,6 +42,7 @@ Run them from a clean checkout of the tagged revision with the prepared SDK:
 python3 setup/stage-licenses.py            # also part of setup/build-native-ros.sh
 python3 setup/generate-notices.py --check  # THIRD-PARTY-NOTICES.md matches the locks
 ./setup/build.sh :app:assembleRelease :app:lintVitalRelease
+python3 setup/check-native-alignment.py --apk android/app/build/outputs/apk/release/app-release-unsigned.apk
 python3 setup/build-python-package.py      # bundled host wheel, from a venv with pip
 # Prebuilt native SDK: run the "Native Android SDK build" workflow on the release commit and
 # download its ros2-android-native-sdk artifact (built on a clean runner, install-tested there).

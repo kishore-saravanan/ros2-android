@@ -29,7 +29,9 @@ here changes phone settings automatically; you change the few settings below you
 4. In each app's Android settings (ROS2 Android → Settings → Background operation, and
    Projects → Details for **runner fixture cpp** and **runner fixture python**), allow
    background activity / choose Unrestricted battery use. On Android 13+ also allow
-   notifications. Labels vary by vendor; see [standalone operation](STANDALONE-OPERATION.md).
+   notifications. Some vendors separate background activity from the Special access →
+   Optimize battery usage list: if the app still reports optimized, choose All apps
+   there and disable optimization for these three project apps. Labels vary by vendor; see [standalone operation](STANDALONE-OPERATION.md).
 
 ## Run the batch
 

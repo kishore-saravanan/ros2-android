@@ -25,5 +25,5 @@ target_link_libraries(ros2android PRIVATE rcl::rcl
   std_msgs::std_msgs__rosidl_generator_c
   std_msgs::std_msgs__rosidl_typesupport_introspection_c)
 target_compile_features(ros2android PRIVATE cxx_std_17)
-target_link_options(ros2android PRIVATE "-Wl,-z,max-page-size=16384")
+target_link_options(ros2android PRIVATE "-Wl,-z,max-page-size=16384,-z,common-page-size=16384")
 

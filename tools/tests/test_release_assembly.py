@@ -9,6 +9,8 @@ import subprocess
 import tarfile
 import tempfile
 import unittest
+import zipfile
+import struct
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -54,6 +56,19 @@ class ReleaseAssemblyTest(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
         self.root = Path(temp.name)
+
+    def test_release_content_gate_rejects_four_kb_native_library(self):
+        data = bytearray(120)
+        data[:6] = b'\x7fELF\x02\x01'
+        struct.pack_into('<H', data, 18, 183)
+        struct.pack_into('<Q', data, 32, 64)
+        struct.pack_into('<HH', data, 54, 56, 1)
+        struct.pack_into('<IIQQQQQQ', data, 64, 1, 5, 0, 0, 0, 120, 120, 4096)
+        path = self.root / 'bad.apk'
+        with zipfile.ZipFile(path, 'w') as archive:
+            archive.writestr('lib/arm64-v8a/libbad.so', data)
+        with self.assertRaisesRegex(ValueError, '16 KB'):
+            release.require_contents(path)
 
     def test_signer_parses_one_certificate_and_verified_schemes(self):
         digest = 'ab' * 32

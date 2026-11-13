@@ -1,0 +1,9 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 36a7cbb..d428bce 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -20,2 +20,4 @@ ament_vendor(libyaml_vendor
+   CMAKE_ARGS
++    "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES:BOOL=ON"
++    "-DCMAKE_SHARED_LINKER_FLAGS:STRING=${CMAKE_SHARED_LINKER_FLAGS}"
+     "-DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS}$<$<BOOL:${MSVC}>: /wd4244 /wd4267 /wd4996>"

@@ -52,6 +52,23 @@ standalone Python examples use their separate backend.
 | Android 15 emulator (ARM translation) | UI, accessibility and phone-local ROS/runner checks; ARM Agent executables are not qualified under translation. |
 | Samsung SM-S926B, Android 17 / API 37 | Initial beta suite: 19 passed, 4 accessibility-window/dialog checks failed, 35 opt-in checks skipped. Investigation and strict background runner checks are pending; this is not a qualified-device claim. |
 
+## Native memory-page compatibility
+
+Every bundled ARM64 ELF must have load segments aligned for 16 KB pages. The
+release assembler/verifier and SDK packager reject incompatible binaries. YAML
+vendor and micro-ROS Agent sub-builds receive the Android page-size flags explicitly,
+including when cached Agent dependencies are rebuilt. This follows
+[Android's page-size guidance](https://developer.android.com/guide/practices/page-sizes).
+
+```bash
+python3 setup/check-native-alignment.py --apk path/to/app.apk
+```
+
+This inspects ELF layout without executing the code. It does not establish runtime
+compatibility on a 16 KB kernel; keep that device test separate. The Samsung used
+for the Android 17 checks currently reports 4 KB pages, so it cannot qualify 16 KB
+runtime behavior. Apps retain extracted native-library packaging for runner executables.
+
 ## What must match
 
 - Use client/templates from the same supported source snapshot. The matrix is

@@ -1,3 +1,4 @@
+import struct
 """Prebuilt native SDK archive: packaging, verified relocation and refusal of unsafe or mismatched archives."""
 import contextlib
 import importlib.util
@@ -33,7 +34,13 @@ class NativeSdkArchiveTest(unittest.TestCase):
             path.write_bytes(data)
         for relative in native_sdk.REQUIRED:
             if relative != 'ros-assets/licenses':
-                write(relative, b'\x7fELF\0' + prefix + b'\0debug')
+                elf = bytearray(120)
+                elf[:6] = b'\x7fELF\x02\x01'
+                struct.pack_into('<H', elf, 18, 183)
+                struct.pack_into('<Q', elf, 32, 64)
+                struct.pack_into('<HH', elf, 54, 56, 1)
+                struct.pack_into('<IIQQQQQQ', elf, 64, 1, 5, 0, 0, 0, 120, 120, 16384)
+                write(relative, bytes(elf) + prefix + b'\0debug')
         write('ros-assets/licenses/rcl/LICENSE', b'Apache License 2.0\n')
         write('install/share/rcl/local_setup.sh', b'export PREFIX="' + prefix + b'/install"\n')
         write('install/share/ament_index/resource_index/parent_prefix_path/rcl', prefix + b'/install')
@@ -54,6 +61,16 @@ class NativeSdkArchiveTest(unittest.TestCase):
                 shutil.copyfile(source, target)
         self.archive, self.digest, self.manifest = packager.package(self.native, self.temp / 'dist', allow_dirty=True)
         self.target = self.temp / 'user-home' / '.cache' / 'ros2-android-native'
+
+    def test_packager_rejects_incompatible_native_binary_before_writing_archive(self):
+        path = self.native / 'apk-libs/arm64-v8a/librcl.so'
+        data = bytearray(path.read_bytes())
+        struct.pack_into('<Q', data, 112, 4096)
+        path.write_bytes(data)
+        output = self.temp / 'rejected'
+        with self.assertRaisesRegex(ValueError, '16 KB'):
+            packager.package(self.native, output, allow_dirty=True)
+        self.assertFalse(output.exists())
 
     def install(self, **options):
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):

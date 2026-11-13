@@ -35,6 +35,6 @@ export PKG_CONFIG_LIBDIR="$PWD/install/lib/pkgconfig"
     -DRCL_LOGGING_IMPLEMENTATION=rcl_logging_noop \
     -DTRACETOOLS_DISABLED=ON -DENABLE_SECURITY=OFF -DENABLE_SSL=OFF \
     -DBUILD_IDLC=OFF -DBUILD_DDSPERF=OFF \
-    -DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384
+    -DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384,-z,common-page-size=16384
 python3 "$project_root/setup/stage-native-libs.py"
 python3 "$project_root/setup/stage-licenses.py"

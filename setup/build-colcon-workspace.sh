@@ -43,5 +43,5 @@ exec "$colcon_bin" --log-base log build --merge-install --base-paths "$workspace
   -DCMAKE_PREFIX_PATH="$workspace_prefixes" "${workspace_python_args[@]}" -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH \
   -DSTATIC_ROSIDL_TYPESUPPORT_C=rosidl_typesupport_introspection_c \
   -DSTATIC_ROSIDL_TYPESUPPORT_CPP=rosidl_typesupport_introspection_cpp \
-  -DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384 \
-  -DCMAKE_EXE_LINKER_FLAGS=-Wl,-z,max-page-size=16384
+  -DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384,-z,common-page-size=16384 \
+  -DCMAKE_EXE_LINKER_FLAGS=-Wl,-z,max-page-size=16384,-z,common-page-size=16384
