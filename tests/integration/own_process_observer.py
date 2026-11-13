@@ -18,7 +18,7 @@ import threading
 import time
 
 PACKAGE = re.compile(r'^dev\.ros2android\.android(\.runner\.[A-Za-z0-9_]{1,64})?$')
-SAMPLE = re.compile(r'^S\|(?P<uptime>\d+(?:\.\d+)?)\|(?P<package>[^|]+)\|(?P<pid>\d+)\|(?P<state>[A-Za-z]?)\|(?P<freezer>[^|]*)\|(?P<cpuset>[^|]*)$')
+SAMPLE = re.compile(r'^S\|(?P<uptime>\d+(?:\.\d+)?)\|(?P<package>[^|]+)\|(?P<pid>\d+)\|(?P<state>[A-Za-z]?)\|(?P<freezer>[^|]*)\|(?P<cpuset>[^|]*)(?:\|(?P<v2frozen>[^|]*)\|(?P<wchan>[^|]*)\|(?P<cpu>[^|]*))?$')
 
 
 def device_loop(packages, interval):
@@ -29,7 +29,13 @@ def device_loop(packages, interval):
             "st=$(cut -d' ' -f3 /proc/$pid/stat 2>/dev/null); "
             "fz=$(grep -m1 ':freezer:' /proc/$pid/cgroup 2>/dev/null | cut -d: -f3); "
             "cs=$(grep -m1 ':cpuset:' /proc/$pid/cgroup 2>/dev/null | cut -d: -f3); "
-            'echo "S|$up|$name|$pid|$st|$fz|$cs"; done; done; '
+            "cg=$(awk -F: '$1==0 {print $3}' /proc/$pid/cgroup 2>/dev/null); "
+            'vf=""; case "$cg" in */pid_"$pid") '
+            "vf=$(grep '^frozen ' \"/sys/fs/cgroup$cg/cgroup.events\" 2>/dev/null | cut -d' ' -f2);; esac; "
+            'wc=$(cat /proc/$pid/wchan 2>/dev/null); '
+            "cpu=$(cut -d' ' -f14,15 /proc/$pid/stat 2>/dev/null); "
+            'echo "S|$up|$name|$pid|$st|$fz|$cs|$vf|$wc|$cpu"; done; done; '
+
             f'sleep {interval:.3f}; done')
 
 
@@ -37,9 +43,13 @@ def parse(line):
     match = SAMPLE.match(line.strip())
     if not match:
         return None
-    return {'boot_ms': round(float(match['uptime']) * 1000), 'package': match['package'],
+    sample = {'boot_ms': round(float(match['uptime']) * 1000), 'package': match['package'],
             'pid': int(match['pid']), 'state': match['state'], 'freezer': match['freezer'],
             'cpuset': match['cpuset']}
+    if match['v2frozen'] is not None:
+        sample.update(cgroupFrozen={'0': False, '1': True}.get(match['v2frozen']),
+                      wchan=match['wchan'], cpuTicks=match['cpu'])
+    return sample
 
 
 def summarize(samples):
@@ -48,11 +58,13 @@ def summarize(samples):
     for sample in samples:
         key = f"{sample['package']}#{sample['pid']}"
         row = summary.setdefault(key, {'samples': 0, 'frozenSamples': 0, 'frozenIntervals': [],
-                                       'states': {}, 'first_ms': sample['boot_ms']})
+                                       'freezerReadableSamples': 0, 'states': {}, 'first_ms': sample['boot_ms']})
         row['samples'] += 1
         row['last_ms'] = sample['boot_ms']
         row['states'][sample['state']] = row['states'].get(sample['state'], 0) + 1
-        frozen = sample['freezer'].rstrip('/').endswith('frozen')
+        if sample['freezer'] or sample.get('cgroupFrozen') is not None:
+            row['freezerReadableSamples'] += 1
+        frozen = sample['freezer'].rstrip('/').endswith('frozen') or sample.get('cgroupFrozen') is True
         intervals = row['frozenIntervals']
         if frozen:
             row['frozenSamples'] += 1

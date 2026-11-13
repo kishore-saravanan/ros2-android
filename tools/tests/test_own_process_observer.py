@@ -52,6 +52,16 @@ class OwnProcessObserverTest(unittest.TestCase):
                          row['frozenIntervals'])
         self.assertEqual({'S': 2, 'D': 3}, row['states'])
 
+    def test_cgroup_v2_freezer_and_unavailable_state_are_distinct(self):
+        frozen = observer.parse('S|101.0|dev.ros2android.android.runner.fixture_cpp|7|S|||1|do_freezer_trap|12 3')
+        unknown = observer.parse('S|102.0|dev.ros2android.android.runner.fixture_cpp|7|S||||ep_poll|12 3')
+        self.assertTrue(frozen['cgroupFrozen'])
+        self.assertIsNone(unknown['cgroupFrozen'])
+        row = observer.summarize([frozen, unknown])['dev.ros2android.android.runner.fixture_cpp#7']
+        self.assertEqual(1, row['frozenSamples'])
+        self.assertEqual(1, row['freezerReadableSamples'])
+        self.assertIn('*/pid_"$pid"', observer.device_loop(['dev.ros2android.android'], 0.2))
+
 
 if __name__ == '__main__':
     unittest.main()

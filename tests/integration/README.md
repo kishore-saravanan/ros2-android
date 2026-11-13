@@ -78,8 +78,12 @@ python3 tests/integration/own_process_observer.py \
 It writes JSON lines plus a `.summary.json` with contiguous frozen intervals per
 process, and exits with the observed command's status. The sampling interval
 bounds what it can see: a freeze shorter than one interval can be missed.
-Freezer cgroup names are vendor policy details; correlate them with fixture
-timestamps before attributing a gap. Keep the output under ignored `device-logs/`.
+The observer also reads cgroup-v2 `cgroup.events` only for each named process's
+PID cgroup, plus its CPU ticks and wait channel. `cgroupFrozen: null` means the
+state was unavailable, not that freezing was absent. Vendor cgroup paths alone
+are insufficient evidence; correlate kernel frozen samples with fixture
+timestamps and system policy events scoped to the project package. Sampling and
+ADB can affect scheduling, so retain failing runs alongside diagnostic repeats. Keep the output under ignored `device-logs/`.
 
 ## Installed-client journey
 

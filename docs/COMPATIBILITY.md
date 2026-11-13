@@ -50,7 +50,7 @@ standalone Python examples use their separate backend.
 | --- | --- |
 | Reference ARM64 Android 12 phone | Native ROS, C++/Python runners, USB micro-ROS and recovery checks; bounded endurance results in [Status](STATUS.md). |
 | Android 15 emulator (ARM translation) | UI, accessibility and phone-local ROS/runner checks; ARM Agent executables are not qualified under translation. |
-| Samsung SM-S926B, Android 17 / API 37 | Initial beta suite: 19 passed, 4 accessibility-window/dialog checks failed, 35 opt-in checks skipped. After rebuilding native libraries for 16 KB alignment and replacing fixed focus delays with bounded waits, all 4 accessibility checks pass. The full-suite repeat passes (23 pass, 35 opt-in skips), plus C++ peer recovery and runner update. Python recovery/endurance checks remain in progress; support is scoped to these results. |
+| Samsung SM-S926B, Android 17 / API 37 | Initial beta suite: 19 passed, 4 accessibility-window/dialog checks failed, 35 opt-in checks skipped. After rebuilding native libraries for 16 KB alignment and replacing fixed focus delays with bounded waits, all 4 accessibility checks pass. The full-suite repeat passes (23 pass, 35 opt-in skips), plus C++ peer recovery and runner update. Python peer recovery also passes. Sustained background operation remains unqualified: Samsung OLAF freezes the runner during app/system UI transitions despite its foreground service and battery exemption, correlating with a failed 2.6-second pause. A later passing short run does not supersede those failures; support is scoped to these results. |
 
 ## Native memory-page compatibility
 
