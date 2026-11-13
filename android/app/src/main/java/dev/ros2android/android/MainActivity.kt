@@ -116,6 +116,7 @@ open class MainActivity : Activity() {
             content.addView(text(label, 13, muted))
             fields[key] = field(config.optString(key), label).also { it.isEnabled = editable; content.addView(it) }
         }
+        linkFieldLabels(content)  // Dialogs are outside the screen hierarchy linked in render().
         val dialog = AlertDialog.Builder(this).setTitle("Project connection").setView(ScrollView(this).apply { addView(content) })
             .setNegativeButton("Cancel", null).setPositiveButton("Save", null).create()
         dialog.setOnShowListener { dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = editable; dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
@@ -442,7 +443,7 @@ open class MainActivity : Activity() {
             val settings: Button
             var logs: TextView? = null
             // Keep the connection action accessible without filling the card with fields.
-            settings = button("Connection settings") { projectSettings(control) }.apply { contentDescription = "Connection settings for $spokenName" }; box.addView(settings)
+            settings = button("Connection settings") { projectSettings(control) }.apply { contentDescription = "Connection settings for $spokenName"; tag = "project_settings:${project.id}" }; box.addView(settings)
             disclosure(box, "logs:${project.id}", "Logs", "Logs for $spokenName") { info ->
                 logs = text(control.status?.optString("logs") ?: "Waiting for runner", 12, muted).apply { tag = "project_logs:${project.id}"; setTextIsSelectable(true) }; info.addView(logs)
             }

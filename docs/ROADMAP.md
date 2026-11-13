@@ -170,8 +170,9 @@ signing key. The repository becomes public with its full history.
 - [ ] Check portrait/landscape, light/dark mode and accessibility on core journeys.
       Reference-phone core tabs, app-local light/dark and large-text layouts pass.
       Automated accessibility checks pass on core screens in light and dark after
-      fixing field labels, disclosure speech and a small touch target; dialogs,
-      a screen-reader walkthrough and wider device coverage remain open.
+      fixing field labels, disclosure speech and a small touch target, and on the
+      Add widget, Project connection and licenses dialogs after naming their fields by
+      visible labels. A screen-reader walkthrough and wider device coverage remain open.
 - [ ] Produce signed, checksummed APK/client/SDK artifacts and dependency notices.
       Release assembly/verification signs, checksums and records provenance; APKs
       carry license texts for every staged native component, listed in

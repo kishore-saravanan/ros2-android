@@ -1,9 +1,11 @@
 package dev.ros2android.android
 
+import android.accessibilityservice.AccessibilityService
 import android.app.Activity
 import android.app.KeyguardManager
 import android.os.SystemClock
 import android.util.Log
+import android.view.accessibility.AccessibilityNodeInfo
 import android.view.View
 import android.view.ViewGroup
 import androidx.test.core.app.ActivityScenario
@@ -14,6 +16,7 @@ import com.google.android.apps.common.testing.accessibility.framework.Accessibil
 import com.google.android.apps.common.testing.accessibility.framework.Parameters
 import com.google.android.apps.common.testing.accessibility.framework.uielement.AccessibilityHierarchyAndroid
 import com.google.android.apps.common.testing.accessibility.framework.utils.contrast.BitmapImage
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
@@ -30,6 +33,8 @@ import java.util.Locale
 class AccessibilityChecksTest {
     @Test fun lightCoreScreensPassAccessibilityChecks() = audit(LightPreviewActivity::class.java)
     @Test fun darkCoreScreensPassAccessibilityChecks() = audit(DarkPreviewActivity::class.java)
+    @Test fun lightDialogsPassAccessibilityChecks() = auditDialogs(LightPreviewActivity::class.java)
+    @Test fun darkDialogsPassAccessibilityChecks() = auditDialogs(DarkPreviewActivity::class.java)
 
     private fun find(view: View, tag: String): View? {
         if (view.tag == tag) return view
@@ -76,5 +81,69 @@ class AccessibilityChecksTest {
             }
         }
         if (errors.isNotEmpty()) fail("${errors.size} accessibility errors:\n" + errors.joinToString("\n"))
+    }
+
+    private fun contains(node: AccessibilityNodeInfo?, text: String): Boolean =
+        node != null && (node.text?.toString() == text || (0 until node.childCount).any { contains(node.getChild(it), text) })
+
+    /**
+     * Dialogs are separate windows, so they are read through the accessibility tree of the active
+     * window, which must belong to this app. Each dialog is dismissed with Back afterwards.
+     */
+    private fun <T : Activity> auditDialogs(type: Class<T>) {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val automation = instrumentation.uiAutomation
+        val checks = AccessibilityCheckPreset.getAccessibilityHierarchyChecksForPreset(AccessibilityCheckPreset.LATEST)
+        val errors = mutableListOf<String>()
+        var audited = 0
+        ActivityScenario.launch(type).use { scenario ->
+            SystemClock.sleep(1500)
+            // Tab, opener tag prefix and the dialog title that proves the dialog is showing.
+            val dialogs = listOf(Triple("Dashboard", "dashboard_add_widget", "Add widget"),
+                Triple("Projects", "project_settings:", "Project connection"),
+                Triple("Connect", "open_source_licenses", "Open-source licenses"))
+            for ((tab, opener, title) in dialogs) {
+                var opened = false
+                scenario.onActivity { app -> find(app.window.decorView, "nav:$tab")!!.performClick() }
+                instrumentation.waitForIdleSync(); SystemClock.sleep(1000)
+                scenario.onActivity { app ->
+                    findPrefix(app.window.decorView, opener)?.let { it.performClick(); opened = true }
+                }
+                if (!opened) { Log.w("ROS2Accessibility", "Skipped $title: no $opener on $tab"); continue }
+                instrumentation.waitForIdleSync()
+                val end = SystemClock.elapsedRealtime() + 5000
+                var root = automation.rootInActiveWindow
+                while (!contains(root, title) && SystemClock.elapsedRealtime() < end) { SystemClock.sleep(200); root = automation.rootInActiveWindow }
+                assertTrue("$title dialog did not appear", contains(root, title))
+                assertEquals("Active window must be this app", instrumentation.targetContext.packageName, root!!.packageName?.toString())
+                scenario.onActivity { app -> assertFalse("Lock screen must be absent", app.getSystemService(KeyguardManager::class.java).isKeyguardLocked) }
+                val screenshot = automation.takeScreenshot()
+                val hierarchy = AccessibilityHierarchyAndroid.newBuilder(root, instrumentation.targetContext).build()
+                val parameters = Parameters().apply { screenshot?.let { putScreenCapture(BitmapImage(it)) } }
+                for (result in checks.flatMap { it.runCheckOnHierarchy(hierarchy, null, parameters) }) {
+                    val element = result.element
+                    val line = "${type.simpleName} $title: ${result.sourceCheckClass.simpleName} " +
+                        "[${element?.className} '${element?.text ?: element?.contentDescription ?: ""}' ${element?.boundsInScreen}] " +
+                        result.getMessage(Locale.ENGLISH)
+                    when (result.type) {
+                        AccessibilityCheckResultType.ERROR -> errors += line
+                        AccessibilityCheckResultType.WARNING -> Log.w("ROS2Accessibility", line)
+                        else -> Unit
+                    }
+                }
+                screenshot?.recycle()
+                audited++
+                automation.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+                instrumentation.waitForIdleSync(); SystemClock.sleep(600)
+            }
+        }
+        assertTrue("No dialog could be opened", audited > 0)
+        if (errors.isNotEmpty()) fail("${errors.size} accessibility errors:\n" + errors.joinToString("\n"))
+    }
+
+    private fun findPrefix(view: View, prefix: String): View? {
+        if ((view.tag as? String)?.startsWith(prefix) == true) return view
+        if (view is ViewGroup) for (i in 0 until view.childCount) findPrefix(view.getChildAt(i), prefix)?.let { return it }
+        return null
     }
 }

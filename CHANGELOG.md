@@ -6,6 +6,10 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Accessibility checks now cover dialogs. The Add widget and Project connection
+  dialogs' fields are named by their visible labels instead of a description that
+  could hide the typed value, and Add widget fields are 48 dp tall.
+
 - Prebuilt native SDK: `ros2-android setup sdk --archive FILE` installs the release's
   native C++, Python/shell and micro-ROS Agent SDK instead of building it from source
   for hours. It verifies the checksum and that the archive was built from the client's

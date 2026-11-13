@@ -24,7 +24,7 @@ internal class ControlDashboard(context: Context, private val robot: () -> Robot
     private val readings = mutableMapOf<String, Pair<TextView, TextView>>()
     private val status = label("")
     private val enable = action("Start dashboard") {}
-    private val add = action("Add widget") { edit(null) }
+    private val add = action("Add widget") { edit(null) }.apply { tag = "dashboard_add_widget" }
     init {
         orientation = VERTICAL
         runCatching {
@@ -161,14 +161,19 @@ internal class ControlDashboard(context: Context, private val robot: () -> Robot
     }
     private fun edit(old: ControlWidget?) {
         val form = LinearLayout(context).apply { orientation = VERTICAL; setPadding(dp(20), dp(8), dp(20), 0) }
-        fun input(title: String, value: String): EditText { form.addView(label(title)); return EditText(context).apply { setSingleLine(); setText(value); contentDescription = title; form.addView(this) } }
+        // Screen readers name each field by its visible label (labelFor), not a description that
+        // would hide the typed value; fields keep 48 dp touch targets.
+        fun input(title: String, value: String): EditText {
+            val field = EditText(context).apply { id = View.generateViewId(); setSingleLine(); setText(value); minHeight = dp(48) }
+            form.addView(label(title).apply { labelFor = field.id }); form.addView(field); return field
+        }
         fun selector(title: String, options: List<String>, selected: String): Spinner {
-            form.addView(label(title))
-            return Spinner(context).apply {
-                contentDescription = title
+            val spinner = Spinner(context).apply {
+                id = View.generateViewId(); minimumHeight = dp(48)
                 adapter = ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, options)
-                setSelection(options.indexOf(selected).coerceAtLeast(0)); form.addView(this)
+                setSelection(options.indexOf(selected).coerceAtLeast(0))
             }
+            form.addView(label(title).apply { labelFor = spinner.id }); form.addView(spinner); return spinner
         }
         val name = input("Label", old?.label ?: "Widget")
         val direction = selector("Direction", listOf("Publish", "Subscribe"), if (old?.subscriber == true) "Subscribe" else "Publish")

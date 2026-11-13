@@ -37,8 +37,11 @@ class ControlsTest {
             val found = node { it.text?.toString()?.equals(text, ignoreCase = true) == true && it.isClickable } ?: error("Missing button: $text")
             check(found.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)); SystemClock.sleep(400)
         }
+        /** The field a visible label names for screen readers (labelFor). */
+        fun labeled(label: String, className: String) =
+            node { it.text?.toString() == label && it.labelFor?.className?.toString() == className }?.labelFor
         fun fill(label: String, value: String) {
-            val found = node { it.contentDescription?.toString() == label && it.className?.toString() == "android.widget.EditText" } ?: error("Missing field: $label")
+            val found = labeled(label, "android.widget.EditText") ?: error("Missing field: $label")
             check(found.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_SET_TEXT, Bundle().apply { putCharSequence(android.view.accessibility.AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, value) }))
         }
         try {
@@ -53,12 +56,12 @@ class ControlsTest {
             assertNotNull(node { it.text?.toString() == "UI test button" && it.className?.toString() == "android.widget.TextView" })
             assertNotNull(node { it.text?.toString() == "Start dashboard" })
             click("Add widget"); fill("Label", "Subscribed test value"); fill("Topic", "/phone/dashboard_test/ui_waiting")
-            val direction = node { it.contentDescription?.toString() == "Direction" && it.className?.toString() == "android.widget.Spinner" } ?: error("Direction selector missing")
+            val direction = labeled("Direction", "android.widget.Spinner") ?: error("Direction selector missing")
             check(direction.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)); SystemClock.sleep(300)
             var subscribe = node { it.text?.toString() == "Subscribe" } ?: error("Subscribe option missing")
             while (!subscribe.isClickable) subscribe = subscribe.parent ?: error("Subscribe option cannot be selected")
             check(subscribe.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)); SystemClock.sleep(300)
-            assertNull("Publisher value must be hidden for subscribers", node { it.contentDescription?.toString() == "Button value" })
+            assertNull("Publisher value must be hidden for subscribers", labeled("Button value", "android.widget.EditText"))
             click("Save")
             val stored = org.json.JSONArray(prefs.getString("widgets", "[]"))
             val subscriber = stored.getJSONObject(1)
