@@ -142,9 +142,18 @@ class ProjectService : Service() {
         private val pauses = PauseMonitor()
         fun statusJson(context: Context): String = JSONObject().put("project", BuildConfig.PROJECT_ID)
             .put("sourceId", BuildConfig.PROJECT_SOURCE_ID).put("state", current?.state ?: lastState).put("busy", current?.busy ?: false)
-            .put("config", lastConfig?.let { JSONObject(it) })
+            .put("config", savedConfig(context))
+            .put("runConfig", lastConfig?.let { JSONObject(it) })
             .put("native", runCatching { JSONObject(backend.diagnostic()) }.getOrElse { JSONObject().put("error", it.message) })
             .put("health", health(context)).toString()
+        /** The saved profile the next Start uses; "runConfig" is what the current or last run started with. */
+        private fun savedConfig(context: Context): JSONObject =
+            context.getSharedPreferences("project_profile", Context.MODE_PRIVATE).let { prefs ->
+                JSONObject().put("revision", prefs.getString("config_revision", "")).put("domain", prefs.getString("domain", "0"))
+                    .put("namespace", prefs.getString("namespace", BuildConfig.PROJECT_NAMESPACE))
+                    .put("peer", prefs.getString("peer", "")).put("local", prefs.getString("local", ""))
+                    .put("ros_args", prefs.getString("ros_args", "[]"))
+            }
         /** Additive status object: absent from older runners, so readers must treat it as optional. */
         private fun health(context: Context): JSONObject = pauses.snapshot.let { pause ->
             JSONObject().put("monitoring", pauses.monitoring).put("pauses", pause.pauses)

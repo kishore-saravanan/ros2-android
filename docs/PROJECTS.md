@@ -39,7 +39,10 @@ this project once (longest 2.2 s)*. Allow background activity for that runner,
 restart the project and check fresh data. Counts reset on the next Start; the
 warning remains visible after Stop until then.
 
-Runner status includes this as an optional `health` object: `monitoring`,
+Runner status reports `config`, the saved profile the next Start uses, and `runConfig`,
+the profile the current or most recent run started with (absent before the first run in
+this process). Both the app's controls and `ros2-android project status` show the same
+values. Runner status also includes an optional `health` object: `monitoring`,
 `pauses`, `longestPauseMs`, `totalPausedMs`, `lastPauseEndedAt` (boot-clock
 milliseconds), `batteryOptimized` and `backgroundRestricted` (`null` when Android
 cannot report it). Older runners omit `health`; treat that as unknown, not healthy.

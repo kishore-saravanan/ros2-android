@@ -43,16 +43,8 @@ open class ProjectControlService : Service() {
                     3 -> ProjectService.current?.stopProject()
                     else -> error("Unsupported project control request")
                 }
-                JSONObject(ProjectService.statusJson(this@ProjectControlService)).apply {
-                    run {
-                        val prefs = getSharedPreferences("project_profile", MODE_PRIVATE)
-                        put("config", JSONObject().put("domain", prefs.getString("domain", "0"))
-                            .put("namespace", prefs.getString("namespace", BuildConfig.PROJECT_NAMESPACE))
-                            .put("peer", prefs.getString("peer", "")).put("local", prefs.getString("local", ""))
-                            .put("ros_args", prefs.getString("ros_args", "[]")))
-                    }
-                    put("logs", ProjectLog.snapshot())
-                }.toString()
+                // statusJson already reports the saved profile as "config".
+                JSONObject(ProjectService.statusJson(this@ProjectControlService)).put("logs", ProjectLog.snapshot()).toString()
             }
             runCatching { message.replyTo?.send(Message.obtain(null, message.what).apply {
                 data = Bundle().apply {

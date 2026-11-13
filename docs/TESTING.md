@@ -539,6 +539,27 @@ executable checks fail only because the emulator's ARM translation ignores
 phone, so test the Agent and workspace child nodes on ARM hardware. Emulator results are compatibility evidence, not
 phone qualification: there is no vendor power policy, real radio or USB.
 
+## Endurance on the reference phone
+
+Start long runs on the phone itself so they survive the PC session; the result is
+written on the phone and `ROS2Endurance` logs a per-minute summary:
+
+```bash
+adb shell "nohup am instrument -w -r -e class dev.ros2android.android.EnduranceTest \
+  -e enduranceRunnerPackage dev.ros2android.android.runner.fixture_cpp -e enduranceMinutes 60 \
+  dev.ros2android.android.test/dev.ros2android.android.Ros2AndroidTestRunner \
+  > /data/local/tmp/ros2android-endurance.txt 2>&1 &"
+```
+
+On the reference phone (Android 12, USB power, Wi-Fi off, background activity allowed)
+the 60-minute run passed: 18,000 of 18,000 samples at 5 Hz, largest receipt gap 219 ms,
+publish-to-receipt mean 7 ms (max 29 ms), and no pauses in the runner or main app. Main
+app memory afterwards was about 29 MB PSS. The PC-side monitor stalled ADB during this
+run, so there is no continuous memory or temperature record; Android's aggregate thermal
+status read "severe" afterwards while current sensors were cool (CPU about 35 °C), which
+appears to come from cached and vendor battery-limit entries. Treat thermal behavior as
+not yet measured. Poll sparingly from the PC during long runs.
+
 ## Runner update while bound
 
 `RunnerUpdateTest` starts a disposable fixture, receives its telemetry in the Dashboard,

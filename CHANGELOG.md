@@ -6,6 +6,12 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Runner status (app controls, debug control and `ros2-android project status`) now
+  reports the saved profile as `config` and the profile of the current or last run as
+  `runConfig`; the debug path previously showed only the last run, which looked like
+  an unrestored profile. Endurance and runner-update tests now fail on rejected
+  commands and verify that the runner profile is restored.
+
 - Add an operator-guided USB Agent recovery test: unplug, replug, deny and allow USB
   access, with the sensor session surviving and only explicit restarts.
 

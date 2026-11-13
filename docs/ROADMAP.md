@@ -156,9 +156,10 @@ package/SDK without editing the platform checkout. No mandatory submodule.
       An Android 15 emulator with ARM translation passes UI, ROS session, Dashboard
       peer and runner discovery checks; a second physical phone remains next.
 - [ ] Measure sustained operation, memory, thermal behavior and camera latency.
-      An opt-in endurance test with a resource monitor is ready and passed a short
-      emulator run (5 Hz, 211 ms largest gap, no pauses); hour-long phone runs and
-      camera latency remain.
+      A 60-minute run on the reference phone (USB power, Wi-Fi off) delivered all 18,000
+      runner samples with a 219 ms largest gap, 7 ms mean latency and no pauses. A
+      continuous memory/thermal record, unplugged runs, other phones and camera
+      latency remain.
 - [ ] Check portrait/landscape, light/dark mode and accessibility on core journeys.
       Reference-phone core tabs, app-local light/dark and large-text layouts pass.
       Automated accessibility checks pass on core screens in light and dark after

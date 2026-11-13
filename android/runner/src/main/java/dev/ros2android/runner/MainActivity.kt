@@ -135,8 +135,8 @@ class MainActivity : Activity() {
         val state = snapshot.optString("state", "Unknown")
         val busy = snapshot.optBoolean("busy")
         snapshot.optJSONObject("config")?.let { config ->
-            val revision = config.getString("revision")
-            if (revision != appliedConfigRevision) {
+            val revision = config.optString("revision")
+            if (revision.isNotEmpty() && revision != appliedConfigRevision) { // Saved by a start or the app's settings
                 fields.forEach { (key, field) -> field.show(config.getString(key)) }
                 appliedConfigRevision = revision
             }

@@ -50,7 +50,11 @@ class RunnerUpdateTest {
         fun command(value: Int, extras: Bundle = Bundle()) {
             var previous: JSONObject? = null
             main { previous = control.status; control.send(value, extras) }
-            waitFor("No reply for $value") { check(control.error == null) { control.error.orEmpty() }; control.status != null && control.status !== previous }
+            waitFor("No reply for $value") {
+                check(control.error == null) { control.error.orEmpty() }
+                check(control.commandError == null) { "Runner rejected $value: ${control.commandError}" }
+                control.status != null && control.status !== previous
+            }
         }
         fun state() = control.status?.optString("state").orEmpty()
         fun connectAndWait() { main { control.close(); control.connect() }; waitFor("Runner unavailable") { control.poll(); control.status != null } }
@@ -61,6 +65,7 @@ class RunnerUpdateTest {
         var original: JSONObject? = null
         var ownsFixture = false; var ownsSession = false; var controllerReady = false
         main { assertTrue(context.bindService(Intent(context, RobotSessionService::class.java), connection, Context.BIND_AUTO_CREATE)) }
+        var failure: Throwable? = null
         try {
             assertTrue(bound.await(5, TimeUnit.SECONDS))
             main {
@@ -103,17 +108,34 @@ class RunnerUpdateTest {
             command(2); waitFor("Updated runner did not start") { control.poll(); state() == "Running" }
             fresh(after)
             android.util.Log.i("ROS2Qualification", "runner update: invalidated, Stopped with profile, no replay, explicit restart fresh")
+        } catch (error: Throwable) {
+            failure = error; throw error
         } finally {
-            runCatching { if (ownsSession) { main { session.stopSession() }; waitFor("Session did not stop") { !session.connected && !session.busy } } }
-            runCatching {
-                if (ownsFixture) {
-                    if (control.status == null) connectAndWait()
-                    if (state() == "Running") { command(3); waitFor("Fixture did not stop") { control.poll(); state() == "Stopped" } }
-                    command(4, Bundle().apply { for (key in listOf("domain", "namespace", "peer", "local", "ros_args")) putString(key, original!!.getString(key)) })
+            // Try every cleanup; report the first problem unless the test body already failed.
+            fun cleanup(label: String, action: () -> Unit) {
+                try { action() } catch (error: Throwable) {
+                    android.util.Log.e("ROS2Qualification", "cleanup failed: $label", error)
+                    if (failure == null) failure = error else failure!!.addSuppressed(error)
                 }
             }
-            runCatching { if (controllerReady) main { control.close() } }
-            runCatching { main { context.unbindService(connection) } }
+            val bodyFailed = failure != null
+            cleanup("main session") { if (ownsSession) { main { session.stopSession() }; waitFor("Session did not stop") { !session.connected && !session.busy } } }
+            cleanup("runner profile") {
+                if (ownsFixture) {
+                    if (control.status == null || control.error != null) connectAndWait()
+                    main { control.poll() }
+                    waitFor("Runner did not stop", 30) { control.poll(); control.status?.optString("state") in setOf("Stopped", "Running") }
+                    if (control.status?.optString("state") == "Running") { command(3); waitFor("Runner did not stop", 30) { control.poll(); control.status?.optString("state") == "Stopped" } }
+                    command(4, Bundle().apply { for (key in listOf("domain", "namespace", "peer", "local", "ros_args")) putString(key, original!!.getString(key)) })
+                    main {
+                        val restored = control.status!!.getJSONObject("config")
+                        for (key in listOf("domain", "namespace", "peer", "local", "ros_args")) assertEquals("Runner profile not restored: $key", original!!.getString(key), restored.getString(key))
+                    }
+                }
+            }
+            cleanup("controller") { if (controllerReady) main { control.close() } }
+            cleanup("binding") { main { context.unbindService(connection) } }
+            if (!bodyFailed) failure?.let { throw it }
         }
     }
 }
