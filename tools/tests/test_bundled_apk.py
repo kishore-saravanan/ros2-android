@@ -28,7 +28,7 @@ command = sys.argv[3:]
 if command == ['get-state']: print('device')
 elif command == ['shell', 'getprop', 'ro.build.version.sdk']: print('31')
 elif command == ['shell', 'getprop', 'ro.product.cpu.abilist']: print(os.environ.get('ADB_TEST_ABI', 'arm64-v8a,armeabi-v7a'))
-elif command[:2] == ['install', '-r']: print('Success')
+elif command[:4] == ['install', '--user', 'current', '-r']: print('Success')
 else: raise SystemExit(2)
 '''); self.adb.chmod(0o755)
         self.env = dict(os.environ, ANDROID_HOME=str(self.root), ADB_TEST_LOG=str(self.log))
@@ -44,7 +44,7 @@ else: raise SystemExit(2)
     def test_install_updates_only_main_app_without_launch_or_clear(self):
         result = self.install()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(self.calls()[-1], ['-s', 'test-phone', 'install', '-r', str(self.apk)])
+        self.assertEqual(self.calls()[-1], ['-s', 'test-phone', 'install', '--user', 'current', '-r', str(self.apk)])
         self.assertEqual(len(self.calls()), 4)
 
     def test_tampered_apk_rejected_before_adb(self):

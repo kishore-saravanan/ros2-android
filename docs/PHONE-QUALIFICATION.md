@@ -19,7 +19,8 @@ here changes phone settings automatically; you change the few settings below you
 2. Turn Wi-Fi **off** (the runtime checks are phone-local and must not depend on a
    router). Keep the screen unlocked during the first batch; UI tests open the app.
 3. Run the driver once; it builds and installs the main app and two harmless runner
-   fixtures, then lists missing preconditions:
+   fixtures in the active Android user profile, then lists missing preconditions. A
+   missing fixture is reported separately from a battery-policy problem:
 
    ```bash
    adb devices                      # note the phone's serial

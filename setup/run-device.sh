@@ -69,7 +69,8 @@ if [[ -n "$bundle_manifest" ]]; then
         printf 'This APK requires Android 8.0/API 26 or newer and ARM64 support.\n' >&2; exit 1
     fi
 fi
-"$adb_bin" "${selection[@]}" install -r "$apk"
+# Scope installation to the active Android user, including phones with protected profiles.
+"$adb_bin" "${selection[@]}" install --user current -r "$apk"
 if [[ "$install_only" == false ]]; then
     "$adb_bin" "${selection[@]}" shell am start -W -n "$app_package/$activity"
 fi

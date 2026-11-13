@@ -89,6 +89,9 @@ def main(arguments=None):
     if shell('settings get global wifi_on') != '0':
         problems.append('Turn Wi-Fi off (phone-local runtime checks require it).')
     for package in [MAIN, *FIXTURES.values()]:
+        if not shell(f'pm path --user current {package}').startswith('package:'):
+            problems.append(f'Install {package} in the active Android user profile first.')
+            continue
         # Filter on the phone so other apps' names never leave the device.
         if not shell(f"dumpsys deviceidle whitelist | grep -F ',{package},'"):
             problems.append(f'Allow background activity (battery optimization off) for {package} '
