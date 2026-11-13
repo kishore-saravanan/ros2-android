@@ -134,6 +134,30 @@ This qualifies that reference runner/update pair. It does not qualify data-schem
 migrations, different signers, main-app updates, bound-request races, release-key
 rotation, other backends or a successful rollback.
 
+## Main app release builds: upgrade and rollback
+
+On a clean Android 15 emulator, two non-debuggable release builds of the main app
+(version codes 8 and 9) signed with the same throwaway key behaved as follows:
+
+- **Clean install:** version 8 installed and started; the instrumentation suite, re-signed
+  with the same key, passed every check that can run against a release build (native
+  ROS session, sensors, Dashboard controls, endpoints, navigation, help). Theme and
+  accessibility checks need debug-only preview screens, and the Agent executable needs ARM
+  hardware.
+- **Upgrade:** installing version 9 over 8 kept the saved Dashboard layout and sensor
+  endpoint settings byte-for-byte.
+- **Downgrade:** installing version 8 over 9 was refused with
+  `INSTALL_FAILED_VERSION_DOWNGRADE`; version 9 and its data stayed intact.
+- **Rollback:** uninstalling and installing version 8 worked and the app started, with
+  its saved settings reset.
+
+So rolling back the app means uninstalling it, which deletes its saved Dashboard layouts,
+sensor settings and Android permissions/background exemptions; note them before. Project
+runners keep their own profiles. Prefer a forward fix with a higher version code. To roll
+back the PC side, reinstall the previous client (`pip install` or the older `.deb`) and
+then `ros2-android setup sdk --replace --archive` with that release's SDK; each SDK fits
+only its own client version.
+
 ## Remaining device qualification
 
 Use disposable talker fixtures, not actuator projects. For same-key replacements,

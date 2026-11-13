@@ -87,5 +87,11 @@ APT repository hosting/signing, Play Store requirements, public visibility and
 artifact publication are separate explicitly authorized steps. Adding this
 checklist or a CI workflow does not perform them.
 
+Before publishing, install the signed APK on a clean emulator or test phone and run the
+instrumentation suite against it, re-signing the test APK with the same key
+(`apksigner sign --ks KEYSTORE --ks-key-alias ALIAS --out test-signed.apk app-debug-androidTest.apk`).
+Theme and accessibility checks use debug-only preview screens and cannot run against a
+release build; run them on the debug build of the same revision.
+
 Use [APK inspection and upgrade checks](UPGRADING.md) when comparing release
 artifacts. File compatibility is not proof of a successful on-device upgrade.

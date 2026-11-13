@@ -179,6 +179,11 @@ signing key. The repository becomes public with its full history.
       THIRD-PARTY-NOTICES. An owner-held release key, a prebuilt SDK archive and an
       actual signed release remain.
 - [ ] Verify installation, upgrade and rollback from clean environments.
+      Clean runners pass the installed-client journey, and a fresh home installs the
+      prebuilt SDK and builds a workspace APK with it. Release-signed app builds
+      installed cleanly on an emulator, kept data on a same-key upgrade, refused a
+      downgrade and rolled back by reinstalling (data reset). Repeat with the real
+      release key on phones for the first release.
 - [ ] Complete public-history/privacy and security review before wider publication.
       The [pre-release review](SECURITY-REVIEW.md) scanned all history for keys,
       tokens and addresses (none found), checked component exposure and listeners,
