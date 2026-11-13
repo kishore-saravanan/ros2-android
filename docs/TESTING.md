@@ -608,3 +608,29 @@ uses a large-text preview context and checks stable status rendering. None chang
 global appearance or accessibility settings. These and the ordinary navigation
 checks pass on the reference phone. They do not qualify every dialog, image widget,
 screen reader, display size or Android version. Camera navigation remains opt-in.
+
+## Camera reception and latency
+
+With the phone publishing its back-camera compressed topic and the PC configured
+for the same ROS domain/network, measure without saving any images:
+
+```bash
+./tools/pc-ros.sh -- python3 tools/pc-camera-benchmark.py \
+  --duration 30 --decode --adb-clock-offset --serial SERIAL
+```
+
+`--decode` validates JPEG decoding in memory and reports resolution. The summary
+reports received FPS, payload bandwidth and inter-frame gaps. The optional ADB
+calibration reads only the selected phone's epoch clock, samples 20 round trips,
+and uses the shortest to estimate phone-minus-PC offset. Prefer USB ADB; wireless
+ADB adds uncertainty. `--clock-offset-ms VALUE` accepts an independently measured
+offset instead; the two calibration options are mutually exclusive.
+
+Latency is from the image's capture timestamp to entry into the PC ROS callback,
+before optional JPEG decoding. It includes camera processing, compression, DDS and
+network delivery; it excludes display rendering. The reported clock uncertainty
+is half the calibration round trip, not a bound on later clock drift, sensor-clock
+conversion or true optical latency. An approximately anchored sensor timestamp
+makes the result approximate. Keep resolution, FPS, JPEG quality, clock source,
+transport and device conditions with any published result. This tool does not
+establish a hard real-time guarantee or authorize camera access by itself.
