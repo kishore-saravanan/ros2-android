@@ -139,3 +139,17 @@ The patches explicitly link Android extension modules to libpython, use portable
 DT_NEEDED library names, and opt into Python interface generation only for the
 Python SDK. Staging rejects non-ARM64 binaries, absolute dependency paths and
 missing packaged dependencies. CPython target download is checksum verified.
+
+## Memory-page compatibility
+
+The currently pinned NumPy/Chaquopy native wheels contain 4 KB-aligned code inside
+Python assets. The Python examples have runtime evidence on 4 KB-page phones;
+16 KB-page devices are not supported by this dependency set yet. Check an APK,
+including nested Python assets, before distributing it for newer devices:
+
+```bash
+python3 setup/check-native-alignment.py --apk path/to/pythonRunner.apk
+```
+
+See [compatibility](COMPATIBILITY.md#native-memory-page-compatibility). This gate
+can fail even when all `lib/arm64-v8a` files pass or the main app shows no warning.

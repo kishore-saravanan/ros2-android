@@ -1,4 +1,5 @@
 import struct
+import io
 import sys
 import tempfile
 from pathlib import Path
@@ -41,4 +42,16 @@ class ElfAlignmentTest(unittest.TestCase):
                 archive.writestr('lib/arm64-v8a/libgood.so', elf())
                 archive.writestr('lib/arm64-v8a/libbad.so', elf(4096))
             with self.assertRaisesRegex(ValueError, 'libbad.so'):
+                check_apk(path)
+
+    def test_nested_python_dependency_cannot_bypass_apk_guard(self):
+        nested = io.BytesIO()
+        with zipfile.ZipFile(nested, 'w') as archive:
+            archive.writestr('numpy/core/dependency.so', elf(4096))
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'python.apk'
+            with zipfile.ZipFile(path, 'w') as archive:
+                archive.writestr('lib/arm64-v8a/libgood.so', elf())
+                archive.writestr('assets/chaquopy/requirements-common.imy', nested.getvalue())
+            with self.assertRaisesRegex(ValueError, 'requirements-common.imy!numpy/core/dependency.so'):
                 check_apk(path)

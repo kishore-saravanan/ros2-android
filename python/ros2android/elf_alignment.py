@@ -1,5 +1,6 @@
 """Check target ELF load-segment alignment without executing native code."""
 import struct
+import io
 import zipfile
 
 PAGE_SIZE = 16384
@@ -26,13 +27,28 @@ def check_elf(data, label='ELF'):
 
 
 def check_apk(apk):
+    """Include native Python assets: Chaquopy loads ELF files from nested .imy ZIPs."""
+    def inspect(archive, prefix='', depth=0):
+        count = 0
+        for name in archive.namelist():
+            if name.endswith('/'):
+                continue
+            with archive.open(name) as stream:
+                magic = stream.read(4)
+            label = prefix + name
+            if magic == b'\x7fELF':
+                check_elf(archive.read(name), label)
+                count += 1
+            elif magic == b'PK\x03\x04' and name.endswith(('.imy', '.zip')):
+                if depth >= 2:
+                    raise ValueError(f'{label}: nested native archive exceeds inspection depth')
+                with zipfile.ZipFile(io.BytesIO(archive.read(name))) as nested:
+                    count += inspect(nested, label + '!', depth + 1)
+        return count
     with zipfile.ZipFile(apk) as archive:
-        names = [name for name in archive.namelist() if name.startswith('lib/arm64-v8a/') and name.endswith('.so')]
-        if not names:
+        if not any(name.startswith('lib/arm64-v8a/') and name.endswith('.so') for name in archive.namelist()):
             raise ValueError('APK has no ARM64 native libraries')
-        for name in names:
-            check_elf(archive.read(name), name)
-        return len(names)
+        return inspect(archive)
 
 
 def check_tree(root):

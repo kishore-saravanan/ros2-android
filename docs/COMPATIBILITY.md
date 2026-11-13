@@ -50,11 +50,12 @@ standalone Python examples use their separate backend.
 | --- | --- |
 | Reference ARM64 Android 12 phone | Native ROS, C++/Python runners, USB micro-ROS and recovery checks; bounded endurance results in [Status](STATUS.md). |
 | Android 15 emulator (ARM translation) | UI, accessibility and phone-local ROS/runner checks; ARM Agent executables are not qualified under translation. |
-| Samsung SM-S926B, Android 17 / API 37 | Initial beta suite: 19 passed, 4 accessibility-window/dialog checks failed, 35 opt-in checks skipped. After rebuilding native libraries for 16 KB alignment and replacing fixed focus delays with bounded waits, all 4 accessibility checks pass. Full-suite repeat and strict background runner checks are pending; this is not a qualified-device claim. |
+| Samsung SM-S926B, Android 17 / API 37 | Initial beta suite: 19 passed, 4 accessibility-window/dialog checks failed, 35 opt-in checks skipped. After rebuilding native libraries for 16 KB alignment and replacing fixed focus delays with bounded waits, all 4 accessibility checks pass. The full-suite repeat passes (23 pass, 35 opt-in skips), plus C++ peer recovery and runner update. Python recovery/endurance checks remain in progress; support is scoped to these results. |
 
 ## Native memory-page compatibility
 
-Every bundled ARM64 ELF must have load segments aligned for 16 KB pages. The
+Every bundled ARM64 ELF must have load segments aligned for 16 KB pages.
+The APK checker includes native code inside nested Python `.imy`/ZIP assets. The
 release assembler/verifier and SDK packager reject incompatible binaries. YAML
 vendor and micro-ROS Agent sub-builds receive the Android page-size flags explicitly,
 including when cached Agent dependencies are rebuilt. This follows
@@ -68,6 +69,13 @@ This inspects ELF layout without executing the code. It does not establish runti
 compatibility on a 16 KB kernel; keep that device test separate. The Samsung used
 for the Android 17 checks currently reports 4 KB pages, so it cannot qualify 16 KB
 runtime behavior. Apps retain extracted native-library packaging for runner executables.
+
+The current Chaquopy NumPy wheels include 4 KB native extensions in Python assets;
+the ball follower also brings a 4 KB FreeType dependency. Those Python APKs remain
+restricted to the tested 4 KB-page environments and fail the complete alignment
+gate. A successful Python build or a warning-free main app does not establish
+16 KB Python support. These dependencies need compatible replacements/rebuilds
+before that claim can be made; no compatibility warning is suppressed.
 
 ## What must match
 
