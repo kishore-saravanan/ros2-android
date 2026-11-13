@@ -50,7 +50,7 @@ python3 setup/assemble-release.py --apk android/app/build/outputs/apk/release/ap
   --wheel dist/ros2_android-0.1.0a1-py3-none-any.whl \
   --sdk ~/Downloads/ros2-android-native-sdk/ros2-android-native-sdk-0.1.0a1-arm64-v8a.tar.xz \
   --keystore /offline/ros2-android-release.jks --key-alias ros2-android --out dist/release-0.1.1
-python3 setup/verify-release.py dist/release-0.1.1 --expect-certificate <published SHA-256>
+python3 setup/verify-release.py dist/release-0.1.1 --expect-certificate abcaf532edc8a3337a8c17d58d83c87ac76306c39e8a41a4fbddd9e9fe12c69e
 ```
 
 The assembler refuses a dirty tracked tree, a debuggable APK, a version that
@@ -70,7 +70,12 @@ and pass `--deb` in a second assembly; the assembler rejects a package bundling 
 other APK. `--unsigned-dry-run` exercises the flow without a key and is marked as
 not a release; the verifier rejects it unless `--allow-unsigned` is given.
 
-Signing key custody is a maintainer decision made before the first public APK:
+Signing key custody is a maintainer decision made before the first public APK. The
+owner created the release key on 2026-11-13 (RSA 4096, alias `ros2-android`, kept outside
+the repository with an offline backup); its certificate SHA-256 is
+`abcaf532edc8a3337a8c17d58d83c87ac76306c39e8a41a4fbddd9e9fe12c69e`, published in
+[SECURITY.md](../SECURITY.md#verify-a-downloaded-apk).
+
 
 - Generate a long-lived key (for example RSA 3072/4096 with `keytool`) on a trusted
   machine, keep the keystore and passwords outside the repository and CI logs, and

@@ -14,7 +14,27 @@ Useful private reports describe the affected revision/artifact, the trust bounda
 impact and a minimal reproduction using synthetic data. Never send signing keys,
 phone backups, personal application data or unredacted device logs.
 
-Current boundaries and limitations:
+## Verify a downloaded APK
+
+Official ROS2 Android APKs are signed by a single release key. Its certificate
+SHA-256 is:
+
+```
+abcaf532edc8a3337a8c17d58d83c87ac76306c39e8a41a4fbddd9e9fe12c69e
+```
+
+Check a download with the Android SDK's `apksigner` before installing:
+
+```bash
+apksigner verify --print-certs ros2-android-VERSION.apk | grep 'SHA-256'
+```
+
+The digest must match exactly. An APK signed by any other certificate did not come
+from this project's release process; Android also refuses to update an installed
+official app with it.
+
+## Boundaries and limitations
+
 
 - Android permissions and app isolation remain in effect. Only explicitly
   authorized device deployment/programming is supported.
