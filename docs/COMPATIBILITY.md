@@ -50,7 +50,7 @@ standalone Python examples use their separate backend.
 | --- | --- |
 | Reference ARM64 Android 12 phone | Native ROS, C++/Python runners, USB micro-ROS and recovery checks; bounded endurance results in [Status](STATUS.md). |
 | Android 15 emulator (ARM translation) | UI, accessibility and phone-local ROS/runner checks; ARM Agent executables are not qualified under translation. |
-| Samsung SM-S926B, Android 17 / API 37 | Initial beta suite: 19 passed, 4 accessibility-window/dialog checks failed, 35 opt-in checks skipped. Investigation and strict background runner checks are pending; this is not a qualified-device claim. |
+| Samsung SM-S926B, Android 17 / API 37 | Initial beta suite: 19 passed, 4 accessibility-window/dialog checks failed, 35 opt-in checks skipped. After rebuilding native libraries for 16 KB alignment and replacing fixed focus delays with bounded waits, all 4 accessibility checks pass. Full-suite repeat and strict background runner checks are pending; this is not a qualified-device claim. |
 
 ## Native memory-page compatibility
 

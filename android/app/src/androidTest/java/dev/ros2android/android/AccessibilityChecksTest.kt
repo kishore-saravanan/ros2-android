@@ -42,20 +42,35 @@ class AccessibilityChecksTest {
         return null
     }
 
+    private fun <T : Activity> waitForOwnFocus(scenario: ActivityScenario<T>, label: String) {
+        val end = SystemClock.elapsedRealtime() + 8000
+        var focused = false
+        while (!focused && SystemClock.elapsedRealtime() < end) {
+            scenario.onActivity { app ->
+                assertFalse("Lock screen must be absent", app.getSystemService(KeyguardManager::class.java).isKeyguardLocked)
+                focused = app.window.decorView.hasWindowFocus()
+            }
+            if (!focused) SystemClock.sleep(100)
+        }
+        assertTrue("Own window did not obtain focus: $label", focused)
+    }
+
     private fun <T : Activity> audit(type: Class<T>) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val checks = AccessibilityCheckPreset.getAccessibilityHierarchyChecksForPreset(AccessibilityCheckPreset.LATEST)
         val errors = mutableListOf<String>()
         ActivityScenario.launch(type).use { scenario ->
-            SystemClock.sleep(1500) // Service binding and first render.
+            waitForOwnFocus(scenario, "initial core screen")
             val screens = listOf("Overview" to null, "Sensors" to null, "Sensors" to "sensor:battery",
                 "Dashboard" to null, "Projects" to null, "Connect" to null)
             for ((tab, detail) in screens) {
+                waitForOwnFocus(scenario, "before $tab")
                 scenario.onActivity { app ->
                     find(app.window.decorView, "nav:$tab")!!.performClick()
                     detail?.let { find(app.window.decorView, it)!!.performClick() }
                 }
-                instrumentation.waitForIdleSync(); SystemClock.sleep(600)
+                instrumentation.waitForIdleSync()
+                waitForOwnFocus(scenario, "$tab/${detail.orEmpty()}")
                 scenario.onActivity { app ->
                     assertTrue("Own window must be focused before capture", app.window.decorView.hasWindowFocus())
                     assertFalse("Lock screen must be absent", app.getSystemService(KeyguardManager::class.java).isKeyguardLocked)
@@ -97,13 +112,14 @@ class AccessibilityChecksTest {
         val errors = mutableListOf<String>()
         var audited = 0
         ActivityScenario.launch(type).use { scenario ->
-            SystemClock.sleep(1500)
+            waitForOwnFocus(scenario, "initial dialog screen")
             // Tab, opener tag prefix and the dialog title that proves the dialog is showing.
             val dialogs = listOf(Triple("Dashboard", "dashboard_add_widget", "Add widget"),
                 Triple("Projects", "project_settings:", "Project connection"),
                 Triple("Connect", "open_source_licenses", "Open-source licenses"))
             for ((tab, opener, title) in dialogs) {
                 var opened = false
+                waitForOwnFocus(scenario, "before $title")
                 scenario.onActivity { app -> find(app.window.decorView, "nav:$tab")!!.performClick() }
                 instrumentation.waitForIdleSync(); SystemClock.sleep(1000)
                 scenario.onActivity { app ->
@@ -112,9 +128,15 @@ class AccessibilityChecksTest {
                 if (!opened) { Log.w("ROS2Accessibility", "Skipped $title: no $opener on $tab"); continue }
                 instrumentation.waitForIdleSync()
                 val end = SystemClock.elapsedRealtime() + 5000
-                var root = automation.rootInActiveWindow
-                while (!contains(root, title) && SystemClock.elapsedRealtime() < end) { SystemClock.sleep(200); root = automation.rootInActiveWindow }
-                assertTrue("$title dialog did not appear", contains(root, title))
+                // Read the package gate before traversing any active-window contents.
+                fun ownRoot() = automation.rootInActiveWindow?.takeIf {
+                    it.packageName?.toString() == instrumentation.targetContext.packageName
+                }
+                var root = ownRoot()
+                while (!contains(root, title) && SystemClock.elapsedRealtime() < end) {
+                    SystemClock.sleep(200); root = ownRoot()
+                }
+                assertTrue("$title dialog did not appear in an own-app window", contains(root, title))
                 assertEquals("Active window must be this app", instrumentation.targetContext.packageName, root!!.packageName?.toString())
                 scenario.onActivity { app -> assertFalse("Lock screen must be absent", app.getSystemService(KeyguardManager::class.java).isKeyguardLocked) }
                 val screenshot = automation.takeScreenshot()
