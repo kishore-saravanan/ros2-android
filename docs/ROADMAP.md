@@ -176,8 +176,8 @@ signing key. The repository becomes public with its full history.
 - [ ] Produce signed, checksummed APK/client/SDK artifacts and dependency notices.
       Release assembly/verification signs, checksums and records provenance; APKs
       carry license texts for every staged native component, listed in
-      THIRD-PARTY-NOTICES. An owner-held release key, a prebuilt SDK archive and an
-      actual signed release remain.
+      THIRD-PARTY-NOTICES. The owner-held release key exists (certificate in
+      SECURITY.md); a CI-built SDK archive and an actual signed release remain.
 - [ ] Verify installation, upgrade and rollback from clean environments.
       Clean runners pass the installed-client journey, and a fresh home installs the
       prebuilt SDK and builds a workspace APK with it. Release-signed app builds
