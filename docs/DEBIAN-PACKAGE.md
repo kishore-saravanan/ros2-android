@@ -10,7 +10,7 @@ Android API 26 or newer. This minimum does not mean every such phone is tested.
 Once supplied with a local Debian artifact:
 
 ```bash
-sudo apt install ./ros2-android_0.1.0~alpha1-1_all.deb
+sudo apt install ./ros2-android_1.0.0~beta1-1_all.deb
 ros2-android doctor
 ros2-android device setup --serial PHONE_ADB_ID
 ```
@@ -43,10 +43,10 @@ environment containing pip, setuptools >=68 and wheel:
 ./setup/build.sh
 python setup/build-python-package.py
 python setup/build-deb.py \
-  --wheel dist/ros2_android-0.1.0a1-py3-none-any.whl \
+  --wheel dist/ros2_android-1.0.0b1-py3-none-any.whl \
   --apk android/app/build/outputs/apk/debug/app-debug.apk \
   --allow-debug-apk
-python setup/verify-deb.py dist/ros2-android_0.1.0~alpha1-1_all.deb
+python setup/verify-deb.py dist/ros2-android_1.0.0~beta1-1_all.deb
 ```
 
 The wheel snapshot includes tracked backend files only; stage intended inputs

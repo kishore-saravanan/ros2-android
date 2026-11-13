@@ -23,7 +23,8 @@ def main():
         env.pop('PYTHONPATH', None)
         def run(*arguments):
             return subprocess.check_output([str(cli), *arguments], cwd=root, env=env, text=True)
-        assert run('--version').strip() == '0.1.0a1'
+        expected = json.loads((Path(__file__).resolve().parents[1] / 'python/ros2android/compatibility.json').read_text())['hostClientVersion']
+        assert run('--version').strip() == expected, 'Packaged client version differs from the compatibility matrix'
         assert 'usage:' in run('device', '--help')
         assert 'usage:' in run('workspace', '--help')
         sdk = root / 'sdk'; adb = sdk / 'platform-tools/adb'; adb.parent.mkdir(parents=True)

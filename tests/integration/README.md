@@ -95,7 +95,7 @@ Android SDK holding only the pinned packages:
 ```bash
 env -i HOME=/fresh/home GRADLE_USER_HOME=/fresh/home/.gradle PATH=/usr/bin:/bin \
   JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 ANDROID_HOME=/fresh/home/Android/Sdk \
-  tests/integration/installed_client_journey.sh dist/ros2_android-0.1.0a1-py3-none-any.whl /fresh/work
+  tests/integration/installed_client_journey.sh dist/ros2_android-1.0.0b1-py3-none-any.whl /fresh/work
 ```
 
 Set `PIP_ZIPAPP` to pip's standalone `pip.pyz` when the system Python lacks `ensurepip`.

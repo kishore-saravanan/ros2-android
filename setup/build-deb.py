@@ -19,7 +19,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--wheel', type=Path, required=True)
     parser.add_argument('--apk', type=Path, required=True)
-    parser.add_argument('--version', default='0.1.0~alpha1-1')
+    parser.add_argument('--version', default='1.0.0~beta1-1')
     parser.add_argument('--maintainer', help='Name <email>; defaults to configured Git identity')
     parser.add_argument('--allow-debug-apk', action='store_true', help='Local development only; never a production release')
     parser.add_argument('--out', type=Path, default=ROOT / 'dist')

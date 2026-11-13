@@ -6,7 +6,7 @@ It is ordered by exit gates, not promised release dates. Updated 2026-11-12.
 
 ## Foundation available today
 
-These are development-preview capabilities with reference-device evidence, not
+These are beta capabilities with reference-device evidence, not
 universal compatibility guarantees. See [Status](STATUS.md) for the boundaries.
 
 - Native Jazzy ROS traffic between Android and Linux over Wi-Fi/USB networking.

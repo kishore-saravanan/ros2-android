@@ -12,8 +12,8 @@ android {
         applicationId = "dev.ros2android.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "0.1.1-dev6"
+        versionCode = 9
+        versionName = "1.0.0-beta.1"
         testInstrumentationRunner = "dev.ros2android.android.Ros2AndroidTestRunner"
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild {

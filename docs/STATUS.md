@@ -1,7 +1,7 @@
 # Compatibility, validation and remaining work
 
-Development preview: **0.1.1-dev6**, status updated 2026-11-12. Apache-2.0.
-This is a source/development preview, not a broadly qualified robot appliance.
+Beta: **1.0.0-beta.1**, status updated 2026-11-13. Apache-2.0.
+This is a beta, not a broadly qualified robot appliance.
 No public APT repository or stable package release is available yet.
 
 ## Verified reference paths

@@ -1,6 +1,6 @@
 # Security
 
-ROS2 Android is a development preview. There is no stable release line with a
+ROS2 Android is in beta (1.0.0-beta.1). There is no stable release line with a
 security-support lifetime yet. Fixes target `develop`; the maintainers cannot
 currently promise a response or remediation deadline.
 

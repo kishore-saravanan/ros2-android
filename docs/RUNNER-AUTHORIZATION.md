@@ -1,7 +1,7 @@
 # Workspace runner authorization
 
 The main app and a workspace runner do not need to share a private signing key.
-There are now two control paths. This is a development-preview implementation;
+There are now two control paths. This is a beta implementation;
 review and broader device/signing qualification remain release gates.
 
 ## Existing same-signature builds

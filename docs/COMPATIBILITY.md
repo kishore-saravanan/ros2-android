@@ -1,6 +1,6 @@
 # Compatibility matrix
 
-This is the current development-preview combination, not a stable release or a
+This is the 1.0.0-beta.1 combination, not a stable release or a
 promise that every Linux ROS package/Android phone works. The machine-readable
 [source matrix](../python/ros2android/compatibility.json) is included in the host
 wheel. Tests check it against the app, build pins, contracts and source locks.
@@ -22,10 +22,10 @@ is identification, not a signature or proof of binary provenance.
 
 | Layer | Current expected input |
 | --- | --- |
-| Host client | `ros2-android` 0.1.0a1; client Python 3.10+ |
+| Host client | `ros2-android` 1.0.0b1; client Python 3.10+ |
 | Reference build machine | Linux x86_64, Ubuntu 24.04, system ROS-build Python 3.12 |
 | Host/target ROS | ROS 2 Jazzy; native `rmw_cyclonedds_cpp` |
-| Main app | 0.1.1-dev6, versionCode 8, plus unreleased source changes |
+| Main app | 1.0.0-beta.1, versionCode 9 |
 | Android target | ARM64 (`arm64-v8a`), build minimum API 26, compile/target API 35 |
 | Android SDK tools | Build tools 35.0.0, NDK 27.2.12479018, SDK CMake 3.22.1 |
 | Build system | JDK 21 runs Gradle 8.9; AGP 8.7.3, Kotlin 2.2.21; bytecode target 17 |

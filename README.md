@@ -119,7 +119,7 @@ qualified recovery behavior and support boundaries that contributors can reprodu
 
 | Stage | What we are building | Status |
 | --- | --- | --- |
-| Native foundation | Sensors, Dashboard, workspace runners and phone-hosted micro-ROS | Available in the development preview |
+| Native foundation | Sensors, Dashboard, workspace runners and phone-hosted micro-ROS | Available in 1.0.0-beta.1 |
 | Reliable operation | Offline startup, network/USB recovery, runtime state and runner trust | Current focus; qualification in progress |
 | External developer journey | Dependency diagnostics, compatibility matrix and clean-machine build/deploy | In progress |
 | Maintainable platform | Focused controllers, shared contracts and packaged host backends | Incremental work ahead |
