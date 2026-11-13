@@ -44,6 +44,14 @@ including limits of the independent-signing preview and new protocol envelopes,
 is in [Status](STATUS.md). Mixed Python/C++ colcon workspaces remain unsupported;
 standalone Python examples use their separate backend.
 
+## Physical and emulator qualification
+
+| Environment | Current qualification |
+| --- | --- |
+| Reference ARM64 Android 12 phone | Native ROS, C++/Python runners, USB micro-ROS and recovery checks; bounded endurance results in [Status](STATUS.md). |
+| Android 15 emulator (ARM translation) | UI, accessibility and phone-local ROS/runner checks; ARM Agent executables are not qualified under translation. |
+| Samsung SM-S926B, Android 17 / API 37 | Initial beta suite: 19 passed, 4 accessibility-window/dialog checks failed, 35 opt-in checks skipped. Investigation and strict background runner checks are pending; this is not a qualified-device claim. |
+
 ## What must match
 
 - Use client/templates from the same supported source snapshot. The matrix is

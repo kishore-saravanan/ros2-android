@@ -159,7 +159,8 @@ signing key. The repository becomes public with its full history.
 - [ ] Test an additional phone/Android version and publish the compatibility matrix.
       [Qualify a phone](PHONE-QUALIFICATION.md) runs the standard batch on any phone.
       An Android 15 emulator with ARM translation passes UI, ROS session, Dashboard
-      peer and runner discovery checks; a second physical phone remains next.
+      peer and runner discovery checks; a Samsung Android 17 phone is now under test (19 initial passes, 4 accessibility
+      focus/dialog failures; strict background checks pending).
 - [ ] Publish a prebuilt, checksummed native SDK archive with its license notices, and
       let the host tool install it instead of building the SDK from source.
 - [ ] Measure sustained operation, memory, thermal behavior and camera latency.
@@ -188,8 +189,8 @@ signing key. The repository becomes public with its full history.
 - [ ] Complete public-history/privacy and security review before wider publication.
       The [pre-release review](SECURITY-REVIEW.md) scanned all history for keys,
       tokens and addresses (none found), checked component exposure and listeners,
-      and queried OSV for every pinned commit (none known). History rewrite,
-      key custody and dependency alerting remain owner decisions/open items.
+      and queried OSV for every pinned commit (none known). The owner has chosen to retain full history and holds the release key;
+      release-artifact review and dependency alerting remain open.
 
 **Exit gate:** the [release checklist](RELEASING.md) passes with linked evidence;
 previous artifacts remain available for rollback. Local wheel/Debian alpha builds

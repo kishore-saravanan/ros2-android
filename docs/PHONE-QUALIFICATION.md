@@ -47,7 +47,14 @@ It runs, pinned to that phone:
 | `runner-update` | Reinstalling a running C++ runner invalidates app controls; after Refresh it is Stopped with its profile, nothing is replayed, and an explicit Start delivers fresh data |
 | `endurance` (optional) | Continuous 5 Hz runner telemetry for the chosen minutes with memory, CPU, battery and thermal sampling |
 
-Results are under `device-logs/qualification/<label>/`. A failing check is a finding,
+Results are under `device-logs/qualification/<label>/`. Use a fresh label for each
+run: earlier evidence is never overwritten. Each batch retains its own XML and log;
+the summary is saved after each completed batch. Missing results, failed Gradle
+commands and skipped opt-in checks cannot qualify a batch. Default-suite hardware
+skips remain expected. The UI suite requires the project app foreground and unlocked;
+subsequent peer/update checks run without a visible app screen.
+
+A failing check is a finding,
 not something to retry until it passes: keep its log and report it. Typical causes are
 vendor background limits (the app then reports "Android paused …"), a locked screen
 during UI tests, or Wi-Fi left on.
