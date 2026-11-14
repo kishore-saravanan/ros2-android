@@ -25,10 +25,11 @@ ends with what you should see. Stop at any part: parts 1–3 need no build tools
 
 ## 1. Install the app and the PC tool
 
-1. Download these from the [latest release](https://github.com/kishore-saravanan/ros2-android/releases)
-   into one folder, for example `~/Downloads`:
-   `ros2-android-1.0.0.apk`, `ros2-android_1.0.0-1_all.deb`,
-   `ros2-android-native-sdk-1.0.0-arm64-v8a.tar.xz` and `SHA256SUMS`.
+1. Download these into one folder, for example `~/Downloads`:
+   [ros2-android-1.0.0.apk](https://github.com/kishore-saravanan/ros2-android/releases/download/v1.0.0/ros2-android-1.0.0.apk),
+   [ros2-android_1.0.0-1_all.deb](https://github.com/kishore-saravanan/ros2-android/releases/download/v1.0.0/ros2-android_1.0.0-1_all.deb),
+   [ros2-android-native-sdk-1.0.0-arm64-v8a.tar.xz](https://github.com/kishore-saravanan/ros2-android/releases/download/v1.0.0/ros2-android-native-sdk-1.0.0-arm64-v8a.tar.xz)
+   (only needed from part 4) and [SHA256SUMS](https://github.com/kishore-saravanan/ros2-android/releases/download/v1.0.0/SHA256SUMS).
 2. Check them:
 
    ```bash
