@@ -58,10 +58,12 @@ std::string json_string(const std::string & input) {
 }
 void stop_locked() {
   running.store(false);
+  // Shut the context down first: it wakes the executor and makes rclcpp::ok() false, so spin()
+  // ends even when cancel() arrives before the spin thread has started spinning.
+  if (context && context->is_valid()) context->shutdown("Project stopped");
   if (executor) executor->cancel();
   if (spin_thread.joinable()) spin_thread.join();
   heartbeat.reset(); executor.reset(); project_nodes.clear(); host_node.reset();
-  if (context && context->is_valid()) context->shutdown("Project stopped");
   context.reset();
 }
 void report(const std::string & error) {

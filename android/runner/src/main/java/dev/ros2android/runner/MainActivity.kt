@@ -172,7 +172,17 @@ class MainActivity : Activity() {
     private fun showError(message: String) { feedback.text = message; feedback.visibility = View.VISIBLE }
     private fun save() { val edit = prefs.edit(); fields.forEach { (key, value) -> edit.putString(key, value.text.toString()) }; edit.apply() }
     override fun onResume() { super.onResume(); main.removeCallbacks(update); main.post(update) }
-    override fun onPause() { refresh(); save(); main.removeCallbacks(update); super.onPause() }
+    override fun onPause() { refresh(); saveIfValid(); main.removeCallbacks(update); super.onPause() }
+    /** Keep edits only when they form a valid profile, so the main app's Start never meets a broken saved profile. */
+    private fun saveIfValid() {
+        val values = fields.mapValues { it.value.text.toString().trim() }
+        val valid = runCatching {
+            val arguments = org.json.JSONArray(values["ros_args"].orEmpty().ifBlank { "[]" })
+            ProjectConfig(values["domain"].orEmpty().toInt(), values["namespace"].orEmpty(), values["peer"].orEmpty(),
+                values["local"].orEmpty(), Array(arguments.length()) { arguments.getString(it) }, emptyList())
+        }.isSuccess
+        if (valid) save()
+    }
     override fun onDestroy() { main.removeCallbacks(update); super.onDestroy() }
     private fun field(box: LinearLayout, key: String, title: String, fallback: String): EditText {
         val caption = label(title, 13, muted); box.addView(caption)

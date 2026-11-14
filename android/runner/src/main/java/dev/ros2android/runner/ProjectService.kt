@@ -104,7 +104,15 @@ class ProjectService : Service() {
                 pauses.stop(); releaseLocks(); stopForeground(STOP_FOREGROUND_REMOVE); stopSelf()
             }
         }
+        watchStop(token)
     }
+    /** A node callback that never returns must not keep the project running: end the runner process. */
+    private fun watchStop(token: Int) = main.postDelayed({
+        if (destroyed || token != generation || !busy) return@postDelayed
+        android.util.Log.e("ROS2AndroidProject", "Stop did not finish in ${STOP_LIMIT_MS / 1000} s; ending the runner process")
+        releaseLocks(); stopForeground(STOP_FOREGROUND_REMOVE)
+        android.os.Process.killProcess(android.os.Process.myPid())
+    }, STOP_LIMIT_MS)
     private fun failProject(reason: String) {
         main.removeCallbacks(monitor)
         val token = ++generation
@@ -118,6 +126,7 @@ class ProjectService : Service() {
                 pauses.stop(); releaseLocks(); stopForeground(STOP_FOREGROUND_REMOVE); stopSelf()
             }
         }
+        watchStop(token)
     }
     private fun releaseLocks() {
         multicast?.let { if (it.isHeld) it.release() }; multicast = null
@@ -133,6 +142,7 @@ class ProjectService : Service() {
         const val START = "dev.ros2android.runner.START"
         const val STOP = "dev.ros2android.runner.STOP"
         private const val CHANNEL = "project_runtime"
+        private const val STOP_LIMIT_MS = 15_000L
         private val control = Executors.newSingleThreadExecutor()
         private val backend: RunnerBackend = ProjectNative
         @Volatile private var lastState = "Stopped"

@@ -7,7 +7,7 @@ data class ProjectConfig(val domain: Int, val namespace: String, val peer: Strin
     init {
         require(domain in 0..101) { "Domain must be 0–101" }
         validateNamespace(namespace)
-        for (ip in listOf(peer, local)) require(ip.isEmpty() || (ip.split('.').size == 4 && ip.split('.').all { it.toIntOrNull() in 0..255 })) { "Use an IPv4 address or leave blank" }
+        for (ip in listOf(peer, local)) require(ip.isEmpty() || (ip.split('.').size == 4 && ip.split('.').all { part -> part.length in 1..3 && part.all(Char::isDigit) && part.toInt() in 0..255 })) { "Use an IPv4 address or leave blank" }
         require(arguments.size <= 128 && arguments.all { it.length <= 4096 && '\u0000' !in it }) { "ROS arguments too large or invalid" }
     }
     companion object {

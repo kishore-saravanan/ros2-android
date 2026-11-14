@@ -18,6 +18,7 @@ import socket
 import subprocess
 import threading
 import time
+from .android_tools import adb_path
 
 PACKAGE = 'dev.ros2android.android'
 RECEIVER = PACKAGE + '/.ProgrammingControlReceiver'
@@ -105,8 +106,7 @@ def main(arguments=None):
             parser.error('Use read-flash OFFSET SIZE OUTPUT_FILE')
         if Path(args.arguments[2]).exists():
             parser.error('Refusing to overwrite an existing flash backup')
-    sdk = Path(os.environ.get('ANDROID_HOME', os.environ.get('ANDROID_SDK_ROOT', str(Path.home() / 'Android/Sdk'))))
-    adb = [str(sdk / 'platform-tools/adb'), *(['-s', args.serial] if args.serial else ['-d'])]
+    adb = [adb_path(), *(['-s', args.serial] if args.serial else ['-d'])]
 
     def device(*command):
         result = subprocess.run([*adb, *command], capture_output=True, text=True)

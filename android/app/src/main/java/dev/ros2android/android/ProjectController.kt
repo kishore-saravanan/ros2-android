@@ -95,7 +95,10 @@ class ProjectController(context: Context, val project: InstalledProjects.Project
         send(ProjectProtocol.STATUS)
     }
     fun send(command: Int, config: Bundle = Bundle()) {
-        val target = remote ?: return
+        val target = remote ?: run {
+            if (command != ProjectProtocol.STATUS) { commandError = "Runner disconnected. Tap Refresh, then try again."; changed() }
+            return
+        }
         if (command != ProjectProtocol.STATUS && !supports(command)) {
             commandError = "Runner does not support this command or has not connected yet"
             changed(); return

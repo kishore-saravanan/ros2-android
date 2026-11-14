@@ -53,7 +53,7 @@
       ]
     }
   },
-  "qualification": "Reference-device preview. This matrix specifies expected inputs, not universal package/device support or measured real-time guarantees.",
+  "qualification": "Tested on the reference devices in docs/COMPATIBILITY.md. This matrix specifies expected inputs, not universal package/device support or measured real-time guarantees.",
   "build": {
     "gradle": "8.9",
     "androidGradlePlugin": "8.7.3",

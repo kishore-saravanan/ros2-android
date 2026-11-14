@@ -25,7 +25,8 @@ class Esp32ProgrammingService : Service() {
     private val manager by lazy { getSystemService(UsbManager::class.java) }
     private val events = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            val selected = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE) ?: return
+            // Exported below API 33: ignore malformed extras instead of crashing.
+            val selected = runCatching { intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE) }.getOrNull() ?: return
             if (selected.deviceId != device?.deviceId) return
             if (intent.action == UsbManager.ACTION_USB_DEVICE_DETACHED) fail("USB disconnected")
             else if (intent.action == PERMISSION) {
@@ -137,7 +138,10 @@ class Esp32ProgrammingService : Service() {
             main.post {
                 active = false
                 if (!state.startsWith("Failed")) state = "Stopped"
-                if (successful && resumeAgent) startForegroundService(Intent(this, MicroRosAgentService::class.java).putExtra(MicroRosAgentService.USB, previousUsb))
+                // Android 12+ refuses foreground starts while the app is in the background; report it instead of crashing.
+                if (successful && resumeAgent) runCatching {
+                    startForegroundService(Intent(this, MicroRosAgentService::class.java).putExtra(MicroRosAgentService.USB, previousUsb))
+                }.onFailure { state = "Flashed; open ROS2 Android and start the agent again" }
             }
         }.start()
         super.onDestroy()

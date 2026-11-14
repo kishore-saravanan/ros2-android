@@ -166,7 +166,7 @@ For a fresh machine, record the client/matrix, OS/tool versions, SDK source lock
 actual build results, app/runner signing setup, device/Android version and an
 independent ROS traffic probe. Test restart and rollback as well as success.
 Keep private paths, keys, addresses and raw device logs out of public reports.
-The release gate remains open until that complete journey is reproduced.
+Share results with the [phone report](https://github.com/kishore-saravanan/ros2-android/issues/new?template=phone_report.md) template.
 
 ## Automated package slice
 

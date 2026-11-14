@@ -109,10 +109,7 @@ def _extract(archive, staging):
         for member in tar:
             _check_member(member, seen)
             member.mode &= 0o755 if member.isdir() or member.mode & 0o111 else 0o644
-            if hasattr(tarfile, 'data_filter'):
-                tar.extract(member, staging, filter='data')
-            else:  # Python without extraction filters; members were validated above.
-                tar.extract(member, staging)
+            tar.extract(member, staging, filter='data')  # install() requires extraction filters.
     return seen
 
 
@@ -124,18 +121,27 @@ def install(archive, *, tooling_root, expected_sha256=None, replace=False, targe
     link = tooling_root / 'native-deps'
     if target is None:
         target = link.resolve() if link.is_symlink() or link.is_dir() else Path.home() / '.cache' / 'ros2-android-native'
-    target = Path(target).absolute()
+    target = Path(target).expanduser().resolve()  # Follow a symlinked cache so staging is on the same disk.
     if ' ' in str(target):
         raise ValueError('Use a native-deps location without spaces; upstream Cyclone DDS generators require it.')
     present = [entry for entry in CONTENT if (target / entry).exists() or (target / entry).is_symlink()]
     if present and not replace:
         raise ValueError(f'An SDK is already in {target} ({", ".join(present[:3])}...). Use --replace to swap it.')
+    if not hasattr(tarfile, 'data_filter'):
+        raise ValueError('This Python cannot extract archives safely; use Python 3.10.12+, 3.11.4+ or 3.12+.')
     expected = _expected_checksum(archive, expected_sha256)
     print('Checking archive checksum…', flush=True)
     actual = sha256_file(archive)
     if actual != expected:
         raise ValueError(f'Checksum mismatch: expected {expected}, archive has {actual}. Download it again.')
     wanted = inputs_digest(tooling_root)
+    # Refuse unsupported or mismatched archives before writing anything.
+    preview = read_manifest(archive)
+    if preview.get('format') != FORMAT or preview.get('abi') != ABI:
+        raise ValueError(f'Unsupported SDK archive (format {preview.get("format")}, ABI {preview.get("abi")})')
+    if preview.get('inputsDigest') != wanted:
+        raise ValueError('This SDK was built from different pinned inputs than this ros2-android version. '
+                         'Download the SDK published with this release, or build it with setup sources/native/python/agent.')
     target.parent.mkdir(parents=True, exist_ok=True)
     staging = Path(tempfile.mkdtemp(prefix=f'.{target.name}-staging-', dir=target.parent))
     backup = None

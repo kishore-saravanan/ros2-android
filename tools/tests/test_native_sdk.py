@@ -103,8 +103,7 @@ class NativeSdkArchiveTest(unittest.TestCase):
             patch.write('\n# changed\n')
         with self.assertRaisesRegex(ValueError, 'different pinned inputs'):
             self.install()
-        self.assertFalse((self.target / 'install').exists())
-        self.assertEqual([], [path.name for path in self.target.parent.iterdir() if path.name.startswith('.ros2-android-native-')])
+        self.assertFalse(self.target.parent.exists(), 'A mismatched archive must be refused before anything is written')
 
     def test_existing_sdk_needs_replace_and_keeps_sources(self):
         self.install()
@@ -115,6 +114,17 @@ class NativeSdkArchiveTest(unittest.TestCase):
         self.install(replace=True)
         self.assertTrue((self.target / 'src').is_dir())
         self.assertFalse((self.target / 'install/stale.txt').exists())
+
+    def test_python_without_extraction_filters_is_refused(self):
+        saved = getattr(native_sdk.tarfile, 'data_filter', None)
+        try:
+            del native_sdk.tarfile.data_filter
+            with self.assertRaisesRegex(ValueError, 'cannot extract archives safely'):
+                self.install()
+        finally:
+            if saved is not None:
+                native_sdk.tarfile.data_filter = saved
+        self.assertFalse((self.target / 'install').exists())
 
     def test_unsafe_archives_are_refused(self):
         for name, build in {

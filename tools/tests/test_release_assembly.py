@@ -39,15 +39,19 @@ Signer #1 certificate SHA-1 digest: 0000000000000000000000000000000000000000
 '''
 
 
-def deb_with_apk(path, apk_bytes):
-    """Minimal ar archive: debian-binary, control.tar.gz, data.tar.gz with the bundled APK."""
+def deb_with_apk(path, apk_bytes, main_json=None):
+    """Minimal ar archive: debian-binary, control.tar.gz, data.tar.gz with the bundled APK (and main.json)."""
     def member(name, body):
         header = f'{name + "/":<16}{0:<12}{0:<6}{0:<6}{"100644":<8}{len(body):<10}`\n'.encode()
         return header + body + (b'\n' if len(body) % 2 else b'')
     data = io.BytesIO()
     with tarfile.open(fileobj=data, mode='w:gz') as tar:
-        info = tarfile.TarInfo('./usr/lib/python3/dist-packages/ros2android/artifacts/main.apk'); info.size = len(apk_bytes)
-        tar.addfile(info, io.BytesIO(apk_bytes))
+        files = {'main.apk': apk_bytes}
+        if main_json is not None:
+            files['main.json'] = json.dumps(main_json).encode()
+        for name, body in files.items():
+            info = tarfile.TarInfo('./usr/lib/python3/dist-packages/ros2android/artifacts/' + name); info.size = len(body)
+            tar.addfile(info, io.BytesIO(body))
     path.write_bytes(b'!<arch>\n' + member('debian-binary', b'2.0\n') + member('control.tar.gz', b'x') +
                      member('data.tar.gz', data.getvalue()))
 
@@ -193,6 +197,40 @@ class ReleaseAssemblyTest(unittest.TestCase):
         self.assertTrue(report['verified'], report['problems'])
         data['artifacts']['sdk']['inputsDigest'] = '0' * 64; save()
         self.assertIn('SDK archive inputsDigest differs from manifest', self.verify(folder, identity, signature)['problems'])
+
+    def client_wheel(self, pinned_sha256, inputs_root=ROOT, version=None):
+        """A wheel holding release.json and an sdk.zip snapshot of the SDK inputs."""
+        matrix = json.loads((ROOT / 'python/ros2android/compatibility.json').read_text())
+        snapshot = io.BytesIO()
+        with zipfile.ZipFile(snapshot, 'w') as tooling:
+            for entry in native_sdk.INPUTS:
+                path = Path(inputs_root) / entry
+                for item in ([path] if path.is_file() else sorted(p for p in path.rglob('*') if p.is_file() and '__pycache__' not in p.parts)):
+                    tooling.write(item, item.relative_to(inputs_root).as_posix())
+        wheel = self.root / 'client.whl'
+        with zipfile.ZipFile(wheel, 'w') as bundle:
+            pin = {'version': version or matrix['hostClientVersion'], 'sha256': pinned_sha256,
+                   'inputsDigest': native_sdk.inputs_digest(inputs_root)}
+            bundle.writestr('ros2android/release.json', json.dumps({'nativeSdk': pin}))
+            bundle.writestr('ros2android/sdk.zip', snapshot.getvalue())
+        return wheel
+
+    def test_release_consistency_catches_mismatched_client_deb_and_sdk(self):
+        archive, manifest, _ = self.sdk_archive()
+        canonical = archive.with_name(f"ros2-android-native-sdk-{manifest['version']}-{native_sdk.ABI}.tar.xz")
+        archive.rename(canonical)
+        wheel = self.client_wheel(release.sha256(canonical))
+        deb = self.root / 'client.deb'
+        deb_with_apk(deb, b'apk', {'wheelSha256': release.sha256(wheel)})
+        self.assertEqual([], release.release_consistency(wheel, deb, canonical, manifest))
+        wrong_pin = self.client_wheel('0' * 64)
+        self.assertIn('The client pins a different native SDK (release.json); setup workspace-tools would reject this one',
+                      release.release_consistency(wrong_pin, None, canonical, manifest))
+        self.assertIn('The Debian package was built from a different wheel',
+                      release.release_consistency(wrong_pin, deb, None, None))
+        changed = dict(manifest, inputsDigest='0' * 64)
+        self.assertIn("The client's build inputs differ from the SDK's; setup sdk would reject it",
+                      release.release_consistency(wheel, None, canonical, changed))
 
 
 if __name__ == '__main__':

@@ -147,57 +147,30 @@ or large rewrite solely for architectural patterns.
 **Exit gate:** a separate examples checkout builds/deploys against a pinned platform
 package/SDK without editing the platform checkout. No mandatory submodule.
 
-## 5. Qualify and ship a community alpha
+## 5. First public release: 1.0.0
 
-**Outcome:** a documented, installable release with honest support boundaries.
+**Outcome:** a documented, installable release with honest support boundaries,
+shipped minimal so the community can extend it.
 
-Owner decisions (2026-11-13): ship a minimal alpha and let the community extend it.
-Every item below is completed before the alpha, including a prebuilt native SDK
-download so workspace users skip the multi-hour SDK build. The owner holds the release
-signing key. The repository becomes public with its full history.
+- [x] Second phone: a Samsung Galaxy S24+ (Android 17) passes the instrumentation
+      suite, accessibility checks, Dashboard peers and runner updates; an Android 15
+      emulator adds UI and runner compatibility checks. See [Compatibility](COMPATIBILITY.md).
+- [x] Prebuilt native SDK: built, packaged and install-tested on a clean CI runner;
+      `ros2-android setup workspace-tools` installs it with the rest of the toolchain.
+- [x] Sustained operation and camera latency: an hour of phone-local runner traffic
+      (18,000 of 18,000 samples), an hour on battery with an ESP32 and a project (per-minute
+      temperature and memory record), and camera to PC over Wi-Fi at 26.8 FPS with a
+      111 ms median capture-to-PC latency.
+- [x] Accessibility: automated checks pass on core screens and dialogs in light and dark.
+- [x] Signed, checksummed APK, Debian package, wheel and SDK with dependency notices and
+      provenance; the release folder verifies against the published certificate.
+- [x] Install, upgrade and rollback checked on clean environments.
+- [x] Security and privacy review of the release surface and of the full history.
 
-- [ ] Test an additional phone/Android version and publish the compatibility matrix.
-      [Qualify a phone](PHONE-QUALIFICATION.md) runs the standard batch on any phone.
-      An Android 15 emulator with ARM translation passes UI, ROS session, Dashboard
-      peer and runner discovery checks; a Samsung Android 17 phone is now under test (19 initial passes, 4 accessibility
-      focus/dialog failures; strict background checks pending).
-- [ ] Publish a prebuilt, checksummed native SDK archive with its license notices, and
-      let the host tool install it instead of building the SDK from source.
-- [ ] Measure sustained operation, memory, thermal behavior and camera latency.
-      A 60-minute run on the reference phone (USB power, Wi-Fi off) delivered all 18,000
-      runner samples with a 219 ms largest gap, 7 ms mean latency and no pauses. A
-      one-hour unplugged run (battery, Wi-Fi off, USB ESP32 plus a project) passed with a
-      per-minute temperature and memory record: 32-33 °C, 92% to 80% battery, memory
-      108-119 MB. Camera to PC over Wi-Fi (Samsung, 640×480 at 30 FPS requested): 26.8 FPS
-      received, capture-to-PC latency median 111 ms, 95th percentile 189 ms. Screen-off
-      runs remain open: on battery the Realme stopped the app about 12 minutes after the
-      screen turned off despite wake locks, so 1.0 documents keeping the screen on.
-- [ ] Check portrait/landscape, light/dark mode and accessibility on core journeys.
-      Reference-phone core tabs, app-local light/dark and large-text layouts pass.
-      Automated accessibility checks pass on core screens in light and dark after
-      fixing field labels, disclosure speech and a small touch target, and on the
-      Add widget, Project connection and licenses dialogs after naming their fields by
-      visible labels. A screen-reader walkthrough and wider device coverage remain open.
-- [ ] Produce signed, checksummed APK/client/SDK artifacts and dependency notices.
-      Release assembly/verification signs, checksums and records provenance; APKs
-      carry license texts for every staged native component, listed in
-      THIRD-PARTY-NOTICES. The owner-held release key exists (certificate in
-      SECURITY.md); a CI-built SDK archive and an actual signed release remain.
-- [ ] Verify installation, upgrade and rollback from clean environments.
-      Clean runners pass the installed-client journey, and a fresh home installs the
-      prebuilt SDK and builds a workspace APK with it. Release-signed app builds
-      installed cleanly on an emulator, kept data on a same-key upgrade, refused a
-      downgrade and rolled back by reinstalling (data reset). Repeat with the real
-      release key on phones for the first release.
-- [ ] Complete public-history/privacy and security review before wider publication.
-      The [pre-release review](SECURITY-REVIEW.md) scanned all history for keys,
-      tokens and addresses (none found), checked component exposure and listeners,
-      and queried OSV for every pinned commit (none known). The owner has chosen to retain full history and holds the release key;
-      release-artifact review and dependency alerting remain open.
-
-**Exit gate:** the [release checklist](RELEASING.md) passes with linked evidence;
-previous artifacts remain available for rollback. Local wheel/Debian alpha builds
-are foundations, not a currently available public installer.
+Carried into 1.0.x and later: a TalkBack walkthrough; screen-off operation on battery (the
+Realme stopped the app about 12 minutes after the screen turned off, so 1.0 documents
+keeping the screen on); Samsung background pauses; the minor app and runner findings of the
+pre-release review; and more phones and USB adapters.
 
 ## Later, driven by user needs
 

@@ -21,7 +21,7 @@ from .diagnostics import compatibility, diagnose
 
 # Ubuntu 24.04 packages for workspace builds; the Debian package recommends the same list.
 APT_PACKAGES = ('build-essential', 'cmake', 'ninja-build', 'git', 'python3-dev', 'python3-venv',
-                'python3-numpy', 'pybind11-dev', 'openjdk-21-jdk-headless')
+                'python3-numpy', 'pybind11-dev', 'openjdk-21-jdk-headless', 'ros-jazzy-rmw-cyclonedds-cpp')
 # Google's Android command-line tools 22.0; SHA-1 as published by Google, SHA-256 measured from that file.
 CMDLINE_TOOLS = {'url': 'https://dl.google.com/android/repository/commandlinetools-linux-15859902_latest.zip',
                  'sha256': '4e4c464f145a7512b57d088ac6c278c03c9eea610886b35a5e0804e74eedf583'}
@@ -116,14 +116,17 @@ def ensure_android(matrix, accept_licenses=False):
         raise ValueError(f'The Android SDK path must not contain spaces: {root}. Set ANDROID_HOME to another folder.')
     packages = android_packages(matrix)
     missing = [name for name, folder in packages.items() if not (root / folder / 'source.properties').is_file()]
-    if not missing:
+    sdkmanager = root / 'cmdline-tools' / 'latest' / 'bin' / 'sdkmanager'
+    if not missing and sdkmanager.is_file():
         print(f'  Android SDK packages: already installed in {root}', flush=True)
         return
-    sdkmanager = root / 'cmdline-tools' / 'latest' / 'bin' / 'sdkmanager'
-    if not sdkmanager.is_file():
+    if not sdkmanager.is_file():  # Also when other tools (for example Android Studio) installed the packages.
         archive = download(CMDLINE_TOOLS['url'], downloads() / Path(CMDLINE_TOOLS['url']).name,
                            CMDLINE_TOOLS['sha256'], 'Android command-line tools')
         sdkmanager = extract_cmdline_tools(archive, root)
+    if not missing:
+        print(f'  Android SDK packages: already installed in {root}', flush=True)
+        return
     base = [str(sdkmanager), f'--sdk_root={root}']
     print("  Review and accept Google's Android SDK licences (answer y):", flush=True)
     if accept_licenses:
@@ -140,17 +143,26 @@ def ensure_android(matrix, accept_licenses=False):
 
 
 def ensure_native_sdk(tooling_root, matrix, archive=None):
-    link = Path(tooling_root) / 'native-deps'
-    target = link.resolve() if link.is_symlink() or link.is_dir() else Path.home() / '.cache' / 'ros2-android-native'
+    tooling_root = Path(tooling_root)
+    link = tooling_root / 'native-deps'
+    target = (link if link.is_symlink() or link.is_dir() else Path.home() / '.cache' / 'ros2-android-native').resolve()
+
+    def keep(message):
+        # A client update extracts new tooling without the link; recreate it for the kept SDK.
+        if not link.exists() and not link.is_symlink():
+            link.symlink_to(target, target_is_directory=True)
+        print('  Native SDK: ' + message, flush=True)
+
     record = target / '.sdk-install.json'
-    present = all((target / path).exists() for path in native_sdk.REQUIRED)
-    if present and not record.is_file():
-        print(f'  Native SDK: using your existing build in {target}', flush=True)
-        return
+    complete = all((target / path).exists() for path in native_sdk.REQUIRED)
+    present = any((target / entry).exists() or (target / entry).is_symlink() for entry in native_sdk.CONTENT)
+    if complete and not record.is_file():
+        return keep(f'using your existing build in {target}')
     wanted = native_sdk.inputs_digest(tooling_root)
-    if present and json.loads(record.read_text()).get('inputsDigest') == wanted:
-        print('  Native SDK: already installed', flush=True)
-        return
+    if complete and json.loads(record.read_text()).get('inputsDigest') == wanted:
+        return keep('already installed')
+    if present:
+        print('  Native SDK: replacing the outputs in ' + str(target) + ' (sources and build trees are kept)', flush=True)
     version = matrix['hostClientVersion']
     name = f'ros2-android-native-sdk-{version}-{native_sdk.ABI}.tar.xz'
     expected = release_info().get('nativeSdk', {})
@@ -159,7 +171,7 @@ def ensure_native_sdk(tooling_root, matrix, archive=None):
         if not sha256:
             raise ValueError('This build of ros2-android has no published native SDK; pass --sdk-archive FILE.')
         archive = download(f'{RELEASES}/v{version}/{name}', downloads() / name, sha256, 'Native SDK')
-    native_sdk.install(archive, tooling_root=tooling_root, replace=present,
+    native_sdk.install(archive, tooling_root=tooling_root, target=target, replace=present,
                        expected_sha256=sha256 if Path(archive).name == name else None)
 
 

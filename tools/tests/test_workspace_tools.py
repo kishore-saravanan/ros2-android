@@ -63,6 +63,9 @@ class WorkspaceToolsTest(unittest.TestCase):
 
     def test_installed_android_packages_skip_downloads_and_licences(self):
         root = self.temp / 'sdk'
+        sdkmanager = root / 'cmdline-tools/latest/bin/sdkmanager'
+        sdkmanager.parent.mkdir(parents=True)
+        sdkmanager.write_text('#!/bin/sh\n')
         for folder in tools.android_packages(self.matrix).values():
             (root / folder).mkdir(parents=True)
             (root / folder / 'source.properties').write_text('Pkg.Revision=1\n')
@@ -72,6 +75,20 @@ class WorkspaceToolsTest(unittest.TestCase):
             tools.ensure_android(self.matrix)
         run.assert_not_called()
         download.assert_not_called()
+
+    def test_packages_without_sdkmanager_get_the_command_line_tools(self):
+        root = self.temp / 'sdk'
+        for folder in tools.android_packages(self.matrix).values():
+            (root / folder).mkdir(parents=True)
+            (root / folder / 'source.properties').write_text('Pkg.Revision=1\n')
+        with mock.patch.dict(os.environ, {'ANDROID_HOME': str(root)}), \
+                mock.patch.object(tools, 'download', return_value=self.temp / 'tools.zip') as download, \
+                mock.patch.object(tools, 'extract_cmdline_tools') as extract, \
+                mock.patch.object(tools.subprocess, 'run') as run, contextlib.redirect_stdout(io.StringIO()):
+            tools.ensure_android(self.matrix)
+        download.assert_called_once()
+        extract.assert_called_once()
+        run.assert_not_called()  # Nothing else to install, so no licence prompt.
 
     def test_missing_android_packages_need_an_interactive_licence_review(self):
         root = self.temp / 'sdk'
@@ -103,10 +120,55 @@ class WorkspaceToolsTest(unittest.TestCase):
             install.assert_called_once()
             self.assertTrue(install.call_args.kwargs['replace'])
 
+    def test_kept_sdk_gets_the_native_deps_link_after_a_client_update(self):
+        tooling = self.temp / 'new-tooling'
+        tooling.mkdir()
+        target = self.temp / 'home' / '.cache' / 'ros2-android-native'
+        for path in native_sdk.REQUIRED:
+            (target / path).parent.mkdir(parents=True, exist_ok=True)
+            (target / path).write_text('x')
+        (target / '.sdk-install.json').write_text(json.dumps({'inputsDigest': 'abc'}))
+        with mock.patch.object(tools.Path, 'home', return_value=self.temp / 'home'), \
+                mock.patch.object(tools.native_sdk, 'inputs_digest', return_value='abc'), \
+                mock.patch.object(tools.native_sdk, 'install') as install, contextlib.redirect_stdout(io.StringIO()):
+            tools.ensure_native_sdk(tooling, self.matrix)
+        install.assert_not_called()
+        self.assertEqual(target.resolve(), (tooling / 'native-deps').resolve())
+
+    def test_partial_source_build_is_replaced_keeping_sources(self):
+        tooling = self.temp / 'tooling'
+        tooling.mkdir()
+        target = self.temp / 'native'
+        (tooling / 'native-deps').symlink_to(target, target_is_directory=True)
+        (target / 'install/lib').mkdir(parents=True)
+        (target / 'install/lib/librcl.so').write_text('x')  # C++ only: no Python or Agent parts
+        with mock.patch.object(tools.native_sdk, 'inputs_digest', return_value='abc'), \
+                mock.patch.object(tools, 'download', return_value=self.temp / 'sdk.tar.xz'), \
+                mock.patch.object(tools.native_sdk, 'install') as install, contextlib.redirect_stdout(io.StringIO()):
+            tools.ensure_native_sdk(tooling, self.matrix)
+        self.assertTrue(install.call_args.kwargs['replace'])
+        self.assertEqual(target.resolve(), install.call_args.kwargs['target'])
+
     def test_release_metadata_names_the_published_sdk_for_this_version(self):
         info = tools.release_info()['nativeSdk']
         self.assertEqual(self.matrix['hostClientVersion'], info['version'])
         self.assertRegex(info['sha256'], '^[0-9a-f]{64}$')
+
+    def test_sdk_build_inputs_match_the_published_sdk(self):
+        # The published SDK only installs with tooling built from the same inputs. Changing any
+        # native_sdk.INPUTS file, even its formatting, needs a new SDK build and release.json pin.
+        pinned = tools.release_info()['nativeSdk']['inputsDigest']
+        self.assertEqual(pinned, native_sdk.inputs_digest(ROOT))
+
+    def test_bundled_release_app_is_the_default_controller(self):
+        from ros2android import workspace
+        package = self.temp / 'ros2android'
+        (package / 'artifacts').mkdir(parents=True)
+        (package / 'artifacts/main.apk').write_bytes(b'apk')
+        with mock.patch('importlib.resources.files', return_value=package):
+            self.assertEqual(package / 'artifacts/main.apk', workspace.bundled_controller())
+        with mock.patch('importlib.resources.files', return_value=self.temp / 'wheel-without-app'):
+            self.assertIsNone(workspace.bundled_controller())
 
     def test_cli_routes_setup_workspace_tools(self):
         with mock.patch.object(sys, 'argv', ['ros2-android', 'setup', 'workspace-tools']), \

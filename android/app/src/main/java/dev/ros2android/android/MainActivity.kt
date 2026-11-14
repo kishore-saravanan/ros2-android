@@ -122,7 +122,11 @@ open class MainActivity : Activity() {
         dialog.setOnShowListener { dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = editable; dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
             val domain = fields.getValue("domain").text.toString().toIntOrNull()
             if (domain == null || domain !in 0..101) { fields.getValue("domain").error = "Use 0–101"; return@setOnClickListener }
-            control.send(4, Bundle().apply { fields.forEach { (key, field) -> putString(key, field.text.toString()) } }); dialog.dismiss()
+            // The screen may have reconnected while the dialog was open: send through the current controller.
+            val current = projectControllers[control.project.packageName] ?: control
+            current.send(4, Bundle().apply { fields.forEach { (key, field) -> putString(key, field.text.toString()) } })
+            current.commandError?.let { announce(it); return@setOnClickListener }
+            dialog.dismiss()
         } }
         dialog.show()
     }
@@ -407,10 +411,12 @@ open class MainActivity : Activity() {
             agentStatus = text(MicroRosAgentService.state, 14).also { box.addView(it) }
             agentToggle = button("Start Wi-Fi agent") {
                 if (MicroRosAgentService.running) stopService(Intent(this, MicroRosAgentService::class.java))
+                else if (Esp32ProgrammingService.active) announce("Stop USB programming first")
                 else { requestNotificationsOnce(); startForegroundService(Intent(this, MicroRosAgentService::class.java)) }
             }.apply { tag = "toggle_micro_ros_agent" }; box.addView(agentToggle)
             box.addView(button("Start USB agent") {
                 if (MicroRosAgentService.running) announce("Stop the current agent before changing transport")
+                else if (Esp32ProgrammingService.active) announce("Stop USB programming first")
                 else { requestNotificationsOnce(); startForegroundService(Intent(this, MicroRosAgentService::class.java).putExtra(MicroRosAgentService.USB, true)) }
             }.apply { tag = "start_usb_micro_ros_agent" })
             box.addView(text("Wi-Fi: UDP 8888. USB: CP2102 ESP32 with serial firmware and OTG cable. Use the same ROS domain as the sensors.", 13, muted))

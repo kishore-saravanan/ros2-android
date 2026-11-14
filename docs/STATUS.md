@@ -2,7 +2,7 @@
 
 Release: **1.0.0**, status updated 2026-11-14. Apache-2.0.
 Results below are for the tested devices listed, not every phone or robot.
-No public APT repository or stable package release is available yet.
+1.0.0 is published on GitHub Releases (APK, Debian package, wheel and native SDK); there is no APT repository yet.
 
 ## Verified reference paths
 
@@ -18,7 +18,7 @@ No public APT repository or stable package release is available yet.
 | Host setup diagnostics | Bundled compatibility matrix and task-scoped doctor checks are tested. Installed-wheel checks cover missing prerequisites and the prepared-host shell profile without SDK extraction or phone access. `setup build-tools` prepares the managed colcon venv, including hosts with APT colcon (simulated host-package and pip-less cases tested). A scripted installed-client journey passes from an empty HOME, Gradle home and Android SDK on the reference OS through the native SDK build and an external workspace APK; it found and fixed a step that depended on an older native install. The hosted native workflow runs the same journey and passes on a clean Ubuntu 24.04 runner. Deploying to a phone from such a machine remains pending. |
 | APK upgrade preflight | Host CLI verifies local project APK metadata/current signature and compares package, numeric version and signer. File checks never install or inspect a phone; a reference C++ runner same-key code-1 → code-2 update preserves its profile and passes fresh offline ROS lifecycle checks. Android rejects the older APK while preserving code 2/data. Other update pairs, signer migration and successful rollback remain unqualified. |
 | Installed-client packaging | Built wheel passed the verifier in a fresh Python 3.12 venv without pip, offline installation, masked SDK/ROS inputs, help/inspection and archive privacy/hash checks. The installed client also resolves a supported C++ launch plan and cross-builds the C++ fixture with a prepared SDK; the separate companion Python app builds through the client. These reuse prepared inputs. Python 3.10/3.12 CI definitions exist; new hosted runs and full fresh-machine native setup remain pending. |
-| Release assembly and notices | `setup/assemble-release.py` signs the main APK with an owner-held key, refuses dirty trees, debuggable or version-mismatched APKs and APKs missing license texts, and writes a provenance manifest and SHA256SUMS; `setup/verify-release.py` re-checks them. An unsigned dry run of the current release APK and wheel assembled and verified, and tampering was detected. A throwaway-key run from a clean commit signed the APK (v2/v3), built the Debian package from it and passed the full verifier, including the bundled-APK check; that key was deleted. APKs now include license texts for all 39 staged components. The owner holds a release key (public certificate in SECURITY.md). The full native-SDK build, archive packaging and fresh-home install/build journey pass on hosted Ubuntu at d24cc4a; that artifact predates the beta version. Beta-version artifacts and the actual signed public release remain pending; the inventory is not legal review. |
+| Release assembly and notices | `setup/assemble-release.py` signs the main APK with the owner-held key, or reuses an owner-signed APK only while the app's sources are unchanged. It refuses dirty trees, debuggable or version-mismatched APKs and APKs missing license texts, checks that the shipped client, Debian package and native SDK accept each other, and writes a provenance manifest and SHA256SUMS; `setup/verify-release.py` re-checks all of it. 1.0.0 was assembled and verified this way against the published certificate (SECURITY.md); its native SDK was built and install-tested on a clean CI runner. APKs include license texts for all 39 staged components; the inventory is not legal review. |
 | Workspace execution | Example ordinary C++ workspace cross-built, deployed and ran native processes on Android, with custom messages, parameters and stop/restart checks. |
 | Python and launch | Separate Python/rclpy examples and supported launch paths passed reference tests. Arbitrary mixed workspaces and Linux dependencies are not guaranteed. |
 | Dashboard | Separate C++ and Python peers pass Wi-Fi-off late-subscriber, lost-peer/Stale, explicit recovery and no-replay tests. Headless runs (no Activity) of the C++ factory peer pass six consecutive strict trials once background activity is allowed for both apps, with no reported process pauses; publish-to-receipt on the same phone averaged 5 ms (max 12 ms) through the Dashboard poll. With the default vendor battery policy the runner process was frozen for 1–20 s and the test fails, as intended. The strict headless rerun with the current build passes for both C++ and Python on the reference phone (mean publish-to-receipt 5 and 7 ms). Local write status stays distinct from observed peer state. These are phone-local process interruptions, not network-handover qualification. Scalar subscriptions, joystick release/focus-loss zero commands and JPEG/PNG image receipt/recovery passed physical tests. Two-phone camera viewing and reference robot control were also confirmed by the operator. |
@@ -65,8 +65,8 @@ must not determine generic platform APIs or readiness.
 ## Community-readiness priorities
 
 See the [platform roadmap](ROADMAP.md), [test scope](TESTING.md) and
-[release checklist](RELEASING.md). [Independent runner authorization](RUNNER-AUTHORIZATION.md)
-is an opt-in preview; broader signing/device review is still a release gate. Dashboard local request status
+[release checklist](RELEASING.md). [Runner authorization](RUNNER-AUTHORIZATION.md) is how the release
+app manages projects you build; key rotation, several authors and more phones are not yet tested. Dashboard local request status
 is implemented, but the earlier intermittent missed OFF has no confirmed root
 cause; network-loss/late-subscriber fault tests remain open.
 
@@ -81,8 +81,7 @@ cause; network-loss/late-subscriber fault tests remain open.
    per-node supervision.
 5. Sustained camera throughput and end-to-end latency measurements, including
    larger resolutions on capable devices.
-6. Stable signed releases and installable host-package distribution after the
-   runtime and onboarding gates are met.
+6. An APT repository for the host package.
 
 See the [starter guide](STARTER-GUIDE.md), [robot operation](ROBOT-OPERATION.md)
 and [development](DEVELOPMENT.md). Public status summarizes reproducible results;

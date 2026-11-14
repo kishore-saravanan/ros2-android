@@ -1,7 +1,7 @@
 # Community release checklist
 
-No stable public package/APT release is claimed. Treat this as a maintainer gate,
-not a command that publishes automatically. A release needs explicit authorization.
+Releases are published on GitHub Releases; there is no APT repository. Treat this as a
+maintainer gate, not a command that publishes automatically. A release needs explicit authorization.
 
 ## Source and contracts
 
@@ -65,7 +65,9 @@ With `--sdk`, the assembler accepts the prebuilt SDK archive only when it was pa
 from a clean tree, for the same client version and from this revision's pinned build
 inputs, and records its source revision; the verifier re-checks the archive manifest.
 Use the CI archive: binaries keep their build path in debug strings, and CI's path is
-neutral where a maintainer's home folder is not.
+neutral where a maintainer's home folder is not. `python/ros2android/release.json` pins
+the published archive's version, SHA-256 and input fingerprint; the host tests fail when
+any SDK build input changes (even formatting) until a new SDK is built and pinned.
 To include a Debian package, build it from the signed APK in the release folder
 and pass `--deb` in a second assembly; the assembler rejects a package bundling any
 other APK. `--unsigned-dry-run` exercises the flow without a key and is marked as

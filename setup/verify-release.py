@@ -67,6 +67,13 @@ def verify(folder, expect_certificate=None, allow_unsigned=False):
                 problems.append(f'SDK archive {key} differs from manifest')
         if sdk.get('version') != manifest['versions']['hostClient']:
             problems.append('SDK archive is for a different client version')
+    artifacts = manifest['artifacts']
+    sdk_entry = artifacts.get('sdk')
+    problems += release.release_consistency(
+        folder / artifacts['wheel']['file'] if 'wheel' in artifacts else None,
+        folder / artifacts['deb']['file'] if 'deb' in artifacts else None,
+        folder / sdk_entry['file'] if sdk_entry else None,
+        release.native_sdk.read_manifest(folder / sdk_entry['file']) if sdk_entry else None)
     if 'deb' in manifest['artifacts']:
         if release.deb_apk_sha256(folder / manifest['artifacts']['deb']['file']) != release.sha256(apk):
             problems.append('Debian package bundles a different APK')

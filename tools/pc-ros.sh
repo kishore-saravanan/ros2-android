@@ -14,7 +14,7 @@ if [[ -f "$project_host_prefix/lib/librmw_cyclonedds_cpp.so" ]]; then
     export AMENT_PREFIX_PATH="$project_host_prefix:${AMENT_PREFIX_PATH:-}"
     export LD_LIBRARY_PATH="$project_host_prefix/lib:$project_host_prefix/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH:-}"
 elif [[ ! -f /opt/ros/jazzy/lib/librmw_cyclonedds_cpp.so ]]; then
-    printf 'Run tools/ros2android host-sdk to prepare the project-local PC middleware.\n' >&2; exit 1
+    printf 'Install the Cyclone DDS middleware the phone uses: sudo apt install ros-jazzy-rmw-cyclonedds-cpp\n' >&2; exit 1
 fi
 if [[ -n "${ROS2_ANDROID_PROJECT_OVERLAY:-}" && -f "$ROS2_ANDROID_PROJECT_OVERLAY" ]]; then
     source "$ROS2_ANDROID_PROJECT_OVERLAY"

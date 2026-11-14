@@ -1,12 +1,13 @@
-# Installable host client — local alpha
+# Installable host client
 
 The [Debian package](DEBIAN-PACKAGE.md) bundles the Ubuntu host client and main
 APK. The wheel described here provides the reusable host tooling.
 
 The Python distribution is `ros2-android`; the installed command is
 `ros2-android`. It contains the current tooling and Android build templates.
-Users of a built wheel do not need a project checkout. This is a local alpha,
-not a published PyPI package or a complete prebuilt runtime SDK.
+Users of a built wheel do not need a project checkout. It is published with each GitHub
+release, not on PyPI; the native SDK is a separate download that `ros2-android setup
+workspace-tools` installs.
 
 ## Install and use a built wheel
 

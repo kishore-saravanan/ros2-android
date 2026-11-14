@@ -7,6 +7,7 @@ import re
 import shlex
 import subprocess
 import sys
+from .android_tools import adb_path
 
 
 def main(arguments=None):
@@ -31,8 +32,7 @@ def main(arguments=None):
     package = manifest['applicationId']
     if not re.fullmatch(r'dev\.ros2android\.android\.runner\.[a-z][a-z0-9_]*', package):
         parser.error('Refusing application outside this project runner namespace')
-    sdk = Path(os.environ.get('ANDROID_HOME', os.environ.get('ANDROID_SDK_ROOT', str(Path.home() / 'Android/Sdk'))))
-    adb = [str(sdk / 'platform-tools/adb'), *(['-s', args.serial] if args.serial else ['-d'])]
+    adb = [adb_path(), *(['-s', args.serial] if args.serial else ['-d'])]
     def remote(*command):
         return subprocess.check_output([*adb, 'shell', shlex.join(command)], text=True)
     if 'showing=true' in remote('dumpsys', 'window', 'policy'):

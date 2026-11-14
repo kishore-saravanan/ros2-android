@@ -17,7 +17,8 @@ class MicroRosAgentService : Service() {
     private val manager by lazy { getSystemService(UsbManager::class.java) }
     private val usbEvents = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            val device = intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE) ?: return
+            // Exported below API 33: ignore malformed extras instead of crashing.
+            val device = runCatching { intent.getParcelableExtra<UsbDevice>(UsbManager.EXTRA_DEVICE) }.getOrNull() ?: return
             if (device.deviceId != selectedDevice?.deviceId) return
             when (intent.action) {
                 USB_PERMISSION -> {
@@ -45,19 +46,22 @@ class MicroRosAgentService : Service() {
     override fun onBind(intent: Intent): IBinder? = null
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == STOP) { stopSelf(); return START_NOT_STICKY }
-        if (Esp32ProgrammingService.active) { state = "Stop USB programming first"; stopSelf(); return START_NOT_STICKY }
-        if (running) return START_NOT_STICKY
-        usbMode = intent?.getBooleanExtra(USB, false) == true
-        usbTransport = usbMode
+        // Started with startForegroundService(): enter the foreground before any early stop,
+        // otherwise Android ends the whole app.
+        val requestedUsb = if (running) usbMode else intent?.getBooleanExtra(USB, false) == true
         val channel = "micro_ros_agent"
         getSystemService(NotificationManager::class.java).createNotificationChannel(NotificationChannel(channel, "Microcontroller connection", NotificationManager.IMPORTANCE_LOW))
         val open = PendingIntent.getActivity(this, 20, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val stop = PendingIntent.getService(this, 21, Intent(this, MicroRosAgentService::class.java).setAction(STOP), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val notification = Notification.Builder(this, channel).setSmallIcon(R.drawable.ic_ros_notification)
-            .setContentTitle("ROS2 Android · micro-ROS Agent").setContentText(if (usbMode) "ESP32 USB · ${UsbSerialBridge.BAUD} baud" else "ESP32 Wi-Fi · UDP 8888")
+            .setContentTitle("ROS2 Android · micro-ROS Agent").setContentText(if (requestedUsb) "ESP32 USB · ${UsbSerialBridge.BAUD} baud" else "ESP32 Wi-Fi · UDP 8888")
             .setContentIntent(open).setOngoing(true).addAction(Notification.Action.Builder(null, "Stop", stop).build()).build()
         if (Build.VERSION.SDK_INT >= 29) startForeground(3, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
         else startForeground(3, notification)
+        if (Esp32ProgrammingService.active) { state = "Stop USB programming first"; stopSelf(); return START_NOT_STICKY }
+        if (running) return START_NOT_STICKY
+        usbMode = requestedUsb
+        usbTransport = usbMode
         running = true
         if (usbMode) {
             val devices = manager.deviceList.values.filter(UsbSerialBridge::supported)

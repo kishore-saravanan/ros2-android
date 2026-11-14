@@ -1,6 +1,7 @@
 {
   "nativeSdk": {
     "version": "1.0.0",
-    "sha256": "2554491acbde4274429ea1d66cadb3b6a656910ac3fb1ed3f08c73dbc08266f0"
+    "sha256": "2554491acbde4274429ea1d66cadb3b6a656910ac3fb1ed3f08c73dbc08266f0",
+    "inputsDigest": "8a6c3ef028f95d89e8f7d85c638c94f0fad492e8ade11e8d64ad8ffc2f3cef33"
   }
 }

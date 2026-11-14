@@ -13,6 +13,7 @@ import tempfile
 from .robot_launch import NAMESPACE, validate_launch
 from .controller_identity import controller_certificate
 from .project_manifest import load_manifest
+from .android_tools import adb_path
 
 
 def source_id(project):
@@ -132,8 +133,7 @@ def main(arguments=None, *, tooling_root, prog=None):
     module = {'cpp': 'runner', 'python': 'pythonRunner', 'workspace': 'workspaceRunner'}[runtime]
     apk = root / f'android/{module}/build/outputs/apk/debug/{module}-debug.apk'
     build_info = root / f'android/{module}/build/outputs/robot-project.json'
-    sdk = Path(os.environ.get('ANDROID_HOME', os.environ.get('ANDROID_SDK_ROOT', str(Path.home() / 'Android/Sdk'))))
-    adb = sdk / 'platform-tools/adb'
+    adb = adb_path()
     selection = ['-s', args.serial] if args.serial else ['-d']
 
     def device(*arguments, capture=True):

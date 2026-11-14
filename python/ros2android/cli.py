@@ -99,7 +99,7 @@ def main():
     if args.command == 'doctor':
         return doctor(remaining)
     if args.command == 'compatibility':
-        argparse.ArgumentParser(prog='ros2-android compatibility', description='Print the bundled preview compatibility matrix.').parse_args(remaining)
+        argparse.ArgumentParser(prog='ros2-android compatibility', description='Print the bundled compatibility matrix.').parse_args(remaining)
         print(json.dumps(compatibility(), indent=2))
         return 0
     if args.command == 'setup' and remaining[:1] == ['build-tools']:

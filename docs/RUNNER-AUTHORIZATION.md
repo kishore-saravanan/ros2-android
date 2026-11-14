@@ -1,8 +1,8 @@
 # Workspace runner authorization
 
 The main app and a workspace runner do not need to share a private signing key.
-There are now two control paths. This is a first-release implementation;
-review and broader device/signing qualification remain release gates.
+There are two control paths. Projects you build for the official release app use the
+certificate-pinned path; the Debian package's `ros2-android` does this automatically.
 
 ## Existing same-signature builds
 
@@ -122,5 +122,4 @@ compiles, but compilation is not runtime evidence.
 
 Pending: API 26/other Android versions, a rotation drill exercising the table above,
 multiple independently signed authors, adversarial Binder/load review, recovery
-and broader accessibility/theme testing. Keep this a preview until those gates
-are qualified. Reproduction notes are in [Testing](TESTING.md).
+and broader accessibility/theme testing remain open for later releases. Reproduction notes are in [Testing](TESTING.md).

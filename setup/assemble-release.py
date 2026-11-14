@@ -19,6 +19,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import tempfile
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -91,22 +92,22 @@ def require_contents(apk):
         raise RuntimeError('Release APK lacks required native/license content: ' + ', '.join(problems))
 
 
-def _bundled_apk(tar_stream, deb):
+def _deb_member(tar_stream, deb, suffix):
     with tarfile.open(fileobj=tar_stream) as tar:
         for member in tar.getmembers():
-            if member.name.endswith('ros2android/artifacts/main.apk'):
-                return hashlib.sha256(tar.extractfile(member).read()).hexdigest()
-    raise RuntimeError(f'{deb} has no bundled main APK')
+            if member.name.endswith(suffix):
+                return tar.extractfile(member).read()
+    raise RuntimeError(f"{deb} has no bundled {suffix.rsplit('/', 1)[-1]}")
 
 
-def deb_apk_sha256(deb):
-    """SHA-256 of the main APK bundled inside a Debian package."""
+def deb_file(deb, suffix):
+    """Bytes of the file ending in suffix inside a Debian package's data archive."""
     data = Path(deb).read_bytes()
     if not data.startswith(b'!<arch>\n'):
         raise RuntimeError(f'{deb} is not a Debian archive')
     if shutil.which('dpkg-deb'):  # handles every dpkg compression, including zstd
         tar = subprocess.run(['dpkg-deb', '--fsys-tarfile', str(deb)], check=True, capture_output=True).stdout
-        return _bundled_apk(io.BytesIO(tar), deb)
+        return _deb_member(io.BytesIO(tar), deb, suffix)
     offset = 8
     while offset < len(data):
         header = data[offset:offset + 60]
@@ -114,9 +115,39 @@ def deb_apk_sha256(deb):
         if name.startswith('data.tar'):
             if name.endswith('.zst'):
                 raise RuntimeError(f'{deb} uses zstd; install dpkg to inspect it')
-            return _bundled_apk(io.BytesIO(data[offset + 60:offset + 60 + size]), deb)
+            return _deb_member(io.BytesIO(data[offset + 60:offset + 60 + size]), deb, suffix)
         offset += 60 + size + (size % 2)
     raise RuntimeError(f'{deb} has no data archive')
+
+
+def deb_apk_sha256(deb):
+    """SHA-256 of the main APK bundled inside a Debian package."""
+    return hashlib.sha256(deb_file(deb, 'ros2android/artifacts/main.apk')).hexdigest()
+
+
+def release_consistency(wheel=None, deb=None, sdk_path=None, sdk=None):
+    """Problems that would stop the shipped client, Debian package and SDK from working together."""
+    problems = []
+    if deb and wheel:
+        bundled = json.loads(deb_file(deb, 'ros2android/artifacts/main.json'))
+        if bundled.get('wheelSha256') != sha256(wheel):
+            problems.append('The Debian package was built from a different wheel')
+    if wheel and sdk_path and sdk:
+        name = f"ros2-android-native-sdk-{sdk['version']}-{native_sdk.ABI}.tar.xz"
+        with zipfile.ZipFile(wheel) as bundle:
+            pinned = json.loads(bundle.read('ros2android/release.json')).get('nativeSdk', {})
+            snapshot = bundle.read('ros2android/sdk.zip')
+        if Path(sdk_path).name != name:
+            problems.append(f'SDK archive must be named {name}')
+        if (pinned.get('version') != sdk['version'] or pinned.get('sha256') != sha256(sdk_path)
+                or pinned.get('inputsDigest') != sdk['inputsDigest']):
+            problems.append('The client pins a different native SDK (release.json); setup workspace-tools would reject this one')
+        with tempfile.TemporaryDirectory() as folder:
+            with zipfile.ZipFile(io.BytesIO(snapshot)) as tooling:
+                tooling.extractall(folder)
+            if native_sdk.inputs_digest(folder) != sdk['inputsDigest']:
+                problems.append("The client's build inputs differ from the SDK's; setup sdk would reject it")
+    return problems
 
 
 def wheel_matrix(wheel):
@@ -131,7 +162,10 @@ def write_checksums(folder):
 
 
 # Sources that determine the main APK; a pre-signed APK is reusable only while these are unchanged.
-APP_SOURCES = ('android', 'native', 'python/ros2android/compatibility.json')
+APP_SOURCES = ('android', 'native', 'build.gradle.kts', 'settings.gradle.kts',
+               'gradle.properties', 'gradle', 'setup/build-native-ros.sh', 'setup/stage-native-libs.py',
+               'setup/stage-licenses.py', 'setup/build-micro-ros-agent.sh', 'setup/stage-micro-ros-agent.py',
+               'setup/build-python-ros.sh', 'setup/stage-python-ros.py', 'setup/prepare-python-target.py')
 
 
 def sdk_manifest(archive, matrix, release=True):
@@ -222,6 +256,13 @@ def assemble(args):
         shutil.copyfile(args.sdk, out / args.sdk.name)
         artifacts['sdk'] = {'file': args.sdk.name, 'version': sdk['version'], 'abi': sdk['abi'],
                             'inputsDigest': sdk['inputsDigest'], 'source': sdk['source']}
+    problems = release_consistency(args.wheel, args.deb, args.sdk, artifacts.get('sdk'))
+    if args.sdk:
+        published = args.sdk.with_name(args.sdk.name + '.sha256')
+        if published.is_file() and published.read_text().split()[0] != sha256(args.sdk):
+            problems.append('SDK archive differs from its published .sha256; download it again')
+    if problems:
+        raise RuntimeError('; '.join(problems))
     if args.deb:
         if deb_apk_sha256(args.deb) != sha256(apk):
             raise RuntimeError('The Debian package does not bundle this release APK; rebuild it with setup/build-deb.py --apk ' + str(apk))
@@ -258,6 +299,8 @@ def main(arguments=None):
     parser.add_argument('--expect-certificate', help='Fail unless the signer certificate has this SHA-256')
     parser.add_argument('--allow-dirty', action='store_true', help='Allow uncommitted tracked changes (dry runs only)')
     args = parser.parse_args(arguments)
+    if args.already_signed and args.allow_dirty:
+        parser.error('Releases must come from a clean tracked tree; --allow-dirty is only for dry runs')
     if args.already_signed and not (args.expect_certificate and args.apk_revision):
         parser.error('--already-signed requires --expect-certificate and --apk-revision')
     if args.keystore and not args.key_alias:

@@ -20,7 +20,7 @@ workspace_sdk="$(readlink -f "$project_root/native-deps/install")"
 export AMENT_PREFIX_PATH="$workspace_sdk:${AMENT_PREFIX_PATH:-}"
 export CMAKE_PREFIX_PATH="$workspace_sdk:${CMAKE_PREFIX_PATH:-}"
 export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-sdk_root="${ANDROID_HOME:-$HOME/Android/Sdk}"
+sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}}"
 workspace_python_args=(-DROS2_ANDROID_WITH_PYTHON=OFF)
 workspace_prefixes="$workspace_sdk"
 if [[ "${4:-false}" == true ]]; then

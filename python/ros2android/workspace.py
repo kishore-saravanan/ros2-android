@@ -52,7 +52,7 @@ def stage(workspace, cache, project_id, launch, launch_arguments, with_shell=Fal
             raise ValueError('Shared-library collision: ' + source.name)
         hashes[source.name] = sha; needed[source.name] = dependencies
         shutil.copy2(source, native / source.name)
-    sdk_home = Path(os.environ.get('ANDROID_HOME', str(Path.home() / 'Android/Sdk')))
+    sdk_home = Path(os.environ.get('ANDROID_HOME') or os.environ.get('ANDROID_SDK_ROOT') or str(Path.home() / 'Android/Sdk'))
     cxx = sdk_home / 'ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so'
     needed[cxx.name] = elf_check(cxx)
     shutil.copy2(cxx, native / cxx.name)
@@ -130,6 +130,13 @@ JOURNEY = """typical journey:
 host-build builds the same workspace for this PC; ros then decodes its custom messages."""
 
 
+def bundled_controller():
+    """The release app shipped inside the Debian package, if this installation has one."""
+    from importlib.resources import files
+    apk = Path(str(files('ros2android').joinpath('artifacts/main.apk')))
+    return apk if apk.is_file() else None
+
+
 def main(arguments=None, *, tooling_root, prog=None):
     root = Path(tooling_root)
     parser = argparse.ArgumentParser(prog=prog, description=__doc__, epilog=JOURNEY,
@@ -148,7 +155,11 @@ def main(arguments=None, *, tooling_root, prog=None):
         shell.add_argument('--without-shell', dest='with_shell', action='store_false',
                            help='Select the C++-only profile without the ROS CLI')
     build.add_argument('--launch', type=Path)
-    build.add_argument('--controller-apk', type=Path, help='Controller main APK for certificate-pinned runner controls')
+    controller = build.add_mutually_exclusive_group()
+    controller.add_argument('--controller-apk', type=Path,
+                            help='Main app APK allowed to manage this runner (default: the app bundled with this ros2-android, if any)')
+    controller.add_argument('--same-signature', action='store_true',
+                            help='Build for a main app you built and signed yourself (no certificate pinning)')
     build.add_argument('--launch-arg', action='append', default=[])
     observe = commands.add_parser('ros', help='Run ROS 2 CLI on this PC with matching middleware and message overlay')
     observe.add_argument('--interface', default='', help='PC IPv4 address to use for discovery (default: automatic)')
@@ -208,8 +219,11 @@ def main(arguments=None, *, tooling_root, prog=None):
         if launch is None: parser.error('Select --launch when the workspace has zero or several launch files')
         project = stage(workspace, cache, project_id, launch, args.launch_arg, args.with_shell, tooling_root=root)
         forwarded = 'build'
-        if args.controller_apk:
-            forward += ['--controller-apk', str(args.controller_apk.expanduser().resolve())]
+        controller = args.controller_apk or (None if args.same_signature else bundled_controller())
+        if controller:
+            if not args.controller_apk:
+                print(f'Using the bundled ROS2 Android app as the controller: {controller}', flush=True)
+            forward += ['--controller-apk', str(Path(controller).expanduser().resolve())]
     else:
         manifest = load_manifest(project)
         if args.command in ('deploy', 'start', 'launch-plan') and manifest['workspaceSourceHash'] != digest_tree(workspace / 'src'):
@@ -227,6 +241,8 @@ def run(arguments=None, *, tooling_root, prog=None):
     try:
         main(arguments, tooling_root=tooling_root, prog=prog)
         return 0
+    except KeyboardInterrupt:
+        return 130  # Ctrl+C ends streams such as `ros -- topic echo` and `logs`.
     except (OSError, ValueError, KeyError, RuntimeError, subprocess.SubprocessError, ET.ParseError) as error:
         print('ros2android-workspace: ' + str(error), file=sys.stderr)
         return 1

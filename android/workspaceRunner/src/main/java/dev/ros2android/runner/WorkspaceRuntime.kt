@@ -77,13 +77,13 @@ object ProjectNative : RunnerBackend {
     private fun stopLocked() {
         running = false
         workers.forEach { it.process.destroy() }
-        workers.forEach {
-            if (!it.process.waitFor(2, TimeUnit.SECONDS)) {
-                it.process.destroyForcibly()
-                check(it.process.waitFor(2, TimeUnit.SECONDS)) { "Workspace process did not terminate: ${it.component}" }
-            }
-        }
-        workers.clear()
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2)
+        workers.forEach { it.process.waitFor(maxOf(0L, deadline - System.nanoTime()), TimeUnit.NANOSECONDS) }
+        // Force-kill every survivor before waiting again, so one stuck node cannot shield the others.
+        workers.filter { it.process.isAlive }.forEach { it.process.destroyForcibly() }
+        val stuck = workers.filter { !it.process.waitFor(2, TimeUnit.SECONDS) }
+        workers.clear(); workers.addAll(stuck)
+        check(stuck.isEmpty()) { "Workspace process did not terminate: " + stuck.joinToString { it.component } }
     }
     override fun stop() = lifecycle.withLock { stopLocked() }
     override fun diagnostic(): String {

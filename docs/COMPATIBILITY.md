@@ -16,7 +16,7 @@ project commands then run their backends in place, like the `tools/` wrappers.
 This command prints the matrix without extracting the SDK or contacting a phone.
 It describes the client's expected inputs, not what is installed on the phone.
 Built wheels also include `artifact.sdkSnapshotSha256`, identifying the exact
-bundled tooling content. This matters because preview versions may repeat across
+bundled tooling content. This matters because versions may repeat across
 source builds. The source-checkout matrix has no artifact stamp. A content hash
 is identification, not a signature or proof of binary provenance.
 
@@ -37,10 +37,10 @@ is identification, not a signature or proof of binary provenance.
 | Native inputs | Exact hashes for checked-in ROS, Python, shell and PC-Cyclone lock files |
 
 An API minimum is not a tested-device list. To add a phone, follow
-[qualify a phone](PHONE-QUALIFICATION.md). Physical evidence comes from one Android
-12 reference phone; an Android 15 emulator run with ARM translation adds UI, ROS
-session and runner compatibility checks, not phone qualification. Reference traffic/device evidence,
-including limits of the independent-signing preview and new protocol envelopes,
+[qualify a phone](PHONE-QUALIFICATION.md). Physical evidence comes from a Realme reference
+phone on Android 12 and a Samsung Galaxy S24+ on Android 17; an Android 15 emulator run with
+ARM translation adds UI, ROS session and runner compatibility checks, not phone qualification. Reference traffic/device evidence,
+including limits of independent signing and new protocol envelopes,
 is in [Status](STATUS.md). Mixed Python/C++ colcon workspaces remain unsupported;
 standalone Python examples use their separate backend.
 
@@ -146,4 +146,4 @@ Checks do not validate every host Python module/system library, SDK license,
 native binary provenance, dependency closure, signing identity or runtime behavior.
 A pass is a preflight result, not a successful build or a robot qualification.
 Follow [clean-machine setup](CLEAN-MACHINE-SETUP.md), then verify actual build and
-ROS traffic. Version combinations beyond this preview remain unqualified.
+ROS traffic. Other version combinations are unqualified.
