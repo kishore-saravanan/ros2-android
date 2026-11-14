@@ -14,12 +14,23 @@
   <a href="https://github.com/sponsors/kishore-saravanan"><img src="https://img.shields.io/badge/Sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white" alt="Sponsor on GitHub"></a>
 </p>
 
+<p align="center">
+  <a href="docs/STARTER-GUIDE.md"><b>Starter guide</b></a> ·
+  <a href="https://github.com/kishore-saravanan/ros2-android/releases">Download</a> ·
+  <a href="#guides">Guides</a> ·
+  <a href="#report-a-bug-or-request-a-feature">Report a bug</a>
+</p>
+
 A phone already has a fast ARM computer, cameras, an IMU, Wi-Fi and a battery.
 ROS2 Android runs **native ROS 2 Jazzy on the phone itself**: no Ubuntu, no root,
 no container. Publish the phone's sensors, run your own ROS nodes on it, talk to
 microcontrollers over USB or Wi-Fi, and drive it all from a touch Dashboard.
 Build on your Linux PC, deploy over Wi-Fi while the phone stays mounted on the robot,
 and keep running with no PC at all.
+
+> [!TIP]
+> **New here?** The [Starter guide](docs/STARTER-GUIDE.md) takes you from download to a first
+> message, your own ROS nodes on the phone and an ESP32, one step at a time.
 
 ## See it drive
 
@@ -28,7 +39,7 @@ https://github.com/user-attachments/assets/cf2f065b-a2af-451b-9734-392699fe368c
 The **onboard phone** captures the camera, runs Python ROS 2 perception and motion
 control, and hosts the micro-ROS Agent for the **ESP32** that drives the motors. A
 second, **remote phone** starts and stops tracking and shows the annotated image.
-Everything in the loop runs on the robot. [Build this example →](docs/BALL-FOLLOWER.md)
+Everything in the loop runs on the robot.
 
 ## What you can do
 
@@ -49,35 +60,6 @@ Everything in the loop runs on the robot. [Build this example →](docs/BALL-FOL
     <td align="center"><img src="docs/assets/screenshots/projects.png" width="200" alt="Projects: deployed workspaces with Start and Stop"><br><b>Projects</b></td>
   </tr>
 </table>
-
-## Develop while the phone stays on the robot
-
-No unmounting, no cables to the robot, no compiling on the phone. Your PC builds;
-the phone runs.
-
-1. **Connect once over wireless debugging** (Android 11+: Developer options →
-   Wireless debugging → Pair device with pairing code):
-
-   ```bash
-   adb pair PHONE_IP:PAIRING_PORT     # enter the code shown on the phone
-   adb connect PHONE_IP:PORT
-   ```
-
-2. **Build on your PC and deploy over Wi-Fi** (with the [native SDK](docs/CLEAN-MACHINE-SETUP.md#3-prepare-the-project-sdk) installed):
-
-   ```bash
-   ros2-android workspace --workspace ~/my_ws build --controller-apk ros2-android-1.0.0.apk
-   ros2-android workspace --workspace ~/my_ws --serial PHONE_IP:PORT deploy
-   ```
-
-3. **Start it** from the app's Projects tab (approve the new project once), and watch
-   its topics from your PC. Edit, rebuild and redeploy the same way.
-
-The nodes run on the phone, so the robot keeps going when the PC disconnects. The
-ESP32 on the robot stays attached to the phone too: flash new firmware into it
-**through the phone** over the same wireless link ([guide](docs/ESP32-PROGRAMMING.md)).
-Flashing an ESP32 over its own Wi-Fi (OTA) is not supported.
-[Workspace guide →](docs/COLCON-WORKSPACES.md)
 
 ## Install
 
@@ -121,6 +103,35 @@ You should see the phone's battery level arrive once a second.
 [Full walkthrough and troubleshooting →](docs/GETTING-STARTED.md) ·
 [Starter guide: your own nodes and an ESP32, step by step →](docs/STARTER-GUIDE.md)
 
+## Develop while the phone stays on the robot
+
+No unmounting, no cables to the robot, no compiling on the phone. Your PC builds;
+the phone runs.
+
+1. **Connect once over wireless debugging** (Android 11+: Developer options →
+   Wireless debugging → Pair device with pairing code):
+
+   ```bash
+   adb pair PHONE_IP:PAIRING_PORT     # enter the code shown on the phone
+   adb connect PHONE_IP:PORT
+   ```
+
+2. **Build on your PC and deploy over Wi-Fi** (with the [native SDK](docs/CLEAN-MACHINE-SETUP.md#3-prepare-the-project-sdk) installed):
+
+   ```bash
+   ros2-android workspace --workspace ~/my_ws build --controller-apk ros2-android-1.0.0.apk
+   ros2-android workspace --workspace ~/my_ws --serial PHONE_IP:PORT deploy
+   ```
+
+3. **Start it** from the app's Projects tab (approve the new project once), and watch
+   its topics from your PC. Edit, rebuild and redeploy the same way.
+
+The nodes run on the phone, so the robot keeps going when the PC disconnects. The
+ESP32 on the robot stays attached to the phone too: flash new firmware into it
+**through the phone** over the same wireless link ([guide](docs/ESP32-PROGRAMMING.md)).
+Flashing an ESP32 over its own Wi-Fi (OTA) is not supported.
+[Workspace guide →](docs/COLCON-WORKSPACES.md)
+
 ## Guides
 
 | I want to… | Read |
@@ -132,6 +143,7 @@ You should see the phone's battery level arrive once a second.
 | Connect an ESP32 over USB or Wi-Fi | [ESP32 over USB](docs/ESP32-USB.md) · [ESP32 over Wi-Fi](docs/ESP32-WIFI.md) · [Flash through the phone](docs/ESP32-PROGRAMMING.md) |
 | Run the robot without a PC | [Robot operation](docs/ROBOT-OPERATION.md) · [Standalone operation](docs/STANDALONE-OPERATION.md) |
 | Check whether my phone is supported | [Compatibility](docs/COMPATIBILITY.md) · [Qualify a phone](docs/PHONE-QUALIFICATION.md) |
+| Study an advanced example: the ball-following robot above (source checkout) | [Ball follower](docs/BALL-FOLLOWER.md) |
 
 ## How it works
 
