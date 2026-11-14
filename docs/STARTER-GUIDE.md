@@ -64,7 +64,7 @@ ends with what you should see. Stop at any part: parts 1–3 need no build tools
 
    **You should see** `data: 85.0` (your battery level) once a second.
 3. Tap **Stop** in the app when done. Nothing arrives? See
-   [troubleshooting](GETTING-STARTED.md#5-stop-and-recover).
+   [connection and troubleshooting](TROUBLESHOOTING.md#when-nothing-arrives).
 
 ## 3. Dashboard: a button the PC can hear
 

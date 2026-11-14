@@ -89,7 +89,7 @@ The preview does not provide that signer migration automatically.
 2. Inspect/compare the old and new artifacts. Resolve blocked results; do not
    uninstall a working app, clear its data or force a downgrade as a workaround.
 3. Install the main APK with the existing documented
-   [installation route](GETTING-STARTED.md), and deploy rebuilt runners through
+   [installation route](STARTER-GUIDE.md#1-install-the-app-and-the-pc-tool), and deploy rebuilt runners through
    `ros2-android workspace --workspace /absolute/path/my_ws deploy` or the
    corresponding project command. Select the intended phone explicitly if needed.
    Deployment is a separate action; `apk compare` never deploys.

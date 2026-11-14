@@ -88,7 +88,7 @@ wireless deployment to a mounted robot and an ESP32, step by step.
 ## Documentation
 
 - [Starter guide](docs/STARTER-GUIDE.md): from install to your own nodes and an ESP32
-- [Getting started](docs/GETTING-STARTED.md): installation details and troubleshooting
+- [Connection and troubleshooting](docs/TROUBLESHOOTING.md): networks, ROS domains, discovery and what to check when nothing arrives
 - [Workspaces](docs/COLCON-WORKSPACES.md): build and deploy your own ROS 2 workspaces
 - [Dashboard](docs/CONTROLS.md): widgets, topics and camera images
 - ESP32: [over USB](docs/ESP32-USB.md) · [over Wi-Fi](docs/ESP32-WIFI.md) · [flashing through the phone](docs/ESP32-PROGRAMMING.md)

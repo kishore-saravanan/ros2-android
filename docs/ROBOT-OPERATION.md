@@ -11,7 +11,7 @@ see [Standalone operation](STANDALONE-OPERATION.md).
 
 ## Prepare once
 
-1. Complete DEVELOPMENT.md and the battery walkthrough in GETTING-STARTED.md.
+1. Complete the [starter guide](STARTER-GUIDE.md) through part 2 (first message).
 2. Build/deploy your compatible workspace using COLCON-WORKSPACES.md. The
    ordinary builder currently supports ament_cmake C++ workspaces; embedded
    Python examples do not establish arbitrary mixed ament_python support.

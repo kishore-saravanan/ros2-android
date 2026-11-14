@@ -1,50 +1,19 @@
-# First message: phone battery to ROS 2
+# Connection and troubleshooting
 
-This walkthrough is for a Linux ROS 2 Jazzy user with an Android ARM64 phone
-(Android 8.0 or newer). It uses the phone's battery percentage before motion or camera
-data, so no camera, microphone or storage permission is needed. You do not need the
-Android SDK, NDK, Java or the native SDK for this; those are only for building your own
-workspaces ([Workspaces](COLCON-WORKSPACES.md)).
+How the phone and your PC find each other over ROS 2, and what to check when messages
+don't arrive. New here? Follow the [starter guide](STARTER-GUIDE.md) first; this page is
+the reference behind its first two parts. Examples use the phone's battery topic.
 
-## 1. Install the app
-
-Download from the [latest release](https://github.com/kishore-saravanan/ros2-android/releases)
-and check the files against `SHA256SUMS` (`sha256sum -c SHA256SUMS --ignore-missing`).
-
-**Option A: the app only.** Copy `ros2-android-1.0.0.apk` to the phone and
-open it, or install it from a PC that has `adb`:
-
-```bash
-adb install ros2-android-1.0.0.apk
-```
-
-**Option B: the PC tool with the app (Ubuntu 24.04).** Enable USB debugging on the
-phone, connect it and authorize this PC, then:
-
-```bash
-sudo apt install ./ros2-android_1.0.0-1_all.deb
-ros2-android device setup
-```
-
-`device setup` checks the bundled app and the phone, then installs or updates only
-ROS2 Android. Pass `--serial ID` when more than one phone is connected. Installing the
-PC package never touches a phone by itself.
-
-Open ROS2 Android on the phone. If an earlier development build is installed, Android
-refuses the update because it was signed by a different key: uninstall the old app
-first (this deletes its saved settings). To confirm a download is genuine, compare its
-certificate with [SECURITY.md](../SECURITY.md#verify-a-downloaded-apk).
-
-To build the app from source instead, see [Development](DEVELOPMENT.md).
-
-## 2. Choose a network path
+## Network paths
 
 - **USB:** enable USB tethering while keeping USB debugging enabled. A debugging
   cable alone carries installation/control traffic, not ordinary DDS messages.
 - **Wi-Fi:** connect PC and phone to a reachable network that permits traffic
   between devices. Client-isolated guest networks may block discovery/messages.
 
-Open **Settings** in the app. Keep domain **0** for this example, matching the PC.
+## ROS domain and discovery
+
+Open **Settings** in the app. Keep domain **0** unless your PC uses another, matching the PC.
 If you change it, use the changed value in every PC command. Use the network
 addresses under Settings → Network addresses and the PC's addresses from:
 
@@ -56,15 +25,14 @@ Automatic discovery is the normal mode: keep the optional PC/phone IPv4 fields
 blank. Devices on the reachable same subnet and ROS domain can discover and
 subscribe without registering a particular PC. An old saved manual address is
 not cleared by an app update: Stop all, clear both optional addresses, Save, then
-Publish again to return to automatic mode. The main-app loopback/multicast bug
-was corrected on 2026-10-30; see the automatic-discovery verification ledger.
+Publish again to return to automatic mode.
 
 When discovery needs help, set PC IPv4 and Phone IPv4 to addresses on the chosen
 link, under Advanced connection, then Save. Leave optional addresses blank for automatic selection.
 Use Stop all before changing an active profile. A saved profile is configuration,
 not proof that a peer has been reached.
 
-## 3. Start battery publishing
+## Phone side: the battery publisher
 
 Open **Sensors → Battery percentage**. Opening its controls does not start
 publishing. The detail screen shows:
@@ -86,7 +54,7 @@ shows an error; the app does not substitute an invented number.
 **The topic is not published while the card is stopped.** Merely opening the app,
 opening the card or completing a previous automated test does not publish it.
 
-## 4. Receive it on the PC
+## PC side: receiving messages
 
 Open **Settings → Help → Your first message** for commands based on your saved domain and battery topic; the
 Copy commands button copies only when you tap it. The default commands are:
@@ -114,7 +82,7 @@ does not. Press Ctrl+C to stop viewing; the phone continues publishing.
 The source command assumes Jazzy is installed under /opt/ros/jazzy on the PC.
 It does not install ROS. Adapt it if your installation uses another prefix.
 
-## 5. Stop and recover
+## Stopping and recovering
 
 Tap Stop on the battery card to stop that publisher, or Stop all to release
 all main-app sensor and Dashboard endpoints. It does not stop projects or the
@@ -123,7 +91,9 @@ an active service-owned session running; process death or APK replacement can
 stop it. Project runners have their own Stop project action and independent
 profiles; see [PROJECTS.md](PROJECTS.md).
 
-If no topic or samples arrive, check these in order:
+## When nothing arrives
+
+Check these in order:
 
 1. The battery card says publishing and its sent count increases. If stopped,
    tap Publish first. If it shows an error, follow the recovery message.
@@ -138,7 +108,7 @@ installing unrelated phone apps. If it still fails, report app/build version,
 Android version, transport, domain, error text and sanitized diagnostic results.
 Exclude device identifiers, personal information and camera images from reports.
 
-## Next examples
+## More
 
 - Sensors → Motion for IMU/gyro; Sensors → Cameras for the local thumbnail and
   ROS JPEG stream. Camera publishing asks for camera permission.
@@ -146,13 +116,9 @@ Exclude device identifiers, personal information and camera images from reports.
 - Projects for ordinary workspace runners; the example is
   examples/android_test_ws. Use the workspace guide's matching domain/overlay.
 
-## Next: use the phone as the robot computer
+## Next
 
-Follow the [starter guide](STARTER-GUIDE.md) from part 3 for the Dashboard, your own nodes and an ESP32.
-
-Continue with [Robot operation](ROBOT-OPERATION.md) for the workspace/MCU setup,
-start/stop scopes, loss-of-connection checks and recovery. APT distribution work
-is deferred while runtime qualification and usability are completed.
-
-For operation after disconnecting the PC and for stale saved-address recovery,
-see [Standalone operation](STANDALONE-OPERATION.md).
+Back to the [starter guide](STARTER-GUIDE.md) for the Dashboard, your own nodes and an ESP32.
+For operation after disconnecting the PC and for stale saved-address recovery, see
+[standalone operation](STANDALONE-OPERATION.md); for start/stop scopes and
+loss-of-connection checks on a robot, see [robot operation](ROBOT-OPERATION.md).

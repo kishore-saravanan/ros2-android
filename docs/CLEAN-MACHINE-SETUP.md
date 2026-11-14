@@ -127,7 +127,7 @@ ros2-android setup app-build
 
 Only when ready to access a development phone, enable/authorize its USB debugging,
 keep it unlocked, and explicitly install via `ros2-android setup app-install`.
-No device operation above is automatic. See [first message](GETTING-STARTED.md)
+No device operation above is automatic. See the [starter guide](STARTER-GUIDE.md)
 and [runner authorization](RUNNER-AUTHORIZATION.md).
 
 Point the client at your external workspace. Inspect the declared providers and

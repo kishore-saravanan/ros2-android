@@ -84,6 +84,6 @@ cause; network-loss/late-subscriber fault tests remain open.
 6. Stable signed releases and installable host-package distribution after the
    runtime and onboarding gates are met.
 
-See [getting started](GETTING-STARTED.md), [robot operation](ROBOT-OPERATION.md)
+See the [starter guide](STARTER-GUIDE.md), [robot operation](ROBOT-OPERATION.md)
 and [development](DEVELOPMENT.md). Public status summarizes reproducible results;
 local device logs, identifiers, backups and maintainer journals are not shipped.
