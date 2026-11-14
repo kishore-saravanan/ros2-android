@@ -170,7 +170,8 @@ signing key. The repository becomes public with its full history.
       per-minute temperature and memory record: 32-33 °C, 92% to 80% battery, memory
       108-119 MB. Camera to PC over Wi-Fi (Samsung, 640×480 at 30 FPS requested): 26.8 FPS
       received, capture-to-PC latency median 111 ms, 95th percentile 189 ms. Screen-off
-      runs remain.
+      runs remain open: on battery the Realme stopped the app about 12 minutes after the
+      screen turned off despite wake locks, so 1.0 documents keeping the screen on.
 - [ ] Check portrait/landscape, light/dark mode and accessibility on core journeys.
       Reference-phone core tabs, app-local light/dark and large-text layouts pass.
       Automated accessibility checks pass on core screens in light and dark after

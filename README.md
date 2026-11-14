@@ -160,9 +160,10 @@ More: [architecture](ARCHITECTURE.md) · [design](docs/design/HIGH-LEVEL-DESIGN.
 ESP32 over USB (CP2102) and Wi-Fi. Results are in [Status](docs/STATUS.md).
 Things to know:
 
-- **Allow background activity** for the app and each project on your phone; vendor
-  power managers can otherwise pause them. Samsung can still pause projects in the
-  background; see [standalone operation](docs/STANDALONE-OPERATION.md).
+- **Keep the app open with the screen on for long runs** (it keeps the screen awake).
+  With the screen off on battery, vendor power management stopped it after about 12
+  minutes on the Realme. Also **allow background activity** for the app and each project;
+  Samsung can still pause projects in the background. See [standalone operation](docs/STANDALONE-OPERATION.md).
 - **Supported workspaces only:** not every Linux ROS package builds for Android.
 - **Trusted networks only:** ROS traffic is not encrypted or authenticated.
 - **No hard real-time guarantees.** The Dashboard is not an emergency stop.
