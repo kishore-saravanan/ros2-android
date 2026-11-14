@@ -10,19 +10,38 @@ object DevelopmentCommands {
         when (intent.getStringExtra("command")) {
             "autonomy-start" -> {
                 if (AutonomyQualificationService.active || Esp32ProgrammingService.active) {
-                    receiver.resultCode = 1; receiver.resultData = "Test or programming already active"; return true
+                    receiver.resultCode = 1
+                    receiver.resultData = "Test or programming already active"
+                    return true
                 }
-                context.startForegroundService(Intent(context, AutonomyQualificationService::class.java)
-                    .putExtra("seconds", intent.getIntExtra("seconds", 180))
-                    .putExtra("minimumOfflineSamples", intent.getIntExtra("minimumOfflineSamples", 30)))
+
+                context.startForegroundService(
+                    Intent(context, AutonomyQualificationService::class.java)
+                        .putExtra("seconds", intent.getIntExtra("seconds", 180))
+                        .putExtra(
+                            "minimumOfflineSamples",
+                            intent.getIntExtra("minimumOfflineSamples", 30),
+                        )
+                )
             }
-            "autonomy-stop" -> if (AutonomyQualificationService.active)
-                context.startService(Intent(context, AutonomyQualificationService::class.java).setAction(AutonomyQualificationService.STOP))
+
+            "autonomy-stop" ->
+                if (AutonomyQualificationService.active) {
+                    context.startService(
+                        Intent(context, AutonomyQualificationService::class.java)
+                            .setAction(AutonomyQualificationService.STOP)
+                    )
+                }
             "autonomy-status" -> {
-                receiver.resultData = java.io.File(context.cacheDir, AutonomyQualificationService.FILE).takeIf { it.isFile }?.readText() ?: "No continuity test recorded"
+                receiver.resultData =
+                    java.io
+                        .File(context.cacheDir, AutonomyQualificationService.FILE)
+                        .takeIf { it.isFile }
+                        ?.readText() ?: "No continuity test recorded"
             }
             else -> return false
         }
+
         receiver.resultCode = 0
         return true
     }

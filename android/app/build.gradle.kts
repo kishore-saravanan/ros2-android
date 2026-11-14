@@ -18,24 +18,29 @@ android {
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild {
             cmake {
-                arguments += listOf("-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON", "-DANDROID_STL=c++_shared")
+                arguments +=
+                    listOf("-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON", "-DANDROID_STL=c++_shared")
                 cppFlags += listOf("-std=c++17", "-Wall", "-Wextra", "-Werror")
             }
         }
     }
+
     externalNativeBuild {
         cmake {
             path = file("../../native/CMakeLists.txt")
             version = "3.22.1"
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
     buildTypes {
         release { isMinifyEnabled = false }
     }
+
     sourceSets["main"].res.srcDir("../branding/res")
     sourceSets["main"].java.srcDir("../security/src/main/java")
     sourceSets["main"].java.srcDir("../protocol/src/main/java")
@@ -58,7 +63,10 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:rules:1.6.1")
-    androidTestImplementation("com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework:4.1.1")
-    androidTestImplementation("com.google.guava:guava:33.3.1-android") // ATF exposes Guava types in its API
+    androidTestImplementation(
+        "com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework:4.1.1"
+    )
+    androidTestImplementation(
+        "com.google.guava:guava:33.3.1-android"
+    ) // ATF exposes Guava types in its API
 }
-

@@ -265,6 +265,7 @@ Java_dev_ros2android_runner_ProjectNative_status(JNIEnv * env, jobject)
       << ",\"heartbeat\":" << pulses.load() << ",\"node\":"
       << json_string(project_nodes.empty() ? "" : project_nodes.front()->get_fully_qualified_name())
       << ",\"nodes\":[";
+
   for (size_t i = 0; i < project_nodes.size(); ++i) {
     if (i) {
       out << ',';

@@ -6,6 +6,8 @@ import dev.ros2android.security.SigningIdentity
 class PairedProjectControlService : ProjectControlService() {
     override fun authorized(uid: Int): Boolean =
         SigningIdentity.ownsUid(packageManager, "dev.ros2android.android", uid) &&
-            SigningIdentity.matches(BuildConfig.CONTROLLER_CERTIFICATE_SHA256,
-                SigningIdentity.current(packageManager, "dev.ros2android.android"))
+            SigningIdentity.matches(
+                BuildConfig.CONTROLLER_CERTIFICATE_SHA256,
+                SigningIdentity.current(packageManager, "dev.ros2android.android"),
+            )
 }

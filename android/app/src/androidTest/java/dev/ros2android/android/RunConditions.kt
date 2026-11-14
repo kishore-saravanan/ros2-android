@@ -19,13 +19,27 @@ object RunConditions {
         val battery = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         val power = context.getSystemService(PowerManager::class.java)
         val entry = JSONObject().put("s", second)
-        battery?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, Int.MIN_VALUE)?.takeIf { it != Int.MIN_VALUE }
+        battery
+            ?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, Int.MIN_VALUE)
+            ?.takeIf { it != Int.MIN_VALUE }
             ?.let { entry.put("batteryTempC", it / 10.0) }
-        battery?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)?.takeIf { it >= 0 }?.let { entry.put("batteryLevel", it) }
+        battery
+            ?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+            ?.takeIf { it >= 0 }
+            ?.let { entry.put("batteryLevel", it) }
         battery?.let { entry.put("charging", it.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0) }
-        entry.put("screenOn", power.isInteractive).put("deviceIdle", power.isDeviceIdleMode).put("appPssKb", Debug.getPss())
+        entry
+            .put("screenOn", power.isInteractive)
+            .put("deviceIdle", power.isDeviceIdleMode)
+            .put("appPssKb", Debug.getPss())
         if (Build.VERSION.SDK_INT >= 29) entry.put("thermalStatus", power.currentThermalStatus)
-        if (Build.VERSION.SDK_INT >= 30) power.getThermalHeadroom(10).takeIf { !it.isNaN() }?.let { entry.put("thermalHeadroom", it.toDouble()) }
+        if (Build.VERSION.SDK_INT >= 30) {
+            power
+                .getThermalHeadroom(10)
+                .takeIf { !it.isNaN() }
+                ?.let { entry.put("thermalHeadroom", it.toDouble()) }
+        }
+
         return entry
     }
 }

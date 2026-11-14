@@ -4,7 +4,8 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class DashboardCommandQueueTest {
-    @Test fun offArrivingDuringOnWriteRemainsQueued() {
+    @Test
+    fun offArrivingDuringOnWriteRemainsQueued() {
         val queue = DashboardCommandQueue()
         queue.submit("track", 1.0, 0.0, "", 0, false, switchInput = true)
         val on = queue.snapshot().single()
@@ -19,7 +20,9 @@ class DashboardCommandQueueTest {
         assertTrue(queue.switchDescription("track").contains("Requested OFF · written locally"))
         assertTrue(queue.switchDescription("track").contains("Remote state unknown"))
     }
-    @Test fun restartingSameWidgetCannotReplayOrCompleteOldRequest() {
+
+    @Test
+    fun restartingSameWidgetCannotReplayOrCompleteOldRequest() {
         val queue = DashboardCommandQueue()
         queue.submit("track", 1.0, 0.0, "", 0, false, switchInput = true)
         val old = queue.snapshot().single()
@@ -31,7 +34,9 @@ class DashboardCommandQueueTest {
         assertEquals(DashboardCommandQueue.Phase.QUEUED, queue.status("track")!!.phase)
         assertEquals(0.0, queue.snapshot().single().first, 0.0)
     }
-    @Test fun failedWriteIsNotReportedAsWritten() {
+
+    @Test
+    fun failedWriteIsNotReportedAsWritten() {
         val queue = DashboardCommandQueue()
         queue.submit("track", 0.0, 0.0, "", 0, false, switchInput = true)
         queue.complete(queue.snapshot().single(), false)
@@ -39,9 +44,22 @@ class DashboardCommandQueueTest {
         queue.cancel() // Service teardown must preserve the failure for diagnosis.
         assertTrue(queue.switchDescription("track").contains("write failed"))
     }
-    @Test fun rapidChangesCoalesceOnlyWithinTheSameWidget() {
+
+    @Test
+    fun rapidChangesCoalesceOnlyWithinTheSameWidget() {
         val queue = DashboardCommandQueue()
-        repeat(1000) { queue.submit("track", (it % 2).toDouble(), 0.0, "", it.toLong(), false, switchInput = true) }
+        repeat(1000) {
+            queue.submit(
+                "track",
+                (it % 2).toDouble(),
+                0.0,
+                "",
+                it.toLong(),
+                false,
+                switchInput = true,
+            )
+        }
+
         queue.submit("other", 0.0, 0.0, "hello", 1001, false)
         assertEquals(2, queue.snapshot().size)
         val track = queue.snapshot().single { it.id == "track" }
@@ -49,7 +67,9 @@ class DashboardCommandQueueTest {
         queue.complete(track, true)
         assertEquals("other", queue.snapshot().single().id)
     }
-    @Test fun motionKeepsItsOriginalLeaseUntilReplacedOrCancelled() {
+
+    @Test
+    fun motionKeepsItsOriginalLeaseUntilReplacedOrCancelled() {
         val queue = DashboardCommandQueue()
         queue.submit("drive", 0.2, -0.4, "", 100, true)
         val held = queue.snapshot().single()
@@ -62,13 +82,17 @@ class DashboardCommandQueueTest {
         queue.cancel()
         assertTrue(queue.snapshot().isEmpty())
     }
-    @Test fun changingAnotherWidgetIntoSwitchDoesNotInventASwitchRequest() {
+
+    @Test
+    fun changingAnotherWidgetIntoSwitchDoesNotInventASwitchRequest() {
         val queue = DashboardCommandQueue()
         queue.submit("same_id", 1.0, 0.0, "", 0, false)
         queue.complete(queue.snapshot().single(), true)
         assertEquals("No request sent · remote state unknown", queue.switchDescription("same_id"))
     }
-    @Test fun deletedWidgetsDoNotKeepOldState() {
+
+    @Test
+    fun deletedWidgetsDoNotKeepOldState() {
         val queue = DashboardCommandQueue()
         queue.submit("old", 1.0, 0.0, "", 0, false, switchInput = true)
         queue.retain(setOf("new"))

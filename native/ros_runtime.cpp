@@ -741,6 +741,7 @@ Java_dev_ros2android_android_NativeRuntime_pollDashboard(JNIEnv * env, jobject)
 
     auto result =
       env->NewObjectArray(static_cast<jsize>(updates.size()), env->FindClass("[B"), nullptr);
+
     for (size_t i = 0; i < updates.size(); ++i) {
       auto bytes = env->NewByteArray(static_cast<jsize>(updates[i].size()));
       env->SetByteArrayRegion(
@@ -887,6 +888,7 @@ Java_dev_ros2android_android_NativeRuntime_topics(JNIEnv * env, jobject)
     finish(rcl_names_and_types_fini(&names));
     auto result = env->NewObjectArray(
       static_cast<jsize>(entries.size()), env->FindClass("java/lang/String"), nullptr);
+
     for (size_t i = 0; i < entries.size(); i++) {
       auto entry = env->NewStringUTF(entries[i].c_str());
       env->SetObjectArrayElement(result, static_cast<jsize>(i), entry);

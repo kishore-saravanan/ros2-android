@@ -10,12 +10,16 @@ data class ImuReading(val x: Float, val y: Float, val z: Float, val timestampNan
 class ImuMonitor(private val manager: SensorManager) : SensorEventListener {
     var active = false
         private set
+
     var accelerometer: ImuReading? = null
         private set
+
     var gyroscope: ImuReading? = null
         private set
+
     var samples = 0L
         private set
+
     var registeredSensors = 0
         private set
 
@@ -24,9 +28,11 @@ class ImuMonitor(private val manager: SensorManager) : SensorEventListener {
         accelerometer = null
         gyroscope = null
         samples = 0
-        registeredSensors = listOf(Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_GYROSCOPE).count { type ->
-            manager.getDefaultSensor(type)?.let { manager.registerListener(this, it, 20_000) } ?: false
-        }
+        registeredSensors =
+            listOf(Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_GYROSCOPE).count { type ->
+                manager.getDefaultSensor(type)?.let { manager.registerListener(this, it, 20_000) }
+                    ?: false
+            }
         active = registeredSensors > 0
     }
 
@@ -39,13 +45,14 @@ class ImuMonitor(private val manager: SensorManager) : SensorEventListener {
     override fun onSensorChanged(event: SensorEvent) {
         if (!active) return
         val reading = ImuReading(event.values[0], event.values[1], event.values[2], event.timestamp)
+
         when (event.sensor.type) {
             Sensor.TYPE_ACCELEROMETER -> accelerometer = reading
             Sensor.TYPE_GYROSCOPE -> gyroscope = reading
         }
+
         samples++
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
 }
-

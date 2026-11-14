@@ -15,26 +15,44 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ProjectBrowserUiTest {
     @get:Rule val activity = ActivityScenarioRule(MainActivity::class.java)
+
     private fun find(view: View, tag: String): View? {
         if (view.tag == tag) return view
-        if (view is ViewGroup) for (i in 0 until view.childCount) find(view.getChildAt(i), tag)?.let { return it }
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                find(view.getChildAt(i), tag)?.let {
+                    return it
+                }
+            }
+        }
+
         return null
     }
-    @Test fun deployedRunnerAppearsAndProjectTabSurvivesRecreation() {
+
+    @Test
+    fun deployedRunnerAppearsAndProjectTabSurvivesRecreation() {
         val arguments = InstrumentationRegistry.getArguments()
         val target = arguments.getString("expectedProjectPackage")
         assumeTrue("Pass an installed project package to verify discovery", target != null)
-        val runtime = arguments.getString("expectedProjectRuntime") ?: "workspace" // cpp, python or workspace
+        val runtime =
+            arguments.getString("expectedProjectRuntime") ?: "workspace" // cpp, python or workspace
         activity.scenario.onActivity { app ->
             val projects = InstalledProjects.list(app)
             val project = projects.single { it.packageName == target }
             assertEquals(runtime, project.runtime)
-            assertEquals("dev.ros2android.runner.MainActivity", project.openIntent().component?.className)
+            assertEquals(
+                "dev.ros2android.runner.MainActivity",
+                project.openIntent().component?.className,
+            )
             assertEquals(target, project.openIntent().component?.packageName)
             (find(app.window.decorView, "nav:Projects") as Button).performClick()
-            assertNotNull("Project controls absent", find(app.window.decorView, "toggle_project:${project.id}"))
+            assertNotNull(
+                "Project controls absent",
+                find(app.window.decorView, "toggle_project:${project.id}"),
+            )
             (find(app.window.decorView, "refresh_projects") as Button).performClick()
         }
+
         activity.scenario.recreate()
         activity.scenario.onActivity { app ->
             assertTrue(find(app.window.decorView, "nav:Projects")!!.isSelected)

@@ -5,14 +5,17 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ProjectRequestsTest {
-    @Test fun statusPollsDoNotPostponeTheDeadline() {
+    @Test
+    fun statusPollsDoNotPostponeTheDeadline() {
         val requests = ProjectRequests()
         requests.begin(Protocol.STATUS, 10000)!!
         assertNull(requests.begin(Protocol.STATUS, 13000))
         assertFalse(requests.expired(13999))
         assertTrue(requests.expired(14000))
     }
-    @Test fun operatorCommandSupersedesPollAndIgnoresItsLateReply() {
+
+    @Test
+    fun operatorCommandSupersedesPollAndIgnoresItsLateReply() {
         val requests = ProjectRequests()
         val poll = requests.begin(Protocol.STATUS, 0)!!
         val stop = requests.begin(Protocol.STOP, 10)!!
@@ -21,15 +24,21 @@ class ProjectRequestsTest {
         assertTrue(requests.accepts(stop, Protocol.STOP))
         assertNull(requests.begin(Protocol.STATUS, 20))
     }
-    @Test fun operatorCommandsAreNotQueuedOrRepeated() {
+
+    @Test
+    fun operatorCommandsAreNotQueuedOrRepeated() {
         val requests = ProjectRequests()
+
         for (command in listOf(Protocol.START, Protocol.STOP, Protocol.CONFIGURE)) {
             val ticket = requests.begin(command, 100)!!
+
             for (next in Protocol.commands) assertNull(requests.begin(next, 101))
             requests.finish(ticket)
         }
     }
-    @Test fun replyMustMatchEndpointAndCommand() {
+
+    @Test
+    fun replyMustMatchEndpointAndCommand() {
         val requests = ProjectRequests()
         val first = requests.begin(Protocol.STATUS, 0)!!
         assertFalse(requests.accepts(first, Protocol.START))
@@ -40,7 +49,9 @@ class ProjectRequestsTest {
         assertFalse(requests.accepts(first, Protocol.STATUS))
         assertTrue(requests.accepts(next, Protocol.STATUS))
     }
-    @Test fun reconnectAndCloseInvalidateAllOldRequests() {
+
+    @Test
+    fun reconnectAndCloseInvalidateAllOldRequests() {
         val requests = ProjectRequests()
         val old = requests.begin(Protocol.START, 100)!!
         requests.reset()
@@ -52,7 +63,9 @@ class ProjectRequestsTest {
         requests.reset()
         assertFalse(requests.accepts(current, Protocol.START))
     }
-    @Test fun timeoutUsesElapsedTimeAndCommandGetsItsOwnDeadline() {
+
+    @Test
+    fun timeoutUsesElapsedTimeAndCommandGetsItsOwnDeadline() {
         val requests = ProjectRequests()
         requests.begin(Protocol.STATUS, 5000)
         requests.begin(Protocol.CONFIGURE, 8900)

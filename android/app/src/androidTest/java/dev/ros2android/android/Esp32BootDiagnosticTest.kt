@@ -16,12 +16,20 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class Esp32BootDiagnosticTest {
     @get:Rule val activity = ActivityScenarioRule(MainActivity::class.java)
-    @Test fun captureReferenceMcuBoot() {
+
+    @Test
+    fun captureReferenceMcuBoot() {
         assumeTrue(InstrumentationRegistry.getArguments().getString("usbBootDiagnostic") == "true")
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        activity.scenario.onActivity { it.stopService(Intent(it, MicroRosAgentService::class.java)) }
+        activity.scenario.onActivity {
+            it.stopService(Intent(it, MicroRosAgentService::class.java))
+        }
+
         val end = SystemClock.elapsedRealtime() + 10000
-        while (MicroRosAgentService.serviceActive && SystemClock.elapsedRealtime() < end) SystemClock.sleep(100)
+        while (MicroRosAgentService.serviceActive && SystemClock.elapsedRealtime() < end) {
+            SystemClock.sleep(100)
+        }
+
         assertFalse(MicroRosAgentService.serviceActive)
         val manager = context.getSystemService(UsbManager::class.java)
         val device = manager.deviceList.values.single(UsbSerialBridge::supported)
@@ -31,11 +39,13 @@ class Esp32BootDiagnosticTest {
             serial.reboot()
             val deadline = SystemClock.elapsedRealtime() + 8000
             val bytes = ByteArray(4096)
+
             while (SystemClock.elapsedRealtime() < deadline) {
                 val size = serial.read(bytes)
                 if (size > 0) data.write(bytes, 0, size)
             }
         }
+
         java.io.File(context.cacheDir, "esp32-reference-boot.bin").writeBytes(data.toByteArray())
     }
 }
