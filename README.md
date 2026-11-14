@@ -37,7 +37,7 @@ Everything in the loop runs on the robot. [Build this example →](docs/BALL-FOL
 | **Publish phone sensors** | IMU, accelerometer, gyroscope, magnetometer, barometer, battery and cameras (with resolution, FPS and JPEG controls), each on an editable topic and rate. |
 | **Run your own nodes on the phone** | Cross-build supported C++ and Python ROS 2 workspaces on Linux, deploy them, then start and stop them from the app's Projects tab. |
 | **Develop on a mounted robot** | Deploy over wireless ADB while the phone stays on the robot. Nodes run on the phone, not on your PC. |
-| **Connect microcontrollers** | A micro-ROS Agent on the phone serves an ESP32 over USB OTG or Wi-Fi (UDP). You can even flash a USB-attached ESP32 *through* the phone. |
+| **Connect microcontrollers** | A micro-ROS Agent on the phone serves an ESP32 over USB OTG or Wi-Fi (UDP). Developers can even flash a USB-attached ESP32 *through* the phone. |
 | **Control and monitor** | A Dashboard with buttons, switches, sliders, a joystick, live values and camera images. |
 | **Run without a PC** | Once deployed, the phone, its nodes and its microcontroller keep working with Wi-Fi off. |
 
@@ -49,6 +49,36 @@ Everything in the loop runs on the robot. [Build this example →](docs/BALL-FOL
     <td align="center"><img src="docs/assets/screenshots/projects.png" width="200" alt="Projects: deployed workspaces with Start and Stop"><br><b>Projects</b></td>
   </tr>
 </table>
+
+## Develop while the phone stays on the robot
+
+No unmounting, no cables to the robot, no compiling on the phone. Your PC builds;
+the phone runs.
+
+1. **Connect once over wireless debugging** (Android 11+: Developer options →
+   Wireless debugging → Pair device with pairing code):
+
+   ```bash
+   adb pair PHONE_IP:PAIRING_PORT     # enter the code shown on the phone
+   adb connect PHONE_IP:PORT
+   ```
+
+2. **Build on your PC and deploy over Wi-Fi** (with the [native SDK](docs/CLEAN-MACHINE-SETUP.md#3-prepare-the-project-sdk) installed):
+
+   ```bash
+   ros2-android workspace --workspace ~/my_ws build --controller-apk ros2-android-1.0.0-beta.1.apk
+   ros2-android workspace --workspace ~/my_ws --serial PHONE_IP:PORT deploy
+   ```
+
+3. **Start it** from the app's Projects tab (approve the new project once), and watch
+   its topics from your PC. Edit, rebuild and redeploy the same way.
+
+The nodes run on the phone, so the robot keeps going when the PC disconnects. The
+ESP32 on the robot stays attached to the phone too. A development build of the app
+can flash it **through the phone** over the same wireless link
+([guide](docs/ESP32-PROGRAMMING.md)); the release app leaves that control out for
+security. Flashing an ESP32 over its own Wi-Fi (OTA) is not supported.
+[Workspace guide →](docs/COLCON-WORKSPACES.md)
 
 ## Install
 
