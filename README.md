@@ -26,8 +26,7 @@ A **remote Android phone** starts/stops tracking and displays annotated images.
 The **onboard Android phone** computes motion commands and hosts the USB micro-ROS
 Agent. The **ESP32** executes motor commands.
 
-[Try the ball-tracking example](docs/BALL-FOLLOWER.md) ·
-[Download video](docs/assets/demo/ball-follower.mp4?raw=true)
+[Try the ball-tracking example](docs/BALL-FOLLOWER.md)
 
 **Development preview · ROS 2 Jazzy · Android ARM64 · Apache-2.0.**
 The demo is one application of the platform. See [supported capabilities and
