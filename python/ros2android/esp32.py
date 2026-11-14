@@ -59,6 +59,17 @@ def relay(listener, forwarded_port, token, errors, stopped):
             connection.close()
 
 
+def esptool_command(tool, port, operation, arguments, no_stub, legacy):
+    """esptool invocation for the phone bridge. Writes are always compressed: the ESP32 ROM loader
+    supports it, but esptool only compresses by default with its stub, and uncompressed writes stall
+    on the 115200-baud phone bridge."""
+    reset = 'no_reset' if legacy else 'no-reset'
+    name = operation.replace('-', '_') if legacy else operation
+    compress = ['--compress'] if operation == 'write-flash' else []
+    return [*tool, '--chip', 'esp32', '--port', port, '--before', reset, '--after', reset,
+            *(['--no-stub'] if no_stub else []), name, *compress, *arguments]
+
+
 def esptool_version(banner):
     match = re.search(r'(?<![\w.])v?([45])\.\d+(?:\.\d+)?(?![\w.])', banner)
     if not match:
@@ -108,7 +119,7 @@ def main(arguments=None):
         output = device('shell', shlex.join(['am', 'broadcast', '-n', RECEIVER, '--es', 'command', command, *extras]))
         match = re.search(r'Broadcast completed: result=(-?\d+)(?:, data="(.*)")?', output)
         if not match or match[1] != '0':
-            raise RuntimeError('Programming control rejected; install the current debug APK and ensure no programming session is active')
+            raise RuntimeError('Programming control rejected; install ROS2 Android 1.0.0 or newer and ensure no programming session is active')
         return json.loads(match[2])
 
     device('get-state')
@@ -157,10 +168,8 @@ def main(arguments=None):
         listener.bind(('127.0.0.1', 0)); listener.listen(1)
         thread = threading.Thread(target=relay, args=(listener, forwarded, token, errors, stopped), daemon=True)
         thread.start()
-        reset = 'no_reset' if legacy else 'no-reset'
-        operation = args.operation.replace('-', '_') if legacy else args.operation
-        command = [*tool, '--chip', 'esp32', '--port', f'socket://127.0.0.1:{listener.getsockname()[1]}',
-                   '--before', reset, '--after', reset, *(['--no-stub'] if args.no_stub else []), operation, *args.arguments]
+        command = esptool_command(tool, f'socket://127.0.0.1:{listener.getsockname()[1]}', args.operation,
+                                  args.arguments, args.no_stub, legacy)
         # No --baud: raw sockets cannot negotiate serial baud. Phone sets 115200.
         result = subprocess.run(command, timeout=14 * 60)
         if result.returncode:

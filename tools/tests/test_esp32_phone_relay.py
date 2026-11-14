@@ -95,6 +95,15 @@ class StatusTest(unittest.TestCase):
         self.assertIn('command status', calls[1][-1])
         self.assertNotIn('am start', calls[1][-1])
 
+    def test_writes_are_compressed_for_the_phone_bridge(self):
+        write = tool.esptool_command(['esptool'], 'socket://x', 'write-flash', ['0x10000', 'a.bin'], True, False)
+        self.assertEqual(write[-4:], ['write-flash', '--compress', '0x10000', 'a.bin'])
+        self.assertIn('--no-stub', write)
+        legacy = tool.esptool_command(['esptool'], 'socket://x', 'write-flash', ['0x10000', 'a.bin'], True, True)
+        self.assertEqual(legacy[-4:], ['write_flash', '--compress', '0x10000', 'a.bin'])
+        read = tool.esptool_command(['esptool'], 'socket://x', 'read-flash', ['0x0', '0x10', 'out.bin'], True, False)
+        self.assertNotIn('--compress', read)
+
     def test_status_rejects_arguments_before_device_access(self):
         with mock.patch('sys.argv', ['esp32-via-phone', 'status', 'extra']), \
                 mock.patch.object(tool.subprocess, 'run') as device, \

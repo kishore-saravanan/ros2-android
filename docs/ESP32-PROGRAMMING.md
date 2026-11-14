@@ -146,6 +146,20 @@ workflow on that board; default4.x phone-tunnel and sustained-transfer qualifica
 remain pending until physically repeated. It is not proof of a universal5.x bug.
 
 
+## Release-app result (2026-11-14)
+
+With the owner-signed ROS2 Android 1.0.0 release APK on the reference Realme (Android 12),
+the ESP32 powered only by the phone and the PC on wireless ADB: `flash-id` identified an
+ESP32-D0WD-V3 with 4 MB flash; a 393,216-byte application backup took 378 s; `write-flash`
+of that backup took 29 s (230,031 bytes compressed) with esptool's hash check; an
+independent `verify-flash` of the whole region matched; and after a normal boot the
+board re-established its micro-ROS session with the phone's USB Agent.
+
+Two earlier uncompressed writes of the same image stalled at 48% and 65% ("The chip
+stopped responding"), leaving the application region partly written until the compressed
+write restored it. The PC tool therefore always compresses writes now (the ESP32 ROM
+loader supports it). If a write fails, run it again: the boot ROM cannot be overwritten.
+
 ## Verified phone ROM programming path (2026-10-30)
 
 The phone relay now defaults to the ROM loader (`--no-stub`); `--stub` explicitly
