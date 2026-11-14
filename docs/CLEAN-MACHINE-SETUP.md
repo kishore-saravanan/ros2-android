@@ -136,13 +136,14 @@ unsupported types before starting a build:
 ```bash
 ros2-android workspace --workspace /absolute/path/my_ws inspect --without-shell
 ros2-android workspace --workspace /absolute/path/my_ws host-build
-ros2-android workspace --workspace /absolute/path/my_ws build --without-shell \
-  --controller-apk /absolute/path/to/the-main-app.apk
+ros2-android workspace --workspace /absolute/path/my_ws build --without-shell
 ```
 
-The `--controller-apk` file must be the main APK installed on the phone; only its
-public certificate is used. Omit it for the existing same-signature development
-path. Then deploy, start, observe and stop it. Observation needs the PC on the
+With the Debian package, `build` pins the release app bundled in it as the runner's
+controller. If the phone runs a different APK, or the client came from a wheel, add
+`--controller-apk /absolute/path/to/the-main-app.apk` (only its public certificate is
+used); see [your own workspace](COLCON-WORKSPACES.md#your-own-workspace). Then deploy,
+start, observe and stop it. Observation needs the PC on the
 phone's network (USB tethering or the same Wi-Fi) and the same ROS domain:
 
 ```bash

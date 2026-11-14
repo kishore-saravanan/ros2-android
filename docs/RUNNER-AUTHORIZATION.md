@@ -12,8 +12,9 @@ service is disabled. Existing installations and local debug workflows still work
 
 ## Independently signed runner
 
-Keep the exact main APK you installed on the phone. Use it as a public identity
-input when building your workspace:
+The runner pins the public certificate of the main app that may control it. With
+the Debian package, `build` uses the release app bundled in the package. Otherwise
+pass the exact main APK you installed on the phone:
 
 ```bash
 ros2-android workspace --workspace /absolute/path/to/my_ws build \

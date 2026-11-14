@@ -67,19 +67,26 @@ Recents behavior and Force stop still need separate qualification.
 
 ## First workspace
 
-From the repository root on your Linux PC, with DEVELOPMENT.md prerequisites:
+With the PC tool from the Debian package and `ros2-android setup workspace-tools`
+done (the [starter guide](STARTER-GUIDE.md) walks through both), build and install
+the example workspace from a clone of this repository:
 
 ```bash
-./tools/ros2android-workspace --workspace examples/android_test_ws build
-./tools/ros2android-workspace --workspace examples/android_test_ws deploy
+ros2-android workspace --workspace "$PWD/examples/android_test_ws" build
+ros2-android workspace --workspace "$PWD/examples/android_test_ws" deploy
 ```
 
 1. Open ROS2 Android → Projects; tap Refresh if needed.
-2. Open Connection settings, match the PC domain and save current IPv4 addresses
+2. Expand the project's Details, tap Authorize runner and confirm.
+3. Open Connection settings, match the PC domain and save current IPv4 addresses
    if explicit discovery/interface selection is needed. Default domain is 0.
-3. Tap Start project. Confirm Running and the two node names.
-4. Monitor real ROS traffic on the PC using COLCON-WORKSPACES.md.
-5. Expand Logs to inspect runner output. Stop project ends the supervised group.
+4. Tap Start project. Confirm Running and the two node names.
+5. Monitor real ROS traffic on the PC using COLCON-WORKSPACES.md.
+6. Expand Logs to inspect runner output. Stop project ends the supervised group.
+
+From a source checkout with a main app you built yourself, use
+`./tools/ros2android-workspace` instead; its runners share your debug signature
+and need no authorization step.
 
 ## Compatibility and authentication
 
@@ -90,8 +97,8 @@ bound Messenger protocol. Existing runners use the signature permission
 `dev.ros2android.android.MANAGE_PROJECTS`. Opted-in independent runners use a
 separate certificate-pinned entry and explicit per-runner approval in Details.
 Both verify each sender UID/package; the main app checks approved identity on
-replies. See [runner authorization](RUNNER-AUTHORIZATION.md) for building with
-`--controller-apk`, approval, revocation and preview qualification limits.
+replies. See [runner authorization](RUNNER-AUTHORIZATION.md) for the controller pin,
+approval and revocation.
 Approval trusts workspace code; it does not sandbox untrusted code.
 
 Commands are status, start packaged launch, stop supervised group and save a

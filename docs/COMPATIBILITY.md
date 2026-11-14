@@ -48,7 +48,9 @@ standalone Python examples use their separate backend.
 
 Within 1.x releases these stay compatible; a change that breaks them needs 2.0.0:
 
-- the `ros2-android` commands and options documented in this repository;
+- the `ros2-android` commands `apk`, `compatibility`, `device`, `doctor`, `esp32`,
+  `project`, `setup`, `shell` and `workspace`, with the options documented in this
+  repository's guides;
 - the project manifest (schema 1) and the app-to-runner management protocol (version 1),
   so runners built with any 1.x client keep working with any 1.x app;
 - the native SDK archive format (format 1) and `setup sdk` installation;

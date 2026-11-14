@@ -44,8 +44,8 @@ publishing. The detail screen shows:
 Tap **Publish**. On Android 13 and newer, the first Publish asks to allow notifications:
 allow them so the running-session notification and its **Stop** action stay visible
 (publishing works either way). Expected: the button becomes Stop and the detail screen
-shows a value such as 85% battery; its local sent-message count is available under Advanced. The phone can
-repeat the same percentage for a long time while its charge stays constant.
+shows a value such as `85% · Publishing`. The phone can repeat the same percentage for
+a long time while its charge stays constant.
 
 If you need another topic or rate, edit the topic and rate on the battery detail screen before Publish.
 The battery rate supports 0.2–1 Hz. A failure to read the hardware percentage
@@ -95,13 +95,17 @@ profiles; see [PROJECTS.md](PROJECTS.md).
 
 Check these in order:
 
-1. The battery card says publishing and its sent count increases. If stopped,
-   tap Publish first. If it shows an error, follow the recovery message.
+1. The battery card says `Publishing`. If stopped, tap Publish first. If it shows
+   an error, follow the recovery message.
 2. Both PC and phone use the same ROS_DOMAIN_ID and exact saved topic name.
 3. Tethering/Wi-Fi is still active and the saved IPv4 addresses are current.
 4. Try `ros2 topic list -t --no-daemon` to avoid a stale CLI discovery cache.
-5. Check network isolation/firewall configuration. Advanced multi-interface
-   checks and scoped middleware helpers are in [V0.1.md](V0.1.md).
+5. Check network isolation and firewall configuration: guest and public Wi-Fi
+   networks often block traffic between devices; USB tethering avoids that.
+6. Use the phone's middleware on the PC: install `ros-jazzy-rmw-cyclonedds-cpp`,
+   then `export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp` before `ros2` commands.
+   Plain topics usually work across middleware; services and parameters are more
+   reliable with the same one. `ros2-android ... ros --` commands already use it.
 
 Do not start by disabling the PC firewall, changing phone security settings or
 installing unrelated phone apps. If it still fails, report app/build version,

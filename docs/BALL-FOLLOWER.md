@@ -95,8 +95,8 @@ ros2 topic echo /ball/metrics --qos-reliability best_effort
 ros2 topic echo /ball_demo/cmd_vel --qos-reliability best_effort
 ```
 
-Stop each echo with Ctrl+C. Match the PC's ROS domain and use the project-local
-Cyclone wrapper when needed; see [connection and troubleshooting](TROUBLESHOOTING.md).
+Stop each echo with Ctrl+C. Match the PC's ROS domain; if nothing arrives, see
+[when nothing arrives](TROUBLESHOOTING.md#when-nothing-arrives).
 
 Targets include source `stamp_ns`, pixel centre/radius, `error_x` in [-1,1],
 ball diameter as a fraction of image width, processing time and frame age.

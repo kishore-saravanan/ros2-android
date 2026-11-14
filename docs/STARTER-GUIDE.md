@@ -15,11 +15,13 @@ ends with what you should see. Stop at any part: parts 1–3 need no build tools
 
 ## What you need
 
-- An **Android phone**, ARM64, Android 8.0 or newer, with **Developer options** and
-  **USB debugging** turned on (Settings → About phone → tap *Build number* 7 times,
-  then Developer options → USB debugging), and a USB data cable.
+- An **Android phone**, ARM64, Android 8.0 or newer (tested on Android 12 and 17;
+  parts 6–7 need Android 11 or newer), with **Developer options** and **USB debugging**
+  turned on (Settings → About phone → tap *Build number* 7 times, then Developer
+  options → USB debugging), and a USB data cable.
 - An **Ubuntu 24.04 PC** with **ROS 2 Jazzy** ([install guide](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)),
   on the **same Wi-Fi network** as the phone. Guest networks that isolate devices won't work.
+  Parts 4–7 also need an internet connection and about 10 GB of free disk space.
 - For part 7: an ESP32 dev board with a **CP2102** USB chip and a **USB OTG adapter**
   for the phone. Keep any motor power disconnected.
 
@@ -77,6 +79,7 @@ ends with what you should see. Stop at any part: parts 1–3 need no build tools
    ```
 
 3. Tap the button in the app. **You should see** `data: true` on the PC.
+4. Tap **Stop dashboard** when done.
 
 More widgets (switch, slider, joystick, live values, camera images): [Dashboard](CONTROLS.md).
 
@@ -106,7 +109,7 @@ The repository's example workspace has a C++ *talker* and a *processor* node.
    so your workspace can be managed by it:
 
    ```bash
-   git clone https://github.com/kishore-saravanan/ros2-android.git ~/ros2-android
+   git clone --depth 1 --branch v1.0.0 https://github.com/kishore-saravanan/ros2-android.git ~/ros2-android
    WS=~/ros2-android/examples/android_test_ws
    ros2-android workspace --workspace $WS inspect
    ros2-android workspace --workspace $WS build --controller-apk ~/Downloads/ros2-android-1.0.0.apk
@@ -127,8 +130,9 @@ The repository's example workspace has a C++ *talker* and a *processor* node.
    **You should see** a new result every 200 ms, computed on the phone.
 4. Tap **Stop project** when done.
 
-Your own workspaces work the same way; see [Workspaces](COLCON-WORKSPACES.md) for
-supported packages and launch files.
+Your own workspaces work the same way when their packages are C++ (`ament_cmake`) and
+they install one launch file (or you pick one with `build --launch FILE`); see
+[Workspaces](COLCON-WORKSPACES.md) for the details.
 
 ## 6. Work wirelessly while the phone is on the robot
 
@@ -143,12 +147,14 @@ supported packages and launch files.
 2. Unplug the cable. Deploy and manage exactly as before, naming the phone:
 
    ```bash
+   WS=~/ros2-android/examples/android_test_ws
    ros2-android workspace --workspace $WS --serial PHONE_IP:PORT deploy
    ```
 
 **You should see** the deploy succeed with no cable. The nodes keep running on the phone
 when the PC disconnects. For long unattended runs keep ROS2 Android open with the screen
-on (it keeps the screen awake), and allow it background activity in Android's app settings.
+on (it keeps the screen awake), and in Android's app settings allow background activity
+for ROS2 Android and for each project app.
 
 ## 7. ESP32: flash it through the phone and talk to it
 
@@ -165,26 +171,25 @@ on (it keeps the screen awake), and allow it background activity in Android's ap
 2. **Connect the board to the phone** with the OTG adapter (motor power off). Keep the PC
    on wireless debugging (part 6).
 3. **Talk to it:** in the app, **Settings → Microcontrollers → Start USB agent** and allow
-   USB access. Then **Sensors → Battery percentage → Publish**, and in **Dashboard → Add
-   widget** choose *Subscribe*, type `std_msgs/msg/String`, topic `/phone/display/text`,
-   **Save** and **Start dashboard**. **You should see** `ESP32 received phone battery: …`
+   USB access. Then **Sensors → Battery percentage → Publish**. In **Dashboard**, tap
+   **Stop dashboard** if it is running, then **Add widget**: choose *Subscribe*, type
+   `std_msgs/msg/String`, topic `/phone/display/text`, **Save** and **Start dashboard**. **You should see** `ESP32 received phone battery: …`
    in the widget: phone → ESP32 → phone over USB.
-4. **Update its firmware through the phone**, without unplugging anything. Create the
-   esptool environment once, then read the chip and write the firmware you built:
+4. **Update its firmware through the phone**, without unplugging anything. Keep the
+   phone unlocked with ROS2 Android open, then read the chip and write the firmware you
+   built (step 1 also installed esptool):
 
    ```bash
-   python3 -m venv ~/.local/share/ros2-android-esptool
-   ~/.local/share/ros2-android-esptool/bin/pip install 'esptool>=4,<6' pyserial
-   E="ros2-android esp32 --python $HOME/.local/share/ros2-android-esptool/bin/python --serial PHONE_IP:PORT"
+   E="ros2-android esp32 --serial PHONE_IP:PORT"
    $E flash-id
    $E write-flash 0x10000 ~/.cache/ros2-android-esp32/firmware-serial-project/.pio/build/esp32dev/firmware.bin
    $E verify-flash 0x10000 ~/.cache/ros2-android-esp32/firmware-serial-project/.pio/build/esp32dev/firmware.bin
    ```
 
    Tap **Allow** if the phone asks for USB access. **You should see** the chip identified,
-   *Hash of data verified* and *verify OK*. The Agent stops while flashing; start it again
-   from Settings → Microcontrollers. If a write fails, run it again: the ESP32's boot ROM
-   can't be overwritten.
+   *Hash of data verified* and *verify OK*. The Agent pauses while flashing and starts
+   again by itself; if it doesn't, start it from Settings → Microcontrollers. If a write
+   fails, run it again: the ESP32's boot ROM can't be overwritten.
 
 More: [ESP32 over USB](ESP32-USB.md) · [over Wi-Fi](ESP32-WIFI.md) ·
 [flashing details](ESP32-PROGRAMMING.md) · [running without a PC](STANDALONE-OPERATION.md).

@@ -17,6 +17,12 @@ source/toolchains. The setup commands use a private cache under
 ```bash
 python3 -m venv "$HOME/.cache/ros2-android-esp32/toolchain-venv"
 "$HOME/.cache/ros2-android-esp32/toolchain-venv/bin/pip" install platformio esptool patchelf
+```
+
+The release APK already includes the Agent. From a source checkout, build it into
+your own app once:
+
+```bash
 ./setup/build-micro-ros-agent.sh
 ./setup/build.sh
 ./setup/run-device.sh
@@ -72,7 +78,8 @@ The ESP32 publishes /esp32/heartbeat (std_msgs/msg/Int32) each second. It subscr
 to /phone/battery_percent (std_msgs/msg/Float64), then publishes a reliable String
 acknowledgement on /phone/display/text. Battery/heartbeat use best-effort QoS.
 The board restarts to rejoin Wi-Fi/recreate entities after a lost Agent session.
-No GPIO actuator or motor output is configured.
+The default build configures no GPIO actuator or motor output; motor control is
+only in the opt-in [robot build](ESP32-ROBOT.md) (`ROS2_ANDROID_ESP32_ROBOT=1`).
 
 Monitor from a ROS PC in the same domain:
 

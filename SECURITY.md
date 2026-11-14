@@ -50,10 +50,19 @@ official app with it.
 - DDS Security (SROS 2) is disabled in the native build, so ROS traffic is neither
   authenticated nor encrypted. While the Wi-Fi micro-ROS Agent runs, any device on
   that network can reach it on UDP 8888 and create ROS entities; prefer USB for robots.
+- Every app on the phone is a potential ROS peer: DDS also runs over the phone's
+  loopback interface, so any installed app can read published sensor topics and
+  publish commands without a permission. Use a dedicated robot phone and install
+  only apps you trust on it.
 - The ESP32 programming receiver and debug-only receivers require Android's `DUMP`
-  permission, which only the system and an authorized ADB shell hold. Release builds
-  contain only the programming receiver; debug receivers, probes and preview screens
-  are absent. On Android 13+, allow notifications so each session's Stop action stays visible.
+  permission. Ordinary apps cannot hold it; the system, privileged system apps and
+  the ADB shell do, and someone with ADB access can grant it to another app
+  (`pm grant`, or tools such as Shizuku). Release builds of the main app contain only
+  the programming receiver; debug receivers, probes and preview screens are absent.
+  On Android 13+, allow notifications so each session's Stop action stays visible.
+- Project runner APKs built by `ros2-android` are debuggable debug builds signed with
+  your key, with a `DUMP`-protected debug receiver: anyone with ADB access to the
+  phone can inspect or control them. Treat ADB access to a robot phone as full control.
 - A Dashboard request/local write is not confirmed robot state. Actuator-local
   expiry and physical stop mechanisms remain application/hardware responsibilities.
 

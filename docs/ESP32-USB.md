@@ -7,7 +7,8 @@ Other serial adapters and native USB ESP32 variants are not supported by this dr
 
 ## Prepare on the PC
 
-Build the optional Agent once if it is not already bundled:
+The release APK already includes the Agent. From a source checkout, build the Agent
+into your own app once:
 
 ```bash
 ./setup/build-micro-ros-agent.sh

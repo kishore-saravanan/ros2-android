@@ -1,6 +1,7 @@
 ---
 name: Bug report
 about: A reproducible platform issue
+labels: bug
 ---
 
 **What happened, and what did you expect?**

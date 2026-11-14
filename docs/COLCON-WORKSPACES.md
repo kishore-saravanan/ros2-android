@@ -11,25 +11,30 @@ Mixed ament_python workspaces, arbitrary dependencies and full ROS launch
 semantics still require integration. Standalone Python rclpy feasibility is
 already verified separately in [PYTHON-PROJECTS.md](PYTHON-PROJECTS.md).
 
-## Your own workspace and controller APK
+## Your own workspace
 
 The installed client accepts an absolute external workspace path; source does
-not need to live in this repository. With the supported SDK prepared:
+not need to live in this repository. After `ros2-android setup workspace-tools`:
 
 ```bash
 ros2-android workspace --workspace /absolute/path/to/my_ws inspect
-ros2-android workspace --workspace /absolute/path/to/my_ws build \
-  --controller-apk /absolute/path/to/ros2-android.apk
+ros2-android workspace --workspace /absolute/path/to/my_ws build
 ros2-android workspace --workspace /absolute/path/to/my_ws deploy
 ```
 
-The APK is the main app installed on the phone; only its public certificate is
-used. In Projects → Details, authorize the runner before starting it. See
-[runner authorization](RUNNER-AUTHORIZATION.md) for the trust boundary and
-remaining preview gates. Omit the flag for the existing same-signature workflow.
-The external smoke test used `build --without-shell`; it reuses prepared SDK
-artifacts and is not fresh-machine qualification. Shell-enabled builds retain
-their additional Python SDK prerequisites.
+A runner only accepts commands from the ROS2 Android app it was built for. With
+the Debian package, `build` uses the release app bundled in it, which is the APK
+from the same release. Choose another controller when needed:
+
+- `--controller-apk /absolute/path/to/app.apk`: the phone runs a different APK,
+  or the PC tool was installed from a wheel (no bundled app). Only the APK's
+  public certificate is used.
+- `--same-signature`: you build and sign the main app yourself, with the same
+  key as your runners.
+
+In Projects → Details, authorize the runner before starting it. See
+[runner authorization](RUNNER-AUTHORIZATION.md) for the trust boundary.
+`--without-shell` builds a smaller C++-only runner without the on-phone ROS CLI.
 
 ## Inspect dependencies before building
 
@@ -280,8 +285,8 @@ workflow and the specified message/computation/parameter behavior. It does not
 prove identical scheduling, latency, every ROS API or every package.
 
 Current limits include ament_cmake/native executables, supported static launch
-features, the existing Android SDK's dependency closure, ARM64/API 26+ with only
-one physical Android 12 device verified. Non-native installed scripts and
+features, the existing Android SDK's dependency closure, and ARM64/API 26+; the
+phones verified so far are listed in [Compatibility](COMPATIBILITY.md). Non-native installed scripts and
 unsupported package types fail explicitly. rosdep/apt dependencies cannot simply
 be installed into Android; they need Android builds or replacements. Parameter
 files, dynamic launch events, arbitrary plugins, package-dependent data-path
@@ -315,8 +320,9 @@ phone; the runner checks an explicit local address against its current interface
   an unbuilt workspace.
 - **Cache ID belongs to another workspace:** choose a different `--id`; the client
   preserves the existing cache rather than overwriting its owner.
-- **Standard CLI needs the Python SDK:** install the release SDK (`ros2-android setup sdk`) or prepare it with `ros2-android setup python`,
-  or select `build --without-shell` when only native C++ processes are needed.
+- **Standard CLI needs the Python SDK:** run `ros2-android setup workspace-tools`,
+  which installs the release SDK including its Python parts, or select
+  `build --without-shell` when only native C++ processes are needed.
 - **Unknown arguments:** correct the option before retrying. Build argument errors
   are rejected before workspace cache creation or build-tool execution.
 

@@ -12,6 +12,21 @@ within 1.x ([compatibility](docs/COMPATIBILITY.md#stability-promise-for-1x)). Te
 devices and limits are in [Status](docs/STATUS.md). The entries below describe the work
 in this release, newest first.
 
+- Workspace builds pin the release app bundled in the `.deb` as the runner's controller
+  by default; `--controller-apk` and `--same-signature` choose another. `adb` comes from
+  the Android SDK when it is not on PATH. Native SDK installs check the archive manifest
+  before writing and require Python's safe tar extraction; release assembly checks that
+  the client, `.deb` and SDK belong together, and the client pins the SDK's build inputs.
+- The app no longer crashes when Android refuses to start a service from the background:
+  the ESP32 programming receiver and the Agent restart after flashing report what to do.
+  The Agent service always enters the foreground before stopping early, Agent buttons
+  wait while an ESP32 flash runs, and project settings stay open with the reason when
+  the runner is disconnected.
+- Runners: a stop that arrives just after start no longer hangs the C++ runner, and a
+  stop that still hangs ends the runner process after 15 s. The workspace runner stops
+  every child after one shared grace period. Runner settings are validated before saving.
+- The code follows one standard format (ruff, clang-format, ktfmt, shfmt), applied by
+  `setup/format.sh`; see [contributing](CONTRIBUTING.md#code-style).
 - `ros2-android setup workspace-tools` prepares workspace builds in one command after the
   `.deb`: Google's Android command-line tools (pinned 22.0, checksum-verified) and SDK/NDK
   packages with the user's own licence acceptance, the release's native SDK (download
@@ -19,8 +34,8 @@ in this release, newest first.
   The `.deb` now recommends the Ubuntu build packages it needs.
 - ESP32 writes through the phone are always compressed. Uncompressed writes stalled on the
   115200-baud phone bridge; compressed, a 384 KB application wrote in 29 s and verified.
-- The release app can program a USB-attached ESP32 through the phone. The control
-  stays limited to the system and an authorized ADB shell; development-only test
+- The release app can program a USB-attached ESP32 through the phone. The control needs
+  Android's `DUMP` permission, which ordinary apps cannot hold; development-only test
   commands remain in debug builds.
 
 - Save endurance progress and outcomes atomically inside the app so disconnected

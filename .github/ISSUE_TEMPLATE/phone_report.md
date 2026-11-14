@@ -19,7 +19,7 @@ App version (Settings → About in the app) and how you installed it (APK, `.deb
 
 **What worked and what didn't**
 Include anything Android paused or stopped, and which battery/background settings you
-changed. If you ran the [qualification batch](../../docs/PHONE-QUALIFICATION.md), attach
+changed. If you ran the [qualification batch](https://github.com/kishore-saravanan/ros2-android/blob/develop/docs/PHONE-QUALIFICATION.md), attach
 its `summary.json` only.
 
 Please leave out personal data: no serial numbers, IP addresses, photos or raw phone logs.

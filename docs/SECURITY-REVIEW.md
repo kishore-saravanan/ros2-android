@@ -30,14 +30,18 @@ again before changing repository visibility or creating release tags.
 | Component | Exposure | Control |
 | --- | --- | --- |
 | Main `MainActivity` | Exported launcher | Starts nothing automatically |
-| Session, Agent and programming services | Not exported | Started only by the app's own UI |
+| Session, Agent and programming services | Not exported | Started by the app's own UI; the Agent and programming services also by the `DUMP`-protected programming receiver |
 | Runner `ProjectControlService` | Exported | `signature` permission `MANAGE_PROJECTS`; per-request UID/package checks |
 | Runner `PairedProjectControlService` | Exported only in opted-in builds | Pinned controller certificate and local approval per request |
 | Runner `MainActivity` | Exported without launcher entry | Opening it never starts a project |
-| ESP32 `ProgrammingControlReceiver` | Exported (release builds from 1.0.0) | `DUMP` permission (system and authorized ADB shell); starts a non-exported service that accepts one loopback connection authenticated by a random per-session token |
+| ESP32 `ProgrammingControlReceiver` | Exported (release builds from 1.0.0) | `DUMP` permission (system, privileged apps, the ADB shell, or an app granted it over ADB); controls USB programming and the USB Agent; starts a non-exported service that accepts one loopback connection authenticated by a random per-session token |
 | Debug receivers, probes and preview Activities | Debug builds only | `DUMP` permission (ADB shell); absent from the release manifest |
+| Runner `DebugControlReceiver` | Exported in runner APKs (debug builds) | `DUMP` permission; runner APKs built by `ros2-android` are debuggable |
 
-Backups are disabled. There is no WebView, file provider or HTTP client. PendingIntents
+Cloud backup is disabled (`allowBackup="false"`). On Android 12 and newer that setting
+does not stop device-to-device transfer, which can copy the app's settings to a new
+phone; excluding them with `dataExtractionRules` is planned for 1.0.1. There is no
+WebView, file provider or HTTP client. PendingIntents
 are immutable except Android's USB permission request, which is mutable and explicitly
 targeted at the app's own package. Runtime receivers are registered not-exported on
 Android 13+.

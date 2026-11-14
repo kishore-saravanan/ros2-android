@@ -18,9 +18,11 @@ host/data roles. It does not support native USB/JTAG or other serial adapters.
 
 No LAN flashing listener is exposed. Authorized ADB forwards a phone loopback-only
 port, and a random per-session token authenticates the UART data connection.
-The programming control receiver requires Android's DUMP permission, held only by
-the system and an authorized ADB shell; other apps cannot invoke it. Release APKs
-include it from 1.0.0; development-only test commands stay out of release builds.
+The programming control receiver requires Android's DUMP permission. Ordinary apps
+cannot hold it: Android grants it to the system, privileged system apps and the ADB
+shell, and someone with ADB access can grant it to another app (`pm grant`, or tools
+such as Shizuku). Release APKs include the receiver from 1.0.0; development-only test
+commands stay out of release builds.
 
 ## Inspect, back up, upload
 
@@ -51,7 +53,7 @@ From the repository root, use the authorized wireless ADB target from
 `status` only reads the app's programming state, Agent state and USB byte
 counters. It does not launch the Activity, open UART, reset the board or stop the
 Agent, and does not require the PC esptool environment. It still requires an
-authorized ADB connection and the current debug APK. A Running state/counter
+authorized ADB connection and ROS2 Android 1.0.0 or newer. A Running state/counter
 proves neither a healthy micro-ROS session nor message receipt; check fresh
 heartbeat/acknowledgement topics for that.
 

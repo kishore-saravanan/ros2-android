@@ -35,12 +35,12 @@ robot sees. There is no PC in the loop.*
 ## Features
 
 - **Phone sensors on ROS topics:** camera, IMU, magnetometer, barometer and battery.
-- **Your ROS nodes on the phone:** build C++ and Python workspaces on your PC, deploy
-  them, and start or stop them from the app.
+- **Your ROS nodes on the phone:** build C++ (`ament_cmake`) workspaces or a Python
+  `rclpy` project on your PC, deploy them, and start or stop them from the app.
 - **Development on a mounted robot:** deploy over Wi-Fi while the phone stays on the robot;
   the nodes keep running when the PC leaves.
-- **Microcontrollers:** a micro-ROS Agent for an ESP32 over USB or Wi-Fi, and firmware
-  updates flashed through the phone.
+- **Microcontrollers:** a micro-ROS Agent for an ESP32 over USB (CP2102 boards) or
+  Wi-Fi, and firmware updates flashed through the phone.
 - **Dashboard:** buttons, switches, sliders, a joystick, live values and camera images.
 
 <table>

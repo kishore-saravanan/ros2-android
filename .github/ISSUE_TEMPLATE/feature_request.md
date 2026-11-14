@@ -1,6 +1,7 @@
 ---
 name: Feature request
 about: Suggest something ROS2 Android should do
+labels: enhancement
 ---
 
 **What do you want to do?**
