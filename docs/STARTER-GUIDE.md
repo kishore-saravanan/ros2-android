@@ -1,4 +1,4 @@
-# ROS2 Android from scratch
+# ROS2 Android starter guide
 
 One path from nothing to a phone running your own ROS 2 nodes and an ESP32. Each part
 ends with what you should see. Stop at any part: parts 1–3 need no build tools at all.

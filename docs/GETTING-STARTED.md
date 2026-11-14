@@ -148,7 +148,7 @@ Exclude device identifiers, personal information and camera images from reports.
 
 ## Next: use the phone as the robot computer
 
-Follow [From scratch](FROM-SCRATCH.md) from part 3 for the Dashboard, your own nodes and an ESP32.
+Follow the [starter guide](STARTER-GUIDE.md) from part 3 for the Dashboard, your own nodes and an ESP32.
 
 Continue with [Robot operation](ROBOT-OPERATION.md) for the workspace/MCU setup,
 start/stop scopes, loss-of-connection checks and recovery. APT distribution work
