@@ -556,6 +556,22 @@ adb shell "nohup am instrument -w -r -e class dev.ros2android.android.EnduranceT
   > /data/local/tmp/ros2android-endurance.txt 2>&1 &"
 ```
 
+Each opted-in run also saves an atomic checkpoint in the main app's private
+`files/endurance.json`: preparation, observation start, minute samples/conditions,
+summary and final outcome after cleanup. Retrieve it without relying on logcat:
+
+```bash
+adb exec-out run-as dev.ros2android.android cat files/endurance.json > endurance.json
+```
+
+Keep raw evidence outside Git. Only `outcome: passed` with `phase: finished` is a
+completed pass. A record left `running` after the process ends is incomplete;
+absence of a failure log does not make it pass. Pull the record before starting
+another run, which replaces it. Screen-off and unplugged evidence must come from
+the recorded conditions, not from the launcher being dispatched. Device-side
+launchers need detached stdin/stdout/stderr and independent session ownership;
+confirm actual first-sample startup before disconnecting the development link.
+
 On the reference phone (Android 12, USB power, Wi-Fi off, background activity allowed)
 the 60-minute run passed: 18,000 of 18,000 samples at 5 Hz, largest receipt gap 219 ms,
 publish-to-receipt mean 7 ms (max 29 ms), and no pauses in the runner or main app. Main

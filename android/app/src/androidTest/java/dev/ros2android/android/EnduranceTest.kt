@@ -4,6 +4,9 @@ import android.content.*
 import android.os.*
 import android.provider.Settings
 import android.util.Log
+import android.util.AtomicFile
+import java.io.File
+import org.json.JSONArray
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import dev.ros2android.health.BackgroundPolicy
@@ -54,9 +57,23 @@ class EnduranceTest {
         val observed = ControlWidget("endurance_observed", "Endurance", "Subscribed value", "/endurance/observed")
         val trial = java.util.UUID.randomUUID().toString()
         var ownsSession = false
-        main { assertTrue(context.bindService(Intent(context, RobotSessionService::class.java), connection, Context.BIND_AUTO_CREATE)) }
+        var ownsBinding = false
+        // App-private, crash-safe evidence survives ADB shell loss and logcat rotation.
+        // A record left "running" is incomplete, never a pass.
+        val record = JSONObject().put("format", 1).put("trial", trial).put("requestedMinutes", minutes)
+            .put("startedAtEpochMs", System.currentTimeMillis()).put("outcome", "running")
+            .put("checkpoints", JSONArray())
+        val evidenceFile = AtomicFile(File(context.filesDir, "endurance.json"))
+        fun save(phase: String) {
+            record.put("phase", phase).put("updatedAtBootMs", SystemClock.elapsedRealtime())
+            val stream = evidenceFile.startWrite()
+            try { stream.write(record.toString(2).toByteArray(Charsets.UTF_8)); evidenceFile.finishWrite(stream) }
+            catch (error: Throwable) { evidenceFile.failWrite(stream); throw error }
+        }
         var failure: Throwable? = null
         try {
+            save("preparing")
+            main { ownsBinding = context.bindService(Intent(context, RobotSessionService::class.java), connection, Context.BIND_AUTO_CREATE); assertTrue(ownsBinding) }
             assertTrue(bound.await(5, TimeUnit.SECONDS))
             main { assertFalse("Stop the main session first", session.connected || session.busy || session.controlsEnabled) }
             project.claim(86, "/endurance", listOf("-p", "trial:=$trial"))
@@ -73,7 +90,10 @@ class EnduranceTest {
             fun conditions(second: Int) = RunConditions.sample(context, second).also { entry ->
                 entry.optDouble("batteryTempC").takeIf { !it.isNaN() }?.let { hottestC = if (hottestC.isNaN()) it else maxOf(hottestC, it) }
             }
-            Log.i("ROS2Endurance", "start conditions=${conditions(0)}")
+            val initialConditions = conditions(0)
+            record.put("initialConditions", initialConditions).put("observationStartedAtBootMs", SystemClock.elapsedRealtime())
+            save("observing")
+            Log.i("ROS2Endurance", "start conditions=$initialConditions")
             while (SystemClock.elapsedRealtime() < end) {
                 main {
                     val reading = session.dashboardReadings[observed.id] ?: return@main
@@ -95,6 +115,11 @@ class EnduranceTest {
                     if (!conditions.optBoolean("screenOn", true)) screenOffMinutes++
                     if (conditions.optBoolean("deviceIdle")) idleMinutes++
                     Log.i("ROS2Endurance", "minute=$minute at=$now samples=$minuteSamples largestGapMs=$minuteGap runnerPauses=${health?.optInt("pauses")} mainPauses=${session.pauses.pauses} conditions=$conditions")
+                    record.getJSONArray("checkpoints").put(JSONObject().put("atBootMs", now).put("minute", minute)
+                        .put("samples", samples).put("minuteSamples", minuteSamples).put("largestGapMs", largestGap)
+                        .put("largestPublishToReceiptMs", largestLatency).put("conditions", conditions)
+                        .put("runnerHealth", health ?: JSONObject.NULL).put("mainPauses", session.pauses.pauses))
+                    save("observing")
                     minuteSamples = 0; minuteGap = 0; nextReport += 60_000L
                 }
                 SystemClock.sleep(100)
@@ -105,6 +130,12 @@ class EnduranceTest {
             val summary = "minutes=$minutes samples=$samples largestGapMs=$largestGap largestPublishToReceiptMs=$largestLatency " +
                 "meanPublishToReceiptMs=${if (samples > 0) latencyTotal / samples else -1} runnerHealth=$runnerHealth mainPauses=${session.pauses} " +
                 "screenOffMinutes=$screenOffMinutes idleMinutes=$idleMinutes hottestBatteryC=$hottestC end conditions=$finalConditions"
+            record.put("summary", JSONObject().put("samples", samples).put("largestGapMs", largestGap)
+                .put("largestPublishToReceiptMs", largestLatency).put("meanPublishToReceiptMs", if (samples > 0) latencyTotal / samples else -1)
+                .put("runnerHealth", runnerHealth).put("mainPauses", session.pauses.pauses)
+                .put("screenOffMinutes", screenOffMinutes).put("idleMinutes", idleMinutes)
+                .put("hottestBatteryC", if (hottestC.isNaN()) JSONObject.NULL else hottestC).put("endConditions", finalConditions))
+            save("checking")
             Log.i("ROS2Endurance", "summary $summary")
             // 5 Hz for the whole window; allow 10% loss for best-effort delivery and polling.
             assertTrue("Too few samples: $summary", samples >= minutes * 60L * 5 * 9 / 10)
@@ -124,7 +155,10 @@ class EnduranceTest {
             val bodyFailed = failure != null
             cleanup("main session") { if (ownsSession) { main { session.stopSession() }; waitFor("Session did not stop") { !session.connected && !session.busy } } }
             cleanup("runner profile") { project.release() }
-            cleanup("binding") { main { context.unbindService(connection) } }
+            cleanup("binding") { if (ownsBinding) main { context.unbindService(connection) } }
+            record.put("outcome", if (failure == null) "passed" else "failed")
+            failure?.let { record.put("error", "${it.javaClass.simpleName}: ${it.message}") }
+            cleanup("evidence") { save("finished") }
             if (!bodyFailed) failure?.let { throw it }
         }
     }
