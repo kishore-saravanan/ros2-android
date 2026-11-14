@@ -50,7 +50,13 @@ The existing SDK can be reused; project requirements add the Android Pillow
 ./tools/ros2android --project examples/ball_follower status
 ```
 
-When multiple ADB devices are listed, add `--serial DEVICE` before the subcommand.
+With the installed PC tool (`.deb` or wheel), use `ros2-android project --project
+/absolute/path/to/ball_follower` in place of `./tools/ros2android --project
+examples/ball_follower`, and add `--controller-apk` to `build` as in the
+[starter guide](STARTER-GUIDE.md). Then authorize the runner in Projects → Details.
+
+When multiple ADB devices are listed, or the phone uses wireless debugging, add
+`--serial DEVICE` (from `adb devices`) before the subcommand.
 Use explicit `--peer PC_IP --local PHONE_IP` on start if needed for discovery.
 Use the current addresses, not those from another machine/session.
 
@@ -67,7 +73,8 @@ so the commands go to a test topic that nothing drives from.
 
 1. Keep motor power off and stop other velocity publishers/Dashboard controls.
 2. On the robot phone, open Sensors → Back camera. Publish on
-   `/phone/camera_back_0/image/compressed`. Start at 640×480 and automatic FPS.
+   `/phone/camera_back_0/image/compressed` at 640×480 and 15 FPS. The follower
+   processes up to 15 frames a second, so a faster camera only adds load.
 3. Hold the red ball in view, move it left/right, and remove it.
 4. View `/ball/image/compressed` with a Dashboard CompressedImage subscriber or
    an image_transport-compatible ROS viewer. Confirm the circle surrounds the
@@ -175,6 +182,35 @@ and camera detection do not replace the physical motor-power switch.
 Defaults: forward ceiling 0.12, angular ceiling 2.5. These are ROS command values,
 not measured/calibrated wheel speeds. The reference low-cost motors may not move
 reliably at small commands. Do not infer calibrated motion from a Twist value.
+
+Match the follower to your firmware and camera mount before driving:
+
+- Firmware built with `ROS2_ANDROID_ESP32_FULL_PWM=1` needs `-p full_pwm:=true`.
+  Without it, every turn command saturates at full duty and the robot spins past
+  the ball. Full-duty mode turns in short pulses and waits for a fresh image
+  between them (see [Parameters](#parameters-and-monocular-distance)).
+- A camera that is not centred on the robot needs its own aim point and stopping
+  size; see [calibration](#calibrate-the-aim-point-and-stopping-distance).
+
+For example, with full-duty firmware and calibrated values (yours will differ):
+
+```bash
+./tools/ros2android --project examples/ball_follower start --namespace /ball --domain 0 \
+  -- -p full_pwm:=true -p target_center_x:=0.55 -p stop_diameter_fraction:=0.28
+```
+
+The project app keeps the last accepted start settings, so Start project on the
+phone reuses them.
+
+## When it does not behave
+
+| Symptom | Check |
+| --- | --- |
+| Wheels do not move | `ros2 topic echo --once /esp32/heartbeat` shows a rising number; if not, restart the USB agent in Settings → Microcontrollers. `/ball/tracking` is true and `/cmd_vel` carries commands. Motor power is on. |
+| Turns overshoot or spin | The drive mode does not match the firmware (`full_pwm`), or the aim point is not calibrated for an off-centre camera. |
+| Slow or late reactions | `/ball/metrics` reports received and processed rates and processing time. Allow background activity for ROS2 Android and the follower app (Android otherwise slows or pauses it; `status` reports pauses), set the camera to 15 FPS, and close image viewers you do not need. |
+| Tracking does not switch on from a PC | Publish several times (`-t 5 -r 1 -w 2`), not `--once`; check `/ball/tracking`. |
+| `start` says the project is already running | It was started from Projects; stop it first, then start with your settings. |
 
 ## Calibrate the aim point and stopping distance
 
