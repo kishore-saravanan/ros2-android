@@ -133,6 +133,16 @@ restart it can differ from the robot's actual state. Use the optional readback
 and toggle OFF/ON deliberately. Stopping Dashboard is not a substitute for
 sending OFF or stopping the project: the robot owns autonomous following.
 
+To switch tracking from a PC instead, publish a few times rather than once:
+
+```bash
+ros2 topic pub -t 5 -r 1 -w 2 /ball/track_ball std_msgs/msg/Bool "{data: true}"
+```
+
+A single `--once` message is often lost over Wi-Fi: the command exits before the
+phone has finished matching its new publisher. `-w 2` waits for both nodes, and
+`/ball/tracking` confirms the state. Send `false` the same way to stop.
+
 At the default test topic, switching ON lets you inspect computed commands but
 cannot drive the reference ESP32. Complete the stationary checks first, then
 choose the real command topic below.
