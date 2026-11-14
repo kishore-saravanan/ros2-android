@@ -1,10 +1,14 @@
 # Changelog
 
-Changes below are unreleased source changes, not a published APK/package promise.
 Host-client, app, runner protocol and native SDK versions are tracked separately;
 see the [release checklist](docs/RELEASING.md).
 
-## Unreleased
+## 1.0.0-beta.1 (2026-11-14)
+
+First public release: the main app 1.0.0-beta.1 (version code 9), the host client
+1.0.0b1 (Debian 1.0.0~beta1-1) and the native SDK archive 1.0.0b1, all for ROS 2 Jazzy
+on ARM64 Android 8.0+. Tested devices and limits are in [Status](docs/STATUS.md). The
+entries below describe the work in this release, newest first.
 
 - Save endurance progress and outcomes atomically inside the app so disconnected
   test sessions and log rotation cannot silently lose all progress.
