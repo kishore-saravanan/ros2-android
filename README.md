@@ -14,7 +14,7 @@
   <a href="https://github.com/sponsors/kishore-saravanan"><img src="https://img.shields.io/badge/Sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white" alt="Sponsor on GitHub"></a>
 </p>
 
-A phone already has a fast ARM computer, cameras, an IMU, GPS, Wi-Fi and a battery.
+A phone already has a fast ARM computer, cameras, an IMU, Wi-Fi and a battery.
 ROS2 Android runs **native ROS 2 Jazzy on the phone itself**: no Ubuntu, no root,
 no container. Publish the phone's sensors, run your own ROS nodes on it, talk to
 microcontrollers over USB or Wi-Fi, and drive it all from a touch Dashboard.
@@ -34,7 +34,7 @@ Everything in the loop runs on the robot. [Build this example →](docs/BALL-FOL
 
 | | |
 | --- | --- |
-| **Publish phone sensors** | IMU, GPS, battery, cameras (with resolution, FPS and JPEG controls) and more, each on an editable topic and rate. |
+| **Publish phone sensors** | IMU, accelerometer, gyroscope, magnetometer, barometer, battery and cameras (with resolution, FPS and JPEG controls), each on an editable topic and rate. |
 | **Run your own nodes on the phone** | Cross-build supported C++ and Python ROS 2 workspaces on Linux, deploy them, then start and stop them from the app's Projects tab. |
 | **Develop on a mounted robot** | Deploy over wireless ADB while the phone stays on the robot. Nodes run on the phone, not on your PC. |
 | **Connect microcontrollers** | A micro-ROS Agent on the phone serves an ESP32 over USB OTG or Wi-Fi (UDP). You can even flash a USB-attached ESP32 *through* the phone. |
@@ -85,7 +85,7 @@ package never touches a phone by itself.
 
    ```bash
    source /opt/ros/jazzy/setup.bash
-   ros2 topic echo /phone/battery_percent
+   ros2 topic echo /phone/battery_percent std_msgs/msg/Float64 --qos-reliability best_effort
    ```
 
 You should see the phone's battery level arrive once a second.
