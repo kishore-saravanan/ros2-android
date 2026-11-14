@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Expose simulated TurtleBot odometry as one standard Float64 dashboard value."""
+
 import time
 from math import hypot
 import rclpy
@@ -15,7 +16,9 @@ class Telemetry(Node):
         self.value = 0.0
         self.received = None
         self.publisher = self.create_publisher(Float64, 'dashboard/speed', 1)
-        self.subscription = self.create_subscription(Odometry, 'odom', self.observe, qos_profile_sensor_data)
+        self.subscription = self.create_subscription(
+            Odometry, 'odom', self.observe, qos_profile_sensor_data
+        )
         self.timer = self.create_timer(0.2, self.publish)
 
     def observe(self, message):
@@ -38,6 +41,7 @@ def main():
         pass
     finally:
         node.destroy_node()
+
         if rclpy.ok():
             rclpy.shutdown()
 

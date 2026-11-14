@@ -25,3 +25,18 @@ ros2android = ["sdk.zip", "compatibility.json", "release.json"]
 
 [project.optional-dependencies]
 inspection = ["catkin-pkg>=1.0,<2"]
+
+# Code formatting: setup/format.sh runs the pinned formatters for every language.
+[tool.ruff]
+line-length = 99  # ROS 2 Python style
+force-exclude = true
+extend-include = ["tools/check-shell-cli", "tools/connect-shell", "tools/esp32-via-phone",
+                  "tools/ros2android", "tools/ros2android-workspace"]
+# Native SDK build inputs (INPUTS in python/ros2android/native_sdk.py): the published SDK only
+# fits byte-identical copies, so these are reformatted together with the next SDK build.
+extend-exclude = ["setup/stage-native-libs.py", "setup/stage-python-ros.py",
+                  "setup/stage-micro-ros-agent.py", "setup/stage-licenses.py",
+                  "setup/prepare-python-target.py", "examples/python_talker/interfaces"]
+
+[tool.ruff.format]
+quote-style = "single"

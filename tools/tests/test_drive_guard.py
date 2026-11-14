@@ -1,4 +1,5 @@
 """Host checks for the MCU command guard; no GPIO or physical timing claim."""
+
 from pathlib import Path
 import shutil
 import subprocess
@@ -7,10 +8,11 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 
+
 @unittest.skipUnless(shutil.which('g++'), 'Requires a C++ compiler')
 class DriveGuardTest(unittest.TestCase):
     def test_deadline_disconnect_invalid_input_and_wheel_mixing(self):
-        source = r'''
+        source = r"""
 #include "drive_guard.hpp"
 #include <cassert>
 #include <limits>
@@ -83,10 +85,25 @@ int main() {
   g.command(.1f, 0, 900, -1); assert(stopped(g.output(900)));
 
 }
-'''
+"""
+
         with tempfile.TemporaryDirectory() as tmp:
-            cpp = Path(tmp) / 'guard.cpp'; binary = Path(tmp) / 'guard'
+            cpp = Path(tmp) / 'guard.cpp'
+            binary = Path(tmp) / 'guard'
             cpp.write_text(source)
-            subprocess.run(['g++', '-std=c++11', '-Wall', '-Wextra', '-Werror',
-                            '-I', str(ROOT / 'examples/esp32_wifi/include'), str(cpp), '-o', str(binary)], check=True)
+            subprocess.run(
+                [
+                    'g++',
+                    '-std=c++11',
+                    '-Wall',
+                    '-Wextra',
+                    '-Werror',
+                    '-I',
+                    str(ROOT / 'examples/esp32_wifi/include'),
+                    str(cpp),
+                    '-o',
+                    str(binary),
+                ],
+                check=True,
+            )
             subprocess.run([str(binary)], check=True)

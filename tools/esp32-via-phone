@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Compatibility entry point for packaged esp32 commands."""
+
 from pathlib import Path
 import sys
 

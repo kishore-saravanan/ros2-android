@@ -1,0 +1,26 @@
+# ROS 2 C++ style (ament_clang_format): braces on every if/else/for/while/do body and
+# no one-line bodies, plus blank lines between definitions.
+# Run setup/format.sh rather than clang-format directly; it pins the version.
+Language: Cpp
+BasedOnStyle: Google
+AccessModifierOffset: -2
+AlignAfterOpenBracket: AlwaysBreak
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+BraceWrapping:
+  AfterClass: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+BreakBeforeBraces: Custom
+ColumnLimit: 100
+ConstructorInitializerIndentWidth: 0
+ContinuationIndentWidth: 2
+DerivePointerAlignment: false
+InsertBraces: true
+PointerAlignment: Middle
+ReflowComments: false
+SeparateDefinitionBlocks: Always
+SortIncludes: Never

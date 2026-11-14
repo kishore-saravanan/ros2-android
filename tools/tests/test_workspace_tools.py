@@ -1,4 +1,5 @@
-"""ros2-android setup workspace-tools: one command that prepares workspace builds after the .deb."""
+"""setup workspace-tools: the one command that prepares workspace builds after the .deb."""
+
 import contextlib
 import io
 import json
@@ -27,10 +28,16 @@ class WorkspaceToolsTest(unittest.TestCase):
     def test_missing_ubuntu_packages_are_listed_as_one_apt_command(self):
         def dpkg(command, **kwargs):
             installed = command[-1] not in ('cmake', 'openjdk-21-jdk-headless')
-            return subprocess.CompletedProcess(command, 0 if installed else 1, 'install ok installed' if installed else '', '')
-        with mock.patch.object(tools.subprocess, 'run', side_effect=dpkg), \
-                contextlib.redirect_stdout(io.StringIO()) as output:
+            return subprocess.CompletedProcess(
+                command, 0 if installed else 1, 'install ok installed' if installed else '', ''
+            )
+
+        with (
+            mock.patch.object(tools.subprocess, 'run', side_effect=dpkg),
+            contextlib.redirect_stdout(io.StringIO()) as output,
+        ):
             self.assertEqual(1, tools.run([], tooling_root=self.temp))
+
         self.assertIn('sudo apt install cmake openjdk-21-jdk-headless', output.getvalue())
 
     def test_download_verifies_checksum_and_leaves_nothing_on_mismatch(self):
@@ -40,9 +47,14 @@ class WorkspaceToolsTest(unittest.TestCase):
         response.headers = {'Content-Length': str(len(payload))}
         response.read.side_effect = [payload, b'']
         target = self.temp / 'cache' / 'tools.zip'
-        with mock.patch.object(tools.urllib.request, 'urlopen', return_value=response), \
-                contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'checksum mismatch'):
+
+        with (
+            mock.patch.object(tools.urllib.request, 'urlopen', return_value=response),
+            contextlib.redirect_stdout(io.StringIO()),
+            self.assertRaisesRegex(ValueError, 'checksum mismatch'),
+        ):
             tools.download('https://example.invalid/tools.zip', target, '0' * 64, 'Tools')
+
         self.assertEqual([], list(target.parent.iterdir()))
 
     def test_command_line_tools_unpack_with_executable_bits_and_reject_traversal(self):
@@ -51,14 +63,17 @@ class WorkspaceToolsTest(unittest.TestCase):
             info = zipfile.ZipInfo('cmdline-tools/bin/sdkmanager')
             info.external_attr = (stat.S_IFREG | 0o755) << 16
             bundle.writestr(info, '#!/bin/sh\n')
+
         sdkmanager = tools.extract_cmdline_tools(archive, self.temp / 'sdk')
         self.assertEqual(self.temp / 'sdk/cmdline-tools/latest/bin/sdkmanager', sdkmanager)
         self.assertTrue(os.access(sdkmanager, os.X_OK))
         evil = self.temp / 'evil.zip'
         with zipfile.ZipFile(evil, 'w') as bundle:
             bundle.writestr('../outside', 'x')
+
         with self.assertRaisesRegex(ValueError, 'Unexpected entry'):
             tools.extract_cmdline_tools(evil, self.temp / 'sdk2')
+
         self.assertFalse((self.temp / 'outside').exists())
 
     def test_installed_android_packages_skip_downloads_and_licences(self):
@@ -66,26 +81,38 @@ class WorkspaceToolsTest(unittest.TestCase):
         sdkmanager = root / 'cmdline-tools/latest/bin/sdkmanager'
         sdkmanager.parent.mkdir(parents=True)
         sdkmanager.write_text('#!/bin/sh\n')
+
         for folder in tools.android_packages(self.matrix).values():
             (root / folder).mkdir(parents=True)
             (root / folder / 'source.properties').write_text('Pkg.Revision=1\n')
-        with mock.patch.dict(os.environ, {'ANDROID_HOME': str(root)}), \
-                mock.patch.object(tools.subprocess, 'run') as run, mock.patch.object(tools, 'download') as download, \
-                contextlib.redirect_stdout(io.StringIO()):
+
+        with (
+            mock.patch.dict(os.environ, {'ANDROID_HOME': str(root)}),
+            mock.patch.object(tools.subprocess, 'run') as run,
+            mock.patch.object(tools, 'download') as download,
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
             tools.ensure_android(self.matrix)
+
         run.assert_not_called()
         download.assert_not_called()
 
     def test_packages_without_sdkmanager_get_the_command_line_tools(self):
         root = self.temp / 'sdk'
+
         for folder in tools.android_packages(self.matrix).values():
             (root / folder).mkdir(parents=True)
             (root / folder / 'source.properties').write_text('Pkg.Revision=1\n')
-        with mock.patch.dict(os.environ, {'ANDROID_HOME': str(root)}), \
-                mock.patch.object(tools, 'download', return_value=self.temp / 'tools.zip') as download, \
-                mock.patch.object(tools, 'extract_cmdline_tools') as extract, \
-                mock.patch.object(tools.subprocess, 'run') as run, contextlib.redirect_stdout(io.StringIO()):
+
+        with (
+            mock.patch.dict(os.environ, {'ANDROID_HOME': str(root)}),
+            mock.patch.object(tools, 'download', return_value=self.temp / 'tools.zip') as download,
+            mock.patch.object(tools, 'extract_cmdline_tools') as extract,
+            mock.patch.object(tools.subprocess, 'run') as run,
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
             tools.ensure_android(self.matrix)
+
         download.assert_called_once()
         extract.assert_called_once()
         run.assert_not_called()  # Nothing else to install, so no licence prompt.
@@ -95,10 +122,16 @@ class WorkspaceToolsTest(unittest.TestCase):
         sdkmanager = root / 'cmdline-tools/latest/bin/sdkmanager'
         sdkmanager.parent.mkdir(parents=True)
         sdkmanager.write_text('#!/bin/sh\n')
-        with mock.patch.dict(os.environ, {'ANDROID_HOME': str(root)}), mock.patch.object(tools.sys.stdin, 'isatty', return_value=False), \
-                mock.patch.object(tools.subprocess, 'run') as run, contextlib.redirect_stdout(io.StringIO()), \
-                self.assertRaisesRegex(ValueError, 'interactive terminal'):
+
+        with (
+            mock.patch.dict(os.environ, {'ANDROID_HOME': str(root)}),
+            mock.patch.object(tools.sys.stdin, 'isatty', return_value=False),
+            mock.patch.object(tools.subprocess, 'run') as run,
+            contextlib.redirect_stdout(io.StringIO()),
+            self.assertRaisesRegex(ValueError, 'interactive terminal'),
+        ):
             tools.ensure_android(self.matrix)
+
         run.assert_not_called()
 
     def test_an_installed_matching_native_sdk_is_kept(self):
@@ -106,17 +139,24 @@ class WorkspaceToolsTest(unittest.TestCase):
         target = self.temp / 'native'
         tooling.mkdir()
         (tooling / 'native-deps').symlink_to(target, target_is_directory=True)
+
         for path in native_sdk.REQUIRED:
             (target / path).parent.mkdir(parents=True, exist_ok=True)
             (target / path).write_text('x')
-        with mock.patch.object(tools.native_sdk, 'inputs_digest', return_value='abc'), \
-                mock.patch.object(tools.native_sdk, 'install') as install, contextlib.redirect_stdout(io.StringIO()):
+
+        with (
+            mock.patch.object(tools.native_sdk, 'inputs_digest', return_value='abc'),
+            mock.patch.object(tools.native_sdk, 'install') as install,
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
             (target / '.sdk-install.json').write_text(json.dumps({'inputsDigest': 'abc'}))
             tools.ensure_native_sdk(tooling, self.matrix)
             install.assert_not_called()
             (target / '.sdk-install.json').write_text(json.dumps({'inputsDigest': 'old'}))
+
             with mock.patch.object(tools, 'download', return_value=self.temp / 'sdk.tar.xz'):
                 tools.ensure_native_sdk(tooling, self.matrix)
+
             install.assert_called_once()
             self.assertTrue(install.call_args.kwargs['replace'])
 
@@ -124,14 +164,21 @@ class WorkspaceToolsTest(unittest.TestCase):
         tooling = self.temp / 'new-tooling'
         tooling.mkdir()
         target = self.temp / 'home' / '.cache' / 'ros2-android-native'
+
         for path in native_sdk.REQUIRED:
             (target / path).parent.mkdir(parents=True, exist_ok=True)
             (target / path).write_text('x')
+
         (target / '.sdk-install.json').write_text(json.dumps({'inputsDigest': 'abc'}))
-        with mock.patch.object(tools.Path, 'home', return_value=self.temp / 'home'), \
-                mock.patch.object(tools.native_sdk, 'inputs_digest', return_value='abc'), \
-                mock.patch.object(tools.native_sdk, 'install') as install, contextlib.redirect_stdout(io.StringIO()):
+
+        with (
+            mock.patch.object(tools.Path, 'home', return_value=self.temp / 'home'),
+            mock.patch.object(tools.native_sdk, 'inputs_digest', return_value='abc'),
+            mock.patch.object(tools.native_sdk, 'install') as install,
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
             tools.ensure_native_sdk(tooling, self.matrix)
+
         install.assert_not_called()
         self.assertEqual(target.resolve(), (tooling / 'native-deps').resolve())
 
@@ -142,10 +189,15 @@ class WorkspaceToolsTest(unittest.TestCase):
         (tooling / 'native-deps').symlink_to(target, target_is_directory=True)
         (target / 'install/lib').mkdir(parents=True)
         (target / 'install/lib/librcl.so').write_text('x')  # C++ only: no Python or Agent parts
-        with mock.patch.object(tools.native_sdk, 'inputs_digest', return_value='abc'), \
-                mock.patch.object(tools, 'download', return_value=self.temp / 'sdk.tar.xz'), \
-                mock.patch.object(tools.native_sdk, 'install') as install, contextlib.redirect_stdout(io.StringIO()):
+
+        with (
+            mock.patch.object(tools.native_sdk, 'inputs_digest', return_value='abc'),
+            mock.patch.object(tools, 'download', return_value=self.temp / 'sdk.tar.xz'),
+            mock.patch.object(tools.native_sdk, 'install') as install,
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
             tools.ensure_native_sdk(tooling, self.matrix)
+
         self.assertTrue(install.call_args.kwargs['replace'])
         self.assertEqual(target.resolve(), install.call_args.kwargs['target'])
 
@@ -162,19 +214,25 @@ class WorkspaceToolsTest(unittest.TestCase):
 
     def test_bundled_release_app_is_the_default_controller(self):
         from ros2android import workspace
+
         package = self.temp / 'ros2android'
         (package / 'artifacts').mkdir(parents=True)
         (package / 'artifacts/main.apk').write_bytes(b'apk')
+
         with mock.patch('importlib.resources.files', return_value=package):
             self.assertEqual(package / 'artifacts/main.apk', workspace.bundled_controller())
+
         with mock.patch('importlib.resources.files', return_value=self.temp / 'wheel-without-app'):
             self.assertIsNone(workspace.bundled_controller())
 
     def test_cli_routes_setup_workspace_tools(self):
-        with mock.patch.object(sys, 'argv', ['ros2-android', 'setup', 'workspace-tools']), \
-                mock.patch.object(cli, 'sdk_root', return_value=self.temp), \
-                mock.patch.object(tools, 'run', return_value=0) as run:
+        with (
+            mock.patch.object(sys, 'argv', ['ros2-android', 'setup', 'workspace-tools']),
+            mock.patch.object(cli, 'sdk_root', return_value=self.temp),
+            mock.patch.object(tools, 'run', return_value=0) as run,
+        ):
             self.assertEqual(0, cli.main())
+
         run.assert_called_once_with([], tooling_root=self.temp)
 
 

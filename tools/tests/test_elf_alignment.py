@@ -24,13 +24,17 @@ class ElfAlignmentTest(unittest.TestCase):
     def test_load_alignment_and_file_address_congruence_both_required(self):
         check_elf(elf())
         check_elf(elf(65536))
+
         for data in (elf(4096), elf(16384, offset=4096), elf(24576)):
             with self.assertRaisesRegex(ValueError, '16 KB'):
                 check_elf(data)
 
     def test_truncated_wrong_machine_and_missing_loads_fail_closed(self):
-        wrong_machine = bytearray(elf()); struct.pack_into('<H', wrong_machine, 18, 62)
-        no_load = bytearray(elf()); struct.pack_into('<I', no_load, 64, 0)
+        wrong_machine = bytearray(elf())
+        struct.pack_into('<H', wrong_machine, 18, 62)
+        no_load = bytearray(elf())
+        struct.pack_into('<I', no_load, 64, 0)
+
         for data in (b'not ELF', elf()[:80], bytes(wrong_machine), bytes(no_load)):
             with self.assertRaises(ValueError):
                 check_elf(data)
@@ -41,6 +45,7 @@ class ElfAlignmentTest(unittest.TestCase):
             with zipfile.ZipFile(path, 'w') as archive:
                 archive.writestr('lib/arm64-v8a/libgood.so', elf())
                 archive.writestr('lib/arm64-v8a/libbad.so', elf(4096))
+
             with self.assertRaisesRegex(ValueError, 'libbad.so'):
                 check_apk(path)
 
@@ -48,10 +53,14 @@ class ElfAlignmentTest(unittest.TestCase):
         nested = io.BytesIO()
         with zipfile.ZipFile(nested, 'w') as archive:
             archive.writestr('numpy/core/dependency.so', elf(4096))
+
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / 'python.apk'
             with zipfile.ZipFile(path, 'w') as archive:
                 archive.writestr('lib/arm64-v8a/libgood.so', elf())
                 archive.writestr('assets/chaquopy/requirements-common.imy', nested.getvalue())
-            with self.assertRaisesRegex(ValueError, 'requirements-common.imy!numpy/core/dependency.so'):
+
+            with self.assertRaisesRegex(
+                ValueError, 'requirements-common.imy!numpy/core/dependency.so'
+            ):
                 check_apk(path)

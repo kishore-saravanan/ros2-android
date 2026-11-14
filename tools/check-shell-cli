@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Verify all bundled ROS CLI command/verb imports on the connected Android runner."""
+
 import argparse
 import json
 from pathlib import Path
@@ -15,8 +16,10 @@ def main():
     parser.add_argument('--serial')
     args = parser.parse_args()
     lock = json.loads((ROOT / 'native/ros-shell-packages.lock.json').read_text())
-    commands = sorted(name[4:] for name in lock['rosPackages'] if name.startswith('ros2') and name != 'ros2cli')
-    script = '''import importlib.metadata as metadata
+    commands = sorted(
+        name[4:] for name in lock['rosPackages'] if name.startswith('ros2') and name != 'ros2cli'
+    )
+    script = """import importlib.metadata as metadata
 import json, subprocess
 commands = COMMANDS
 failures = []
@@ -30,11 +33,14 @@ for args in checks:
         failures.append({'args': args, 'exit': process.returncode, 'stderr': process.stderr[-3000:]})
 print(json.dumps({'commands': commands, 'checks': len(checks), 'failures': failures}, indent=2))
 raise SystemExit(bool(failures))
-'''.replace('COMMANDS', repr(commands))
+""".replace('COMMANDS', repr(commands))
     command = [str(ROOT / 'tools/connect-shell'), '--workspace', args.workspace]
+
     for key in ('id', 'serial'):
         value = getattr(args, key)
-        if value: command += ['--' + key, value]
+        if value:
+            command += ['--' + key, value]
+
     return subprocess.run([*command, '--', 'python3', '-c', script]).returncode
 
 

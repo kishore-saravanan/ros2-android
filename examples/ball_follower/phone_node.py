@@ -1,4 +1,5 @@
 """Android entry point; the ROS package is also runnable with normal Linux ROS tools."""
+
 from ball_follower.nodes import VisionNode, FollowerNode
 
 
@@ -11,4 +12,5 @@ def create_nodes(**kwargs):
     except BaseException:
         for node in nodes:
             node.destroy_node()
+
         raise

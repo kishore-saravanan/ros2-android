@@ -1,4 +1,5 @@
 """Exercise the actual embedded runner lifecycle with host rclpy and tiny user nodes."""
+
 import importlib.util
 import json
 from pathlib import Path
@@ -18,7 +19,9 @@ ROOT = Path(__file__).resolve().parents[2]
 @unittest.skipUnless(Node, 'Source ROS before testing the Python lifecycle')
 class PythonRunnerLifecycleTest(unittest.TestCase):
     def setUp(self):
-        spec = importlib.util.spec_from_file_location('embedded_runner_test', ROOT / 'android/pythonRunner/src/main/python/phone_runtime.py')
+        spec = importlib.util.spec_from_file_location(
+            'embedded_runner_test', ROOT / 'android/pythonRunner/src/main/python/phone_runtime.py'
+        )
         self.runtime = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(self.runtime)
 
@@ -30,6 +33,7 @@ class PythonRunnerLifecycleTest(unittest.TestCase):
         module.PhoneNode = lambda **kw: Node('legacy_python_node', **kw)
         with patch.dict(sys.modules, phone_node=module):
             self.runtime.start(91, '/runner_test', [])
+
         state = json.loads(self.runtime.status())
         self.assertTrue(state['running'])
         self.assertEqual(state['nodes'], ['/runner_test/legacy_python_node'])
@@ -42,8 +46,10 @@ class PythonRunnerLifecycleTest(unittest.TestCase):
         with patch.dict(sys.modules, phone_node=module):
             for _ in range(2):
                 self.runtime.start(91, '/runner_test', [])
-                self.assertEqual(json.loads(self.runtime.status())['nodes'],
-                                 ['/runner_test/vision', '/runner_test/follower'])
+                self.assertEqual(
+                    json.loads(self.runtime.status())['nodes'],
+                    ['/runner_test/vision', '/runner_test/follower'],
+                )
                 self.runtime.stop()
                 self.assertFalse(json.loads(self.runtime.status())['running'])
 
@@ -53,6 +59,7 @@ class PythonRunnerLifecycleTest(unittest.TestCase):
         with patch.dict(sys.modules, phone_node=module):
             with self.assertRaisesRegex(ValueError, '1..16 ROS nodes'):
                 self.runtime.start(91, '/runner_test', [])
+
         self.assertIsNone(self.runtime._context)
         self.assertFalse(json.loads(self.runtime.status())['running'])
 
@@ -62,5 +69,6 @@ class PythonRunnerLifecycleTest(unittest.TestCase):
         with patch.dict(sys.modules, phone_node=module):
             with self.assertRaisesRegex(ValueError, '1..16 ROS nodes'):
                 self.runtime.start(91, '/runner_test', [])
+
         self.assertIsNone(self.runtime._context)
         self.assertEqual(json.loads(self.runtime.status())['nodes'], [])

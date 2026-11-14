@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Write a PC Fast DDS profile restricted to one IP, e.g. the USB interface."""
+
 import argparse
 import ipaddress
 from pathlib import Path
@@ -9,7 +10,7 @@ parser.add_argument('address')
 parser.add_argument('output', type=Path)
 args = parser.parse_args()
 address = str(ipaddress.IPv4Address(args.address))
-args.output.write_text(f'''<?xml version="1.0" encoding="UTF-8"?>
+args.output.write_text(f"""<?xml version="1.0" encoding="UTF-8"?>
 <profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
   <transport_descriptors>
     <transport_descriptor>
@@ -25,5 +26,5 @@ args.output.write_text(f'''<?xml version="1.0" encoding="UTF-8"?>
     </rtps>
   </participant>
 </profiles>
-''')
+""")
 print(f'Fast DDS profile written for {address}')

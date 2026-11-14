@@ -176,6 +176,16 @@ git add .
 git commit -m 'Describe the change'
 ```
 
+Format the code before committing; see [code style](../CONTRIBUTING.md#code-style):
+
+```bash
+./setup/format.sh
+```
+
+The one-time commit that formatted the whole codebase is listed in
+`.git-blame-ignore-revs`. GitHub's blame view skips it; for local `git blame`, run
+`git config blame.ignoreRevsFile .git-blame-ignore-revs` once.
+
 Build output, device logs, SDKs, native dependency builds, and machine-local SDK
 paths are ignored. Never commit device serials, signing keys, or credentials.
 

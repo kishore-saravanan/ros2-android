@@ -22,6 +22,26 @@ Host implementation belongs in reusable Python modules as it is extracted;
 retain one public `ros2-android` command family. Do not add a new operator shell
 wrapper for a task already supported by standard ROS commands.
 
+## Code style
+
+Run `setup/format.sh` before committing; CI runs `setup/format.sh --check`. It
+applies pinned formatters: ruff for Python (ROS 2 style: 99 columns, single
+quotes), clang-format for C/C++ (ROS 2 style: 100 columns, braces on every
+block), ktfmt for Kotlin (Kotlin coding conventions) and shfmt for shell. It
+needs `python3-venv`, Java and network access on its first run.
+
+Formatters do not split a function into readable steps, so also:
+
+- Put one statement on a line, and separate logical steps with a blank line,
+  for example after a block ends and before an `if`, loop or `try`.
+- Prefer a named variable or helper over a long expression or nested call.
+- Write comments for intent and constraints, not for what the code says.
+
+The scripts in `native_sdk.INPUTS` (`setup/build-native-ros.sh` and the other
+native SDK build inputs) are skipped: the published SDK only installs with
+byte-identical copies, and a host test enforces that. Change them only together
+with a new native SDK build.
+
 ## Verification
 
 Run checks appropriate to the change using the commands in [Testing](docs/TESTING.md).

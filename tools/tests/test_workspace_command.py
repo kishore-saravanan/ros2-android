@@ -1,4 +1,5 @@
 """Packaged workspace orchestration preserves paths, errors and backend failures."""
+
 import contextlib
 import io
 import os
@@ -33,9 +34,12 @@ class WorkspaceCommandTest(unittest.TestCase):
     def invoke(self, *arguments):
         with contextlib.redirect_stderr(io.StringIO()) as error:
             try:
-                code = run([*self.arguments, *arguments], tooling_root=self.root / 'SDK with spaces')
+                code = run(
+                    [*self.arguments, *arguments], tooling_root=self.root / 'SDK with spaces'
+                )
             except SystemExit as failure:
                 code = failure.code
+
         return code, error.getvalue()
 
     def test_unknown_build_arguments_do_not_create_cache_or_run_backend(self):
@@ -44,6 +48,7 @@ class WorkspaceCommandTest(unittest.TestCase):
             self.assertEqual(2, code)
             self.assertIn('Unknown arguments', error)
             self.assertEqual([], list(self.home.iterdir()))
+
         self.backend.assert_not_called()
 
     def test_unbuilt_operations_offer_build_guidance_without_writes(self):
@@ -52,6 +57,7 @@ class WorkspaceCommandTest(unittest.TestCase):
             self.assertEqual(2, code)
             self.assertIn('build first', error)
             self.assertEqual([], list(self.home.iterdir()))
+
         self.backend.assert_not_called()
 
     def test_shell_prerequisite_failure_has_installed_command_guidance(self):
@@ -68,7 +74,9 @@ class WorkspaceCommandTest(unittest.TestCase):
         self.assertIn('exit status 9', error)
         self.assertNotIn('Traceback', error)
         command = self.backend.call_args.args[0]
-        self.assertEqual(str(self.root / 'SDK with spaces/setup/build-colcon-workspace.sh'), command[0])
+        self.assertEqual(
+            str(self.root / 'SDK with spaces/setup/build-colcon-workspace.sh'), command[0]
+        )
         self.assertEqual(str(self.workspace), command[1])
         self.assertEqual('host', command[-1])
 
@@ -85,42 +93,86 @@ class WorkspaceCommandTest(unittest.TestCase):
 
 
 class WorkspaceJourneyTest(unittest.TestCase):
-    """Help explains each step; ros observes from the PC with the workspace's own message overlay."""
+    """Help explains each step; ros observes from the PC with the workspace's message overlay."""
 
     def setUp(self):
-        temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
         self.root = Path(temp.name)
-        self.home = self.root / 'home'; self.home.mkdir()
-        self.workspace = self.root / 'demo_ws'; (self.workspace / 'src').mkdir(parents=True)
+        self.home = self.root / 'home'
+        self.home.mkdir()
+        self.workspace = self.root / 'demo_ws'
+        (self.workspace / 'src').mkdir(parents=True)
         self.addCleanup(patch.stopall)
         patch('ros2android.workspace.Path.home', return_value=self.home).start()
         self.backend = patch('ros2android.workspace.subprocess.run').start()
 
     def invoke(self, *arguments):
-        with contextlib.redirect_stdout(io.StringIO()) as output, contextlib.redirect_stderr(io.StringIO()) as error:
+        with (
+            contextlib.redirect_stdout(io.StringIO()) as output,
+            contextlib.redirect_stderr(io.StringIO()) as error,
+        ):
             try:
-                code = run(['--workspace', str(self.workspace), *arguments], tooling_root=self.root / 'sdk',
-                           prog='ros2-android workspace')
+                code = run(
+                    ['--workspace', str(self.workspace), *arguments],
+                    tooling_root=self.root / 'sdk',
+                    prog='ros2-android workspace',
+                )
             except SystemExit as failure:
                 code = failure.code
+
         return code, output.getvalue(), error.getvalue()
 
     def test_help_names_every_step_and_the_journey(self):
         code, output, _ = self.invoke('--help')
         self.assertEqual(0, code)
         self.assertIn('usage: ros2-android workspace', output)
-        for step in ('inspect', 'host-build', 'build', 'ros', 'deploy', 'start', 'status', 'stop', 'kill', 'logs', 'launch-plan'):
+
+        for step in (
+            'inspect',
+            'host-build',
+            'build',
+            'ros',
+            'deploy',
+            'start',
+            'status',
+            'stop',
+            'kill',
+            'logs',
+            'launch-plan',
+        ):
             self.assertRegex(output, rf'\n    {re.escape(step)}\s+[A-Z]')
+
         self.assertIn('typical journey:', output)
 
     def test_ros_uses_the_workspace_overlay_and_pc_middleware_wrapper(self):
-        overlay = self.home / '.cache/ros2-android-workspaces/demo_ws/host/install/local_setup.bash'
-        overlay.parent.mkdir(parents=True); overlay.write_text('')
-        code, _, error = self.invoke('ros', '--interface', '192.0.2.10', '--', 'topic', 'echo', '/result')
-        self.assertEqual(0, code); self.assertEqual('', error)
+        overlay = (
+            self.home / '.cache/ros2-android-workspaces/demo_ws/host/install/local_setup.bash'
+        )
+        overlay.parent.mkdir(parents=True)
+        overlay.write_text('')
+        code, _, error = self.invoke(
+            'ros', '--interface', '192.0.2.10', '--', 'topic', 'echo', '/result'
+        )
+        self.assertEqual(0, code)
+        self.assertEqual('', error)
         command = self.backend.call_args.args[0]
-        self.assertEqual([str(self.root / 'sdk/tools/pc-ros.sh'), '--interface', '192.0.2.10', '--', 'ros2', 'topic', 'echo', '/result'], command)
-        self.assertEqual(str(overlay), self.backend.call_args.kwargs['env']['ROS2_ANDROID_PROJECT_OVERLAY'])
+        self.assertEqual(
+            [
+                str(self.root / 'sdk/tools/pc-ros.sh'),
+                '--interface',
+                '192.0.2.10',
+                '--',
+                'ros2',
+                'topic',
+                'echo',
+                '/result',
+            ],
+            command,
+        )
+        self.assertEqual(
+            str(overlay), self.backend.call_args.kwargs['env']['ROS2_ANDROID_PROJECT_OVERLAY']
+        )
 
     def test_ros_without_host_build_still_runs_but_explains_custom_types(self):
         code, _, error = self.invoke('ros', '--', 'topic', 'list')

@@ -11,5 +11,5 @@ extern "C" rclcpp::Node * ros2_android_create_node(const rclcpp::NodeOptions * o
 #else
 // ABI 2: component selects one compiled-in factory; called once per launch entry.
 extern "C" rclcpp::Node * ros2_android_create_component(
-    const char * component, const rclcpp::NodeOptions * options);
+  const char * component, const rclcpp::NodeOptions * options);
 #endif

@@ -7,6 +7,7 @@ package. Signing passwords are read only from ROS2_ANDROID_KEYSTORE_PASSWORD and
 ROS2_ANDROID_KEY_PASSWORD (defaults to the keystore password); keys never enter the
 release folder. Nothing is published, uploaded or installed on a phone.
 """
+
 import argparse
 from datetime import datetime, timezone
 import hashlib
@@ -25,6 +26,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'python'))
 from ros2android import native_sdk  # noqa: E402
+
 PACKAGE = 'dev.ros2android.android'
 DOCUMENTS = ('LICENSE', 'NOTICE', 'THIRD-PARTY-NOTICES.md', 'CHANGELOG.md')
 CHECKSUMS = 'SHA256SUMS'
@@ -33,63 +35,123 @@ MANIFEST = 'release-manifest.json'
 
 def sha256(path):
     digest = hashlib.sha256()
+
     with Path(path).open('rb') as stream:
         for block in iter(lambda: stream.read(1 << 20), b''):
             digest.update(block)
+
     return digest.hexdigest()
 
 
 def build_tools():
-    sdk = Path(os.environ.get('ANDROID_HOME') or os.environ.get('ANDROID_SDK_ROOT') or Path.home() / 'Android/Sdk')
-    version = json.loads((ROOT / 'python/ros2android/compatibility.json').read_text())['android']['buildTools']
+    sdk = Path(
+        os.environ.get('ANDROID_HOME')
+        or os.environ.get('ANDROID_SDK_ROOT')
+        or Path.home() / 'Android/Sdk'
+    )
+    version = json.loads((ROOT / 'python/ros2android/compatibility.json').read_text())['android'][
+        'buildTools'
+    ]
     return sdk / 'build-tools' / version
 
 
 def badging(apk):
-    output = subprocess.run([str(build_tools() / 'aapt'), 'dump', 'badging', str(apk)], check=True,
-                            capture_output=True, text=True).stdout
-    package = re.search(r"package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'", output)
+    output = subprocess.run(
+        [str(build_tools() / 'aapt'), 'dump', 'badging', str(apk)],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    package = re.search(
+        r"package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'", output
+    )
     if not package:
         raise RuntimeError(f'Cannot read package identity from {apk}')
-    return {'package': package[1], 'versionCode': int(package[2]), 'versionName': package[3],
-            'debuggable': 'application-debuggable' in output,
-            'abis': re.findall(r"'([^']+)'", re.search(r"native-code:(.*)", output)[1]) if 'native-code:' in output else []}
+
+    return {
+        'package': package[1],
+        'versionCode': int(package[2]),
+        'versionName': package[3],
+        'debuggable': 'application-debuggable' in output,
+        'abis': re.findall(r"'([^']+)'", re.search(r'native-code:(.*)', output)[1])
+        if 'native-code:' in output
+        else [],
+    }
 
 
 def signer(apk):
     """Signer certificate digest and verified schemes from apksigner."""
-    result = subprocess.run([str(build_tools() / 'apksigner'), 'verify', '--verbose', '--print-certs', str(apk)],
-                            capture_output=True, text=True)
+    result = subprocess.run(
+        [str(build_tools() / 'apksigner'), 'verify', '--verbose', '--print-certs', str(apk)],
+        capture_output=True,
+        text=True,
+    )
     if result.returncode:
-        raise RuntimeError('APK signature verification failed: ' + (result.stderr or result.stdout).strip())
+        raise RuntimeError(
+            'APK signature verification failed: ' + (result.stderr or result.stdout).strip()
+        )
+
     digests = re.findall(r'Signer #\d+ certificate SHA-256 digest: ([0-9a-f]{64})', result.stdout)
-    schemes = sorted(set(re.findall(r'Verified using (v\d(?:\.\d)?) scheme \([^)]*\): true', result.stdout)))
+    schemes = sorted(
+        set(re.findall(r'Verified using (v\d(?:\.\d)?) scheme \([^)]*\): true', result.stdout))
+    )
+
     if len(digests) != 1:
         raise RuntimeError('Expected exactly one APK signer, found %d' % len(digests))
+
     return {'certificateSha256': digests[0], 'schemes': schemes}
 
 
-AGENT_LICENSES = ('micro-xrce-agent', 'fastdds', 'fastcdr', 'foonathan-memory', 'spdlog', 'asio', 'tinyxml2', 'android-ifaddrs')
+AGENT_LICENSES = (
+    'micro-xrce-agent',
+    'fastdds',
+    'fastcdr',
+    'foonathan-memory',
+    'spdlog',
+    'asio',
+    'tinyxml2',
+    'android-ifaddrs',
+)
 
 
 def require_contents(apk):
-    """Native runtime plus a license text for every staged component (ROS index and Agent stack)."""
+    """Native runtime plus a license text per staged component (ROS index and Agent stack)."""
     from ros2android.elf_alignment import check_apk
+
     check_apk(apk)
+
     with zipfile.ZipFile(apk) as archive:
         names = set(archive.namelist())
-        index = json.loads(archive.read('assets/licenses/index.json')) if 'assets/licenses/index.json' in names else []
-    problems = [name for name in ('lib/arm64-v8a/libros2android.so', 'lib/arm64-v8a/libc++_shared.so') if name not in names]
+        index = (
+            json.loads(archive.read('assets/licenses/index.json'))
+            if 'assets/licenses/index.json' in names
+            else []
+        )
+
+    problems = [
+        name
+        for name in ('lib/arm64-v8a/libros2android.so', 'lib/arm64-v8a/libc++_shared.so')
+        if name not in names
+    ]
+
     if not index:
         problems.append('assets/licenses/index.json (run setup/stage-licenses.py)')
+
     for entry in index:
-        problems += [f"assets/licenses/{entry['component']}/{file}" for file in entry['files']
-                     if f"assets/licenses/{entry['component']}/{file}" not in names]
+        problems += [
+            f'assets/licenses/{entry["component"]}/{file}'
+            for file in entry['files']
+            if f'assets/licenses/{entry["component"]}/{file}' not in names
+        ]
+
     for component in AGENT_LICENSES:
         if not any(name.startswith(f'assets/licenses/{component}/') for name in names):
             problems.append(f'assets/licenses/{component}/ (empty)')
+
     if problems:
-        raise RuntimeError('Release APK lacks required native/license content: ' + ', '.join(problems))
+        raise RuntimeError(
+            'Release APK lacks required native/license content: ' + ', '.join(problems)
+        )
 
 
 def _deb_member(tar_stream, deb, suffix):
@@ -97,7 +159,8 @@ def _deb_member(tar_stream, deb, suffix):
         for member in tar.getmembers():
             if member.name.endswith(suffix):
                 return tar.extractfile(member).read()
-    raise RuntimeError(f"{deb} has no bundled {suffix.rsplit('/', 1)[-1]}")
+
+    raise RuntimeError(f'{deb} has no bundled {suffix.rsplit("/", 1)[-1]}')
 
 
 def deb_file(deb, suffix):
@@ -105,18 +168,25 @@ def deb_file(deb, suffix):
     data = Path(deb).read_bytes()
     if not data.startswith(b'!<arch>\n'):
         raise RuntimeError(f'{deb} is not a Debian archive')
+
     if shutil.which('dpkg-deb'):  # handles every dpkg compression, including zstd
-        tar = subprocess.run(['dpkg-deb', '--fsys-tarfile', str(deb)], check=True, capture_output=True).stdout
+        tar = subprocess.run(
+            ['dpkg-deb', '--fsys-tarfile', str(deb)], check=True, capture_output=True
+        ).stdout
         return _deb_member(io.BytesIO(tar), deb, suffix)
+
     offset = 8
     while offset < len(data):
-        header = data[offset:offset + 60]
+        header = data[offset : offset + 60]
         name, size = header[:16].decode().strip().rstrip('/'), int(header[48:58].decode().strip())
         if name.startswith('data.tar'):
             if name.endswith('.zst'):
                 raise RuntimeError(f'{deb} uses zstd; install dpkg to inspect it')
-            return _deb_member(io.BytesIO(data[offset + 60:offset + 60 + size]), deb, suffix)
+
+            return _deb_member(io.BytesIO(data[offset + 60 : offset + 60 + size]), deb, suffix)
+
         offset += 60 + size + (size % 2)
+
     raise RuntimeError(f'{deb} has no data archive')
 
 
@@ -126,27 +196,43 @@ def deb_apk_sha256(deb):
 
 
 def release_consistency(wheel=None, deb=None, sdk_path=None, sdk=None):
-    """Problems that would stop the shipped client, Debian package and SDK from working together."""
+    """Problems that would stop the shipped client, .deb and SDK from working together."""
     problems = []
+
     if deb and wheel:
         bundled = json.loads(deb_file(deb, 'ros2android/artifacts/main.json'))
         if bundled.get('wheelSha256') != sha256(wheel):
             problems.append('The Debian package was built from a different wheel')
+
     if wheel and sdk_path and sdk:
-        name = f"ros2-android-native-sdk-{sdk['version']}-{native_sdk.ABI}.tar.xz"
+        name = f'ros2-android-native-sdk-{sdk["version"]}-{native_sdk.ABI}.tar.xz'
+
         with zipfile.ZipFile(wheel) as bundle:
             pinned = json.loads(bundle.read('ros2android/release.json')).get('nativeSdk', {})
             snapshot = bundle.read('ros2android/sdk.zip')
+
         if Path(sdk_path).name != name:
             problems.append(f'SDK archive must be named {name}')
-        if (pinned.get('version') != sdk['version'] or pinned.get('sha256') != sha256(sdk_path)
-                or pinned.get('inputsDigest') != sdk['inputsDigest']):
-            problems.append('The client pins a different native SDK (release.json); setup workspace-tools would reject this one')
+
+        if (
+            pinned.get('version') != sdk['version']
+            or pinned.get('sha256') != sha256(sdk_path)
+            or pinned.get('inputsDigest') != sdk['inputsDigest']
+        ):
+            problems.append(
+                'The client pins a different native SDK (release.json); setup '
+                'workspace-tools would reject this one'
+            )
+
         with tempfile.TemporaryDirectory() as folder:
             with zipfile.ZipFile(io.BytesIO(snapshot)) as tooling:
                 tooling.extractall(folder)
+
             if native_sdk.inputs_digest(folder) != sdk['inputsDigest']:
-                problems.append("The client's build inputs differ from the SDK's; setup sdk would reject it")
+                problems.append(
+                    "The client's build inputs differ from the SDK's; setup sdk would reject it"
+                )
+
     return problems
 
 
@@ -157,37 +243,72 @@ def wheel_matrix(wheel):
 
 def write_checksums(folder):
     files = sorted(p.name for p in folder.iterdir() if p.is_file() and p.name != CHECKSUMS)
-    (folder / CHECKSUMS).write_text(''.join(f'{sha256(folder / name)}  {name}\n' for name in files))
+    (folder / CHECKSUMS).write_text(
+        ''.join(f'{sha256(folder / name)}  {name}\n' for name in files)
+    )
     return files
 
 
 # Sources that determine the main APK; a pre-signed APK is reusable only while these are unchanged.
-APP_SOURCES = ('android', 'native', 'build.gradle.kts', 'settings.gradle.kts',
-               'gradle.properties', 'gradle', 'setup/build-native-ros.sh', 'setup/stage-native-libs.py',
-               'setup/stage-licenses.py', 'setup/build-micro-ros-agent.sh', 'setup/stage-micro-ros-agent.py',
-               'setup/build-python-ros.sh', 'setup/stage-python-ros.py', 'setup/prepare-python-target.py')
+APP_SOURCES = (
+    'android',
+    'native',
+    'build.gradle.kts',
+    'settings.gradle.kts',
+    'gradle.properties',
+    'gradle',
+    'setup/build-native-ros.sh',
+    'setup/stage-native-libs.py',
+    'setup/stage-licenses.py',
+    'setup/build-micro-ros-agent.sh',
+    'setup/stage-micro-ros-agent.py',
+    'setup/build-python-ros.sh',
+    'setup/stage-python-ros.py',
+    'setup/prepare-python-target.py',
+)
 
 
 def sdk_manifest(archive, matrix, release=True):
     """Accept a prebuilt native SDK only if it was built from this release's pinned inputs."""
     sdk = native_sdk.read_manifest(archive)
     if sdk.get('format') != native_sdk.FORMAT or sdk.get('abi') != native_sdk.ABI:
-        raise RuntimeError(f"Unsupported SDK archive format {sdk.get('format')} / ABI {sdk.get('abi')}")
+        raise RuntimeError(
+            f'Unsupported SDK archive format {sdk.get("format")} / ABI {sdk.get("abi")}'
+        )
+
     if sdk.get('version') != matrix['hostClientVersion']:
-        raise RuntimeError(f"SDK archive is for client {sdk.get('version')}, not {matrix['hostClientVersion']}")
+        raise RuntimeError(
+            f'SDK archive is for client {sdk.get("version")}, not {matrix["hostClientVersion"]}'
+        )
+
     if sdk.get('inputsDigest') != native_sdk.inputs_digest(ROOT):
-        raise RuntimeError('SDK archive was built from different pinned inputs; rebuild it from this revision')
+        raise RuntimeError(
+            'SDK archive was built from different pinned inputs; rebuild it from this revision'
+        )
+
     if release and not sdk.get('source', {}).get('clean'):
         raise RuntimeError('SDK archive was packaged from a dirty tree; use a clean CI build')
+
     return sdk
 
 
 def source_state(allow_dirty):
-    revision = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], check=True, capture_output=True, text=True).stdout.strip()
-    dirty = bool(subprocess.run(['git', '-C', str(ROOT), 'status', '--porcelain', '--untracked-files=no'],
-                                check=True, capture_output=True, text=True).stdout.strip())
+    revision = subprocess.run(
+        ['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], check=True, capture_output=True, text=True
+    ).stdout.strip()
+    dirty = bool(
+        subprocess.run(
+            ['git', '-C', str(ROOT), 'status', '--porcelain', '--untracked-files=no'],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    )
     if dirty and not allow_dirty:
-        raise RuntimeError('Tracked files differ from HEAD; commit first or pass --allow-dirty for a dry run')
+        raise RuntimeError(
+            'Tracked files differ from HEAD; commit first or pass --allow-dirty for a dry run'
+        )
+
     return revision, not dirty
 
 
@@ -196,126 +317,297 @@ def assemble(args):
     revision, clean = source_state(args.allow_dirty or args.unsigned_dry_run)
     identity = badging(args.apk)
     expected = matrix['app']
+
     if identity['package'] != PACKAGE or identity['debuggable']:
-        raise RuntimeError(f"Release requires the non-debuggable {PACKAGE} APK, got {identity}")
-    if (identity['versionName'], identity['versionCode']) != (expected['versionName'], expected['versionCode']):
-        raise RuntimeError(f"APK version {identity['versionName']}/{identity['versionCode']} differs from the "
-                           f"compatibility matrix {expected['versionName']}/{expected['versionCode']}")
+        raise RuntimeError(f'Release requires the non-debuggable {PACKAGE} APK, got {identity}')
+
+    if (identity['versionName'], identity['versionCode']) != (
+        expected['versionName'],
+        expected['versionCode'],
+    ):
+        raise RuntimeError(
+            f'APK version {identity["versionName"]}/{identity["versionCode"]} differs from the '
+            f'compatibility matrix {expected["versionName"]}/{expected["versionCode"]}'
+        )
+
     require_contents(args.apk)
     out = args.out
     if out.exists() and any(out.iterdir()):
         raise RuntimeError(f'{out} is not empty; choose a new release folder')
+
     out.mkdir(parents=True, exist_ok=True)
-    apk_name = f"ros2-android-{identity['versionName']}{'-UNSIGNED-DRY-RUN' if args.unsigned_dry_run else ''}.apk"
+    dry_run = '-UNSIGNED-DRY-RUN' if args.unsigned_dry_run else ''
+    apk_name = f'ros2-android-{identity["versionName"]}{dry_run}.apk'
     apk = out / apk_name
+
     if args.unsigned_dry_run:
         shutil.copyfile(args.apk, apk)
         signature = None
     elif args.already_signed:
-        # Repackaging after docs/packaging edits: keep the owner-signed APK instead of signing again,
-        # but only if it carries the expected signer and the app sources are unchanged since it was built.
+        # Repackaging after docs/packaging edits: keep the owner-signed APK instead of signing
+        # again, but only if it carries the expected signer and the app sources are unchanged
+        # since it was built.
         signature = signer(args.apk)
         if signature['certificateSha256'] != args.expect_certificate.lower():
-            raise RuntimeError('Pre-signed APK has an unexpected certificate: ' + signature['certificateSha256'])
+            raise RuntimeError(
+                'Pre-signed APK has an unexpected certificate: ' + signature['certificateSha256']
+            )
+
         if not set(signature['schemes']) & {'v2', 'v3', 'v3.1'}:
             raise RuntimeError('Pre-signed APK lacks a v2/v3 signature scheme')
-        changed = subprocess.run(['git', '-C', str(ROOT), 'diff', '--name-only', args.apk_revision, 'HEAD', '--', *APP_SOURCES],
-                                 check=True, capture_output=True, text=True).stdout.split()
+
+        changed = subprocess.run(
+            [
+                'git',
+                '-C',
+                str(ROOT),
+                'diff',
+                '--name-only',
+                args.apk_revision,
+                'HEAD',
+                '--',
+                *APP_SOURCES,
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.split()
         if changed:
-            raise RuntimeError(f'App sources changed since {args.apk_revision}; build and sign a new APK: ' + ', '.join(changed[:5]))
+            raise RuntimeError(
+                f'App sources changed since {args.apk_revision}; build and sign a new APK: '
+                + ', '.join(changed[:5])
+            )
+
         shutil.copyfile(args.apk, apk)
     else:
         password = os.environ.get('ROS2_ANDROID_KEYSTORE_PASSWORD')
         if not password:
-            raise RuntimeError('Set ROS2_ANDROID_KEYSTORE_PASSWORD (and optionally ROS2_ANDROID_KEY_PASSWORD)')
-        key_variable = 'ROS2_ANDROID_KEY_PASSWORD' if os.environ.get('ROS2_ANDROID_KEY_PASSWORD') else 'ROS2_ANDROID_KEYSTORE_PASSWORD'
+            raise RuntimeError(
+                'Set ROS2_ANDROID_KEYSTORE_PASSWORD (and optionally ROS2_ANDROID_KEY_PASSWORD)'
+            )
+
+        key_variable = (
+            'ROS2_ANDROID_KEY_PASSWORD'
+            if os.environ.get('ROS2_ANDROID_KEY_PASSWORD')
+            else 'ROS2_ANDROID_KEYSTORE_PASSWORD'
+        )
         aligned = out / '.aligned.apk'
-        subprocess.run([str(build_tools() / 'zipalign'), '-f', '-P', '16', '4', str(args.apk), str(aligned)], check=True)
-        subprocess.run([str(build_tools() / 'apksigner'), 'sign', '--ks', str(args.keystore), '--ks-key-alias', args.key_alias,
-                        '--ks-pass', 'env:ROS2_ANDROID_KEYSTORE_PASSWORD', '--key-pass', f'env:{key_variable}',
-                        '--out', str(apk), str(aligned)], check=True)
+        subprocess.run(
+            [str(build_tools() / 'zipalign'), '-f', '-P', '16', '4', str(args.apk), str(aligned)],
+            check=True,
+        )
+        subprocess.run(
+            [
+                str(build_tools() / 'apksigner'),
+                'sign',
+                '--ks',
+                str(args.keystore),
+                '--ks-key-alias',
+                args.key_alias,
+                '--ks-pass',
+                'env:ROS2_ANDROID_KEYSTORE_PASSWORD',
+                '--key-pass',
+                f'env:{key_variable}',
+                '--out',
+                str(apk),
+                str(aligned),
+            ],
+            check=True,
+        )
         aligned.unlink()
+
         for leftover in out.glob('*.idsig'):
             leftover.unlink()
+
         signature = signer(apk)
-        if args.expect_certificate and signature['certificateSha256'] != args.expect_certificate.lower():
-            raise RuntimeError('Signed with an unexpected certificate: ' + signature['certificateSha256'])
+        if (
+            args.expect_certificate
+            and signature['certificateSha256'] != args.expect_certificate.lower()
+        ):
+            raise RuntimeError(
+                'Signed with an unexpected certificate: ' + signature['certificateSha256']
+            )
+
     artifacts = {'apk': {'file': apk_name, **identity, 'signature': signature}}
+
     if args.already_signed:
-        artifacts['apk']['builtFromRevision'] = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', args.apk_revision],
-                                                              check=True, capture_output=True, text=True).stdout.strip()
+        artifacts['apk']['builtFromRevision'] = subprocess.run(
+            ['git', '-C', str(ROOT), 'rev-parse', args.apk_revision],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+
     if args.wheel:
         bundled = wheel_matrix(args.wheel)
-        if bundled.get('hostClientVersion') != matrix['hostClientVersion'] or 'artifact' not in bundled:
-            raise RuntimeError('Wheel is not a bundled build of this client version; use setup/build-python-package.py')
+        if (
+            bundled.get('hostClientVersion') != matrix['hostClientVersion']
+            or 'artifact' not in bundled
+        ):
+            raise RuntimeError(
+                'Wheel is not a bundled build of this client version; use '
+                'setup/build-python-package.py'
+            )
+
         shutil.copyfile(args.wheel, out / args.wheel.name)
-        artifacts['wheel'] = {'file': args.wheel.name, 'version': bundled['hostClientVersion'],
-                              'sdkSnapshotSha256': bundled['artifact']['sdkSnapshotSha256']}
+        artifacts['wheel'] = {
+            'file': args.wheel.name,
+            'version': bundled['hostClientVersion'],
+            'sdkSnapshotSha256': bundled['artifact']['sdkSnapshotSha256'],
+        }
+
     if args.sdk:
         sdk = sdk_manifest(args.sdk, matrix, release=not args.unsigned_dry_run)
         shutil.copyfile(args.sdk, out / args.sdk.name)
-        artifacts['sdk'] = {'file': args.sdk.name, 'version': sdk['version'], 'abi': sdk['abi'],
-                            'inputsDigest': sdk['inputsDigest'], 'source': sdk['source']}
+        artifacts['sdk'] = {
+            'file': args.sdk.name,
+            'version': sdk['version'],
+            'abi': sdk['abi'],
+            'inputsDigest': sdk['inputsDigest'],
+            'source': sdk['source'],
+        }
+
     problems = release_consistency(args.wheel, args.deb, args.sdk, artifacts.get('sdk'))
+
     if args.sdk:
         published = args.sdk.with_name(args.sdk.name + '.sha256')
         if published.is_file() and published.read_text().split()[0] != sha256(args.sdk):
             problems.append('SDK archive differs from its published .sha256; download it again')
+
     if problems:
         raise RuntimeError('; '.join(problems))
+
     if args.deb:
         if deb_apk_sha256(args.deb) != sha256(apk):
-            raise RuntimeError('The Debian package does not bundle this release APK; rebuild it with setup/build-deb.py --apk ' + str(apk))
+            raise RuntimeError(
+                (
+                    'The Debian package does not bundle this release APK; rebuild it with '
+                    'setup/build-deb.py --apk '
+                )
+                + str(apk)
+            )
+
         shutil.copyfile(args.deb, out / args.deb.name)
         artifacts['deb'] = {'file': args.deb.name, 'bundledApkSha256': sha256(apk)}
+
     for name in DOCUMENTS:
         shutil.copyfile(ROOT / name, out / name)
-    manifest = {'schemaVersion': 1, 'createdUtc': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
-                'status': 'unsigned dry run - not a release' if args.unsigned_dry_run else matrix['status'],
-                'source': {'revision': revision, 'trackedTreeClean': clean},
-                'versions': {'app': expected, 'hostClient': matrix['hostClientVersion'], 'contracts': matrix['contracts']},
-                'toolchain': {'android': matrix['android'], 'host': matrix['host'], 'ros': matrix['ros']},
-                'artifacts': artifacts,
-                'notes': 'Checksums identify files; the APK signature identifies its signer. Neither proves runtime qualification.'}
+
+    manifest = {
+        'schemaVersion': 1,
+        'createdUtc': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'status': 'unsigned dry run - not a release'
+        if args.unsigned_dry_run
+        else matrix['status'],
+        'source': {'revision': revision, 'trackedTreeClean': clean},
+        'versions': {
+            'app': expected,
+            'hostClient': matrix['hostClientVersion'],
+            'contracts': matrix['contracts'],
+        },
+        'toolchain': {'android': matrix['android'], 'host': matrix['host'], 'ros': matrix['ros']},
+        'artifacts': artifacts,
+        'notes': (
+            'Checksums identify files; the APK signature identifies its signer. Neither '
+            'proves runtime qualification.'
+        ),
+    }
     (out / MANIFEST).write_text(json.dumps(manifest, indent=2) + '\n')
     files = write_checksums(out)
     return manifest, files
 
 
 def main(arguments=None):
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--apk', type=Path, required=True, help='Non-debuggable release APK (unsigned, or already signed with --already-signed)')
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        '--apk',
+        type=Path,
+        required=True,
+        help='Non-debuggable release APK (unsigned, or already signed with --already-signed)',
+    )
     parser.add_argument('--out', type=Path, required=True, help='New, empty release folder')
-    parser.add_argument('--wheel', type=Path, help='Bundled host wheel from setup/build-python-package.py')
+    parser.add_argument(
+        '--wheel', type=Path, help='Bundled host wheel from setup/build-python-package.py'
+    )
     parser.add_argument('--deb', type=Path, help='Debian package built from the signed APK')
-    parser.add_argument('--sdk', type=Path, help='Prebuilt native SDK archive from setup/package-native-sdk.py (CI artifact)')
+    parser.add_argument(
+        '--sdk',
+        type=Path,
+        help='Prebuilt native SDK archive from setup/package-native-sdk.py (CI artifact)',
+    )
     signing = parser.add_mutually_exclusive_group(required=True)
-    signing.add_argument('--keystore', type=Path, help='Release keystore held by the maintainer, outside the repository')
-    signing.add_argument('--unsigned-dry-run', action='store_true', help='Exercise the flow without signing; never publish')
-    signing.add_argument('--already-signed', action='store_true',
-                         help='--apk is already release-signed; needs --expect-certificate and --apk-revision')
+    signing.add_argument(
+        '--keystore',
+        type=Path,
+        help='Release keystore held by the maintainer, outside the repository',
+    )
+    signing.add_argument(
+        '--unsigned-dry-run',
+        action='store_true',
+        help='Exercise the flow without signing; never publish',
+    )
+    signing.add_argument(
+        '--already-signed',
+        action='store_true',
+        help='--apk is already release-signed; needs --expect-certificate and --apk-revision',
+    )
     parser.add_argument('--apk-revision', help='Commit the pre-signed APK was built from')
     parser.add_argument('--key-alias', help='Key alias inside --keystore')
-    parser.add_argument('--expect-certificate', help='Fail unless the signer certificate has this SHA-256')
-    parser.add_argument('--allow-dirty', action='store_true', help='Allow uncommitted tracked changes (dry runs only)')
+    parser.add_argument(
+        '--expect-certificate', help='Fail unless the signer certificate has this SHA-256'
+    )
+    parser.add_argument(
+        '--allow-dirty',
+        action='store_true',
+        help='Allow uncommitted tracked changes (dry runs only)',
+    )
     args = parser.parse_args(arguments)
     if args.already_signed and args.allow_dirty:
-        parser.error('Releases must come from a clean tracked tree; --allow-dirty is only for dry runs')
+        parser.error(
+            'Releases must come from a clean tracked tree; --allow-dirty is only for dry runs'
+        )
+
     if args.already_signed and not (args.expect_certificate and args.apk_revision):
         parser.error('--already-signed requires --expect-certificate and --apk-revision')
+
     if args.keystore and not args.key_alias:
         parser.error('--keystore requires --key-alias')
+
     if args.keystore and args.allow_dirty:
         parser.error('Signed releases must come from a clean tracked tree')
+
     if args.keystore and ROOT in args.keystore.resolve().parents:
         parser.error('Keep the release keystore outside the repository')
+
     try:
         manifest, files = assemble(args)
-    except (OSError, RuntimeError, ValueError, subprocess.SubprocessError, KeyError, zipfile.BadZipFile, json.JSONDecodeError) as error:
+    except (
+        OSError,
+        RuntimeError,
+        ValueError,
+        subprocess.SubprocessError,
+        KeyError,
+        zipfile.BadZipFile,
+        json.JSONDecodeError,
+    ) as error:
         print('assemble release: ' + str(error), file=sys.stderr)
         return 1
-    print(json.dumps({'release': str(args.out), 'files': files, 'apk': manifest['artifacts']['apk']['file'],
-                      'signer': (manifest['artifacts']['apk']['signature'] or {}).get('certificateSha256')}, indent=2))
+
+    print(
+        json.dumps(
+            {
+                'release': str(args.out),
+                'files': files,
+                'apk': manifest['artifacts']['apk']['file'],
+                'signer': (manifest['artifacts']['apk']['signature'] or {}).get(
+                    'certificateSha256'
+                ),
+            },
+            indent=2,
+        )
+    )
     return 0
 
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Reject 4 KB target ELF binaries before APK/SDK publication (does not test runtime behavior)."""
+
 import argparse
 from pathlib import Path
 import sys
@@ -16,4 +17,5 @@ try:
     count = check_apk(args.apk) if args.apk else check_tree(args.native_root)
 except (OSError, ValueError) as error:
     parser.exit(1, str(error) + '\n')
+
 print(f'{count} target ELF files pass 16 KB load-segment alignment')

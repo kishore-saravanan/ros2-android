@@ -42,29 +42,39 @@ static std_msgs__msg__Bool led_command, led_state;
 #define ROS2_ANDROID_LED_ACTIVE_HIGH 1
 #endif
 
-static void set_led(bool on) {
+static void set_led(bool on)
+{
   digitalWrite(ROS2_ANDROID_LED_PIN, (on == bool(ROS2_ANDROID_LED_ACTIVE_HIGH)) ? HIGH : LOW);
   led_state.data = on;
-  const rcl_ret_t result = rcl_publish(&led_state_pub, &led_state, nullptr); (void)result;
+  const rcl_ret_t result = rcl_publish(&led_state_pub, &led_state, nullptr);
+  (void)result;
 }
-static void led_received(const void *message) {
+
+static void led_received(const void * message)
+{
   const bool on = static_cast<const std_msgs__msg__Bool *>(message)->data;
   set_led(on);
 }
+
 static std_msgs__msg__String display;
 static char display_buffer[160];
 static bool ready = false;
 static unsigned long last_ping = 0;
 
-void battery_received(const void *message) {
-  const auto *value = static_cast<const std_msgs__msg__Float64 *>(message);
-  int count = snprintf(display_buffer, sizeof(display_buffer),
-      "ESP32 received phone battery: %.1f%% (heartbeat %ld)", value->data, (long)heartbeat.data);
+void battery_received(const void * message)
+{
+  const auto * value = static_cast<const std_msgs__msg__Float64 *>(message);
+  int count = snprintf(
+    display_buffer, sizeof(display_buffer), "ESP32 received phone battery: %.1f%% (heartbeat %ld)",
+    value->data, (long)heartbeat.data);
   display.data.size = count < 0 ? 0 : min((size_t)count, sizeof(display_buffer) - 1);
-  const rcl_ret_t result = rcl_publish(&display_pub, &display, nullptr); (void)result;
+  const rcl_ret_t result = rcl_publish(&display_pub, &display, nullptr);
+  (void)result;
   LOG("phone battery %.1f; reply %s\n", value->data, result == RCL_RET_OK ? "sent" : "failed");
 }
-void heartbeat_tick(rcl_timer_t *, int64_t) {
+
+void heartbeat_tick(rcl_timer_t *, int64_t)
+{
   ++heartbeat.data;
 #ifdef ROS2_ANDROID_ROBOT
   publish_robot_state();
@@ -72,60 +82,134 @@ void heartbeat_tick(rcl_timer_t *, int64_t) {
   const rcl_ret_t result = rcl_publish(&heartbeat_pub, &heartbeat, nullptr);
   (void)result;
 }
-bool create_entities() {
+
+bool create_entities()
+{
   allocator = rcl_get_default_allocator();
   rcl_init_options_t options = rcl_get_zero_initialized_init_options();
-  if (rcl_init_options_init(&options, allocator) != RCL_RET_OK) return false;
-  if (rcl_init_options_set_domain_id(&options, ROS_DOMAIN) != RCL_RET_OK) return false;
-  const rcl_ret_t initialized = rclc_support_init_with_options(&support, 0, nullptr, &options, &allocator);
-  const rcl_ret_t options_done = rcl_init_options_fini(&options); (void)options_done;
-  if (initialized != RCL_RET_OK) return false;
+  if (rcl_init_options_init(&options, allocator) != RCL_RET_OK) {
+    return false;
+  }
+
+  if (rcl_init_options_set_domain_id(&options, ROS_DOMAIN) != RCL_RET_OK) {
+    return false;
+  }
+
+  const rcl_ret_t initialized =
+    rclc_support_init_with_options(&support, 0, nullptr, &options, &allocator);
+  const rcl_ret_t options_done = rcl_init_options_fini(&options);
+  (void)options_done;
+
+  if (initialized != RCL_RET_OK) {
+    return false;
+  }
 #ifdef ROS2_ANDROID_USB
-  const char *node_name = "usb_bridge";
+  const char * node_name = "usb_bridge";
 #else
-  const char *node_name = "wifi_bridge";
+  const char * node_name = "wifi_bridge";
 #endif
-  if (rclc_node_init_default(&node, node_name, "/esp32", &support) != RCL_RET_OK) return false;
-  if (rclc_publisher_init_best_effort(&heartbeat_pub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32), "/esp32/heartbeat") != RCL_RET_OK) return false;
-  if (rclc_publisher_init_default(&display_pub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), "/phone/display/text") != RCL_RET_OK) return false;
-  if (rclc_subscription_init_best_effort(&battery_sub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float64), "/phone/battery_percent") != RCL_RET_OK) return false;
-  if (rclc_publisher_init_default(&led_state_pub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Bool), "/esp32/led_state") != RCL_RET_OK) return false;
-  if (rclc_subscription_init_default(&led_sub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Bool), "/esp32/led") != RCL_RET_OK) return false;
-  if (rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(1000), heartbeat_tick) != RCL_RET_OK) return false;
+  if (rclc_node_init_default(&node, node_name, "/esp32", &support) != RCL_RET_OK) {
+    return false;
+  }
+
+  if (
+    rclc_publisher_init_best_effort(
+      &heartbeat_pub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
+      "/esp32/heartbeat") != RCL_RET_OK) {
+    return false;
+  }
+
+  if (
+    rclc_publisher_init_default(
+      &display_pub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String),
+      "/phone/display/text") != RCL_RET_OK) {
+    return false;
+  }
+
+  if (
+    rclc_subscription_init_best_effort(
+      &battery_sub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Float64),
+      "/phone/battery_percent") != RCL_RET_OK) {
+    return false;
+  }
+
+  if (
+    rclc_publisher_init_default(
+      &led_state_pub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Bool),
+      "/esp32/led_state") != RCL_RET_OK) {
+    return false;
+  }
+
+  if (
+    rclc_subscription_init_default(
+      &led_sub, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Bool), "/esp32/led") !=
+    RCL_RET_OK) {
+    return false;
+  }
+
+  if (rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(1000), heartbeat_tick) != RCL_RET_OK) {
+    return false;
+  }
 #ifdef ROS2_ANDROID_ROBOT
-  if (!create_robot_entities()) return false;
+  if (!create_robot_entities()) {
+    return false;
+  }
+
   constexpr int handles = 6;
 #else
   constexpr int handles = 3;
 #endif
-  if (rclc_executor_init(&executor, &support.context, handles, &allocator) != RCL_RET_OK) return false;
-  if (rclc_executor_add_timer(&executor, &timer) != RCL_RET_OK) return false;
-  if (rclc_executor_add_subscription(&executor, &battery_sub, &battery, battery_received, ON_NEW_DATA) != RCL_RET_OK) return false;
-  if (rclc_executor_add_subscription(&executor, &led_sub, &led_command, led_received, ON_NEW_DATA) != RCL_RET_OK) return false;
+  if (rclc_executor_init(&executor, &support.context, handles, &allocator) != RCL_RET_OK) {
+    return false;
+  }
+
+  if (rclc_executor_add_timer(&executor, &timer) != RCL_RET_OK) {
+    return false;
+  }
+
+  if (
+    rclc_executor_add_subscription(
+      &executor, &battery_sub, &battery, battery_received, ON_NEW_DATA) != RCL_RET_OK) {
+    return false;
+  }
+
+  if (
+    rclc_executor_add_subscription(&executor, &led_sub, &led_command, led_received, ON_NEW_DATA) !=
+    RCL_RET_OK) {
+    return false;
+  }
 #ifdef ROS2_ANDROID_ROBOT
   return add_robot_handles();
 #else
   return true;
 #endif
 }
-void setup() {
+
+void setup()
+{
 #ifdef ROS2_ANDROID_ROBOT
   setup_robot_motors();
 #endif
   pinMode(ROS2_ANDROID_LED_PIN, OUTPUT);
   digitalWrite(ROS2_ANDROID_LED_PIN, ROS2_ANDROID_LED_ACTIVE_HIGH ? LOW : HIGH);
   Serial.begin(115200);
-  display.data.data = display_buffer; display.data.capacity = sizeof(display_buffer); display.data.size = 0;
+  display.data.data = display_buffer;
+  display.data.capacity = sizeof(display_buffer);
+  display.data.size = 0;
 #ifdef ROS2_ANDROID_USB
   set_microros_serial_transports(Serial);
 #else
   WiFi.mode(WIFI_STA);
   IPAddress agent(AGENT_IP_0, AGENT_IP_1, AGENT_IP_2, AGENT_IP_3);
   set_microros_wifi_transports(WIFI_SSID, WIFI_PASSWORD, agent, AGENT_PORT);
-  LOG("Wi-Fi connected: %s; agent %s:%u\n", WiFi.localIP().toString().c_str(), agent.toString().c_str(), AGENT_PORT);
+  LOG(
+    "Wi-Fi connected: %s; agent %s:%u\n", WiFi.localIP().toString().c_str(),
+    agent.toString().c_str(), AGENT_PORT);
 #endif
 }
-void loop() {
+
+void loop()
+{
   if (!ready) {
     if (rmw_uros_ping_agent(100, 1) == RMW_RET_OK) {
       ready = create_entities();
@@ -133,11 +217,20 @@ void loop() {
       robot_connection(ready);
 #endif
       LOG("%s\n", ready ? "micro-ROS ready" : "micro-ROS creation failed; restarting");
-      if (!ready) { delay(1000); ESP.restart(); }
-    } else delay(200);
+      if (!ready) {
+        delay(1000);
+        ESP.restart();
+      }
+    } else {
+      delay(200);
+    }
+
     return;
   }
-  const rcl_ret_t result = rclc_executor_spin_some(&executor, RCL_MS_TO_NS(20)); (void)result;
+
+  const rcl_ret_t result = rclc_executor_spin_some(&executor, RCL_MS_TO_NS(20));
+  (void)result;
+
   if (millis() - last_ping > 3000) {
     last_ping = millis();
     bool disconnected = rmw_uros_ping_agent(200, 2) != RMW_RET_OK;
@@ -148,7 +241,9 @@ void loop() {
 #ifdef ROS2_ANDROID_ROBOT
       robot_connection(false);
 #endif
-      LOG("Connection lost; restarting to rejoin\n"); delay(100); ESP.restart();
+      LOG("Connection lost; restarting to rejoin\n");
+      delay(100);
+      ESP.restart();
     }
   }
 }

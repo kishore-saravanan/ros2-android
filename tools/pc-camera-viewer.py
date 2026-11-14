@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Show live ROS JPEG frames and received FPS without saving images."""
+
 import argparse
 import time
 
@@ -25,12 +26,22 @@ def receive(message):
     count += 1
 
 
-subscription = node.create_subscription(CompressedImage, args.topic, receive, qos_profile_sensor_data)
+subscription = node.create_subscription(
+    CompressedImage, args.topic, receive, qos_profile_sensor_data
+)
 title = 'ROS2 Android - live camera (Q to close)'
 cv2.namedWindow(title, cv2.WINDOW_NORMAL)
 cv2.resizeWindow(title, 960, 720)
 waiting = np.zeros((480, 640, 3), dtype=np.uint8)
-cv2.putText(waiting, 'Waiting for camera topic...', (30, 240), cv2.FONT_HERSHEY_SIMPLEX, .8, (100, 226, 188), 2)
+cv2.putText(
+    waiting,
+    'Waiting for camera topic...',
+    (30, 240),
+    cv2.FONT_HERSHEY_SIMPLEX,
+    0.8,
+    (100, 226, 188),
+    2,
+)
 cv2.imshow(title, waiting)
 last_frame = None
 started = last_report = time.monotonic()
@@ -46,21 +57,33 @@ try:
             fps = (count - last_count) / (now - last_report)
             last_report = now
             last_count = count
+
         if latest is not None and latest is not last_frame:
             last_frame = latest
             frame = cv2.imdecode(np.frombuffer(last_frame, dtype=np.uint8), cv2.IMREAD_COLOR)
             if frame is not None:
                 cv2.rectangle(frame, (0, 0), (frame.shape[1], 34), (16, 23, 29), -1)
-                cv2.putText(frame, f'{frame.shape[1]}x{frame.shape[0]} | received {fps:.1f} FPS | Q: close',
-                            (10, 23), cv2.FONT_HERSHEY_SIMPLEX, .55, (188, 226, 100), 1)
+                cv2.putText(
+                    frame,
+                    f'{frame.shape[1]}x{frame.shape[0]} | received {fps:.1f} FPS | Q: close',
+                    (10, 23),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.55,
+                    (188, 226, 100),
+                    1,
+                )
                 cv2.imshow(title, frame)
+
                 if not received:
                     print(f'Live preview: {frame.shape[1]}x{frame.shape[0]}', flush=True)
                     received = True
+
         if cv2.waitKey(1) & 0xFF in (ord('q'), 27):
             break
+
         if cv2.getWindowProperty(title, cv2.WND_PROP_VISIBLE) < 1:
             break
+
         if args.duration is not None and now - started >= args.duration:
             break
 except KeyboardInterrupt:
@@ -68,5 +91,6 @@ except KeyboardInterrupt:
 finally:
     cv2.destroyAllWindows()
     node.destroy_node()
+
     if rclpy.ok():
         rclpy.shutdown()

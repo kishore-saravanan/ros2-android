@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.22.1)
 project(ros2_android_runner LANGUAGES CXX)
-get_filename_component(ROS_ANDROID_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/../../native-deps/install" REALPATH)
+
+get_filename_component(
+  ROS_ANDROID_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}/../../native-deps/install" REALPATH)
 if(NOT EXISTS "${ROS_ANDROID_PREFIX}/lib/librclcpp.so")
   message(FATAL_ERROR "Run setup/build-native-ros.sh --with-cpp first")
 endif()
+
 list(PREPEND CMAKE_PREFIX_PATH "${ROS_ANDROID_PREFIX}")
 list(APPEND CMAKE_FIND_ROOT_PATH "${ROS_ANDROID_PREFIX}")
 file(GLOB ROS_HOST_PYTHON_PATHS "${ROS_ANDROID_PREFIX}/lib/python*/site-packages")
@@ -12,21 +15,27 @@ set(ENV{PYTHONPATH} "${ROS_HOST_PYTHON_PATH}:$ENV{PYTHONPATH}")
 set(ENV{AMENT_PREFIX_PATH} "${ROS_ANDROID_PREFIX}")
 set(STATIC_ROSIDL_TYPESUPPORT_C rosidl_typesupport_introspection_c)
 set(STATIC_ROSIDL_TYPESUPPORT_CPP rosidl_typesupport_introspection_cpp)
+
 find_package(rclcpp REQUIRED)
 set(ROS2_ANDROID_SDK_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+
 if(NOT EXISTS "${ROBOT_PROJECT_DIR}/robot-project.json")
   message(FATAL_ERROR "Missing project manifest in ROBOT_PROJECT_DIR")
 endif()
+
 file(READ "${ROBOT_PROJECT_DIR}/robot-project.json" PROJECT_MANIFEST)
 string(JSON PROJECT_RUNTIME_ABI GET "${PROJECT_MANIFEST}" runtimeAbi)
 if(NOT PROJECT_RUNTIME_ABI MATCHES "^[12]$")
   message(FATAL_ERROR "Unsupported project runtime ABI")
 endif()
+
 add_compile_definitions(ROS2_ANDROID_PROJECT_ABI=${PROJECT_RUNTIME_ABI})
 add_subdirectory("${ROBOT_PROJECT_DIR}" project-code)
+
 if(NOT TARGET robot_project)
   message(FATAL_ERROR "Project must define robot_project and export ros2_android_create_node")
 endif()
+
 add_library(project_runner SHARED runner.cpp)
 target_include_directories(project_runner PRIVATE "${ROS2_ANDROID_SDK_INCLUDE}")
 target_link_libraries(project_runner PRIVATE robot_project rclcpp::rclcpp log)

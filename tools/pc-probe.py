@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Observe actual phone IMU traffic and reply only after receipt; no simulated sensor data."""
+
 import argparse
 import json
 import time
@@ -24,8 +25,16 @@ def received(message):
     if state['first_sample'] is None:
         state['first_sample'] = {
             'frame_id': message.header.frame_id,
-            'acceleration': [message.linear_acceleration.x, message.linear_acceleration.y, message.linear_acceleration.z],
-            'gyro': [message.angular_velocity.x, message.angular_velocity.y, message.angular_velocity.z],
+            'acceleration': [
+                message.linear_acceleration.x,
+                message.linear_acceleration.y,
+                message.linear_acceleration.z,
+            ],
+            'gyro': [
+                message.angular_velocity.x,
+                message.angular_velocity.y,
+                message.angular_velocity.z,
+            ],
             'orientation_unavailable': bool(message.orientation_covariance[0] == -1),
         }
         print(json.dumps({'first_phone_imu': state['first_sample']}), flush=True)
@@ -51,4 +60,5 @@ finally:
     print(json.dumps(state), flush=True)
     node.destroy_node()
     rclpy.shutdown()
+
 raise SystemExit(0 if state['received'] and state['reply_sent'] else 1)

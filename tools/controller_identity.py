@@ -1,4 +1,5 @@
 """Compatibility import; implementation lives in the installed host package."""
+
 from pathlib import Path
 import sys
 

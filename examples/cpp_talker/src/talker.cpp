@@ -9,9 +9,11 @@
 #include <string>
 #include <stdexcept>
 
-class DemoNode : public rclcpp::Node {
- public:
-  explicit DemoNode(const rclcpp::NodeOptions & options) : Node("cpp_demo", options) {
+class DemoNode : public rclcpp::Node
+{
+public:
+  explicit DemoNode(const rclcpp::NodeOptions & options) : Node("cpp_demo", options)
+  {
     declare_parameter("message", "Hello from ROS2 Android C++");
     // Explicitly opt in to a recoverable callback failure for host verification.
     declare_parameter("fail_after_ticks", int64_t{0});
@@ -19,27 +21,31 @@ class DemoNode : public rclcpp::Node {
     status_ = create_publisher<std_msgs::msg::String>("status", 10);
     telemetry_ = create_publisher<demo_interfaces::msg::RuntimeStatus>("runtime_status", 10);
     echo_ = create_publisher<std_msgs::msg::String>("echo", 10);
-    magnitude_ = create_publisher<std_msgs::msg::Float64>("acceleration_magnitude", rclcpp::SensorDataQoS());
-    command_ = create_subscription<std_msgs::msg::String>("command", 10, [this](std_msgs::msg::String::ConstSharedPtr input) {
-      std_msgs::msg::String out;
-      out.data = "phone C++ processed: " + input->data;
-      echo_->publish(out);
-    });
-    imu_ = create_subscription<sensor_msgs::msg::Imu>(imu_topic, rclcpp::SensorDataQoS(), [this](sensor_msgs::msg::Imu::ConstSharedPtr input) {
-      const auto & a = input->linear_acceleration;
-      std_msgs::msg::Float64 out;
-      out.data = std::sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
-      magnitude_->publish(out);
-      ++imu_count_;
-    });
+    magnitude_ =
+      create_publisher<std_msgs::msg::Float64>("acceleration_magnitude", rclcpp::SensorDataQoS());
+    command_ = create_subscription<std_msgs::msg::String>(
+      "command", 10, [this](std_msgs::msg::String::ConstSharedPtr input) {
+        std_msgs::msg::String out;
+        out.data = "phone C++ processed: " + input->data;
+        echo_->publish(out);
+      });
+    imu_ = create_subscription<sensor_msgs::msg::Imu>(
+      imu_topic, rclcpp::SensorDataQoS(), [this](sensor_msgs::msg::Imu::ConstSharedPtr input) {
+        const auto & a = input->linear_acceleration;
+        std_msgs::msg::Float64 out;
+        out.data = std::sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+        magnitude_->publish(out);
+        ++imu_count_;
+      });
     timer_ = create_wall_timer(std::chrono::seconds(1), [this] {
       std_msgs::msg::String out;
       out.data = get_parameter("message").as_string() + " | tick=" + std::to_string(++tick_) +
-        " | imu=" + std::to_string(imu_count_);
+                 " | imu=" + std::to_string(imu_count_);
       status_->publish(out);
       demo_interfaces::msg::RuntimeStatus telemetry;
       telemetry.message = get_parameter("message").as_string();
-      telemetry.tick = tick_; telemetry.imu_samples = imu_count_;
+      telemetry.tick = tick_;
+      telemetry.imu_samples = imu_count_;
       telemetry_->publish(telemetry);
       const auto fail_after = get_parameter("fail_after_ticks").as_int();
       if (fail_after > 0 && tick_ >= static_cast<uint64_t>(fail_after)) {
@@ -47,7 +53,8 @@ class DemoNode : public rclcpp::Node {
       }
     });
   }
- private:
+
+private:
   uint64_t tick_ = 0;
   uint64_t imu_count_ = 0;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr status_, echo_;
@@ -58,6 +65,7 @@ class DemoNode : public rclcpp::Node {
   rclcpp::TimerBase::SharedPtr timer_;
 };
 
-extern "C" rclcpp::Node * ros2_android_create_node(const rclcpp::NodeOptions * options) {
+extern "C" rclcpp::Node * ros2_android_create_node(const rclcpp::NodeOptions * options)
+{
   return new DemoNode(*options);
 }

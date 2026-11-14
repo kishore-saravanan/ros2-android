@@ -1,4 +1,5 @@
 """Public project contracts reject incompatible inputs before device/build access."""
+
 import copy
 import json
 from pathlib import Path
@@ -15,8 +16,12 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class ProjectManifestTest(unittest.TestCase):
     def setUp(self):
-        self.manifest = {'schemaVersion': 1, 'runtimeAbi': 1, 'id': 'test_project',
-                         'applicationId': 'dev.ros2android.android.runner.test_project'}
+        self.manifest = {
+            'schemaVersion': 1,
+            'runtimeAbi': 1,
+            'id': 'test_project',
+            'applicationId': 'dev.ros2android.android.runner.test_project',
+        }
 
     def test_existing_examples_remain_compatible(self):
         for path in (ROOT / 'examples').glob('*/robot-project.json'):
@@ -25,10 +30,12 @@ class ProjectManifestTest(unittest.TestCase):
 
     def test_runtime_contract_and_legacy_cpp_default(self):
         self.assertEqual(validate_manifest(self.manifest), self.manifest)
+
         for runtime, supported in [('cpp', (1, 2)), ('python', (1,)), ('workspace', (2,))]:
             for abi in (1, 2, 3, True, '1', None):
                 with self.subTest(runtime=runtime, abi=abi):
                     value = dict(self.manifest, runtime=runtime, runtimeAbi=abi)
+
                     if type(abi) is int and abi in supported:
                         validate_manifest(value)
                     else:
@@ -38,7 +45,7 @@ class ProjectManifestTest(unittest.TestCase):
     def test_malformed_versions_ids_and_field_types_fail_with_context(self):
         for field, values in {
             'schemaVersion': [True, '1', 2, None],
-            'id': ['../other', 'a'*65, [], None],
+            'id': ['../other', 'a' * 65, [], None],
             'applicationId': ['personal.app', None, {}],
             'runtime': ['unknown', [], None],
             'name': ['', [], None],
@@ -48,6 +55,7 @@ class ProjectManifestTest(unittest.TestCase):
                 with self.subTest(field=field, value=bad):
                     with self.assertRaisesRegex(ValueError, field):
                         validate_manifest(dict(self.manifest, **{field: bad}))
+
         for bad in ([], None, 'text'):
             with self.assertRaisesRegex(ValueError, 'JSON object'):
                 validate_manifest(bad)
@@ -58,8 +66,10 @@ class ProjectManifestTest(unittest.TestCase):
                 with self.subTest(field=field, value=bad):
                     with self.assertRaisesRegex(ValueError, field):
                         validate_manifest(dict(self.manifest, runtimeAbi=2, **{field: bad}))
+
         with self.assertRaisesRegex(ValueError, 'runtimeAbi 2'):
             validate_manifest(dict(self.manifest, defaultLaunch='launch/main.launch.py'))
+
         validate_manifest(dict(self.manifest, runtimeAbi=2, defaultLaunch='launch/main.launch.py'))
 
     def test_additive_metadata_is_preserved(self):
@@ -70,9 +80,20 @@ class ProjectManifestTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             project = Path(folder)
             path = project / 'robot-project.json'
+
             def run(command='inspect'):
-                return subprocess.run([sys.executable, str(ROOT / 'tools/ros2android'),
-                                       '--project', folder, command], capture_output=True, text=True)
+                return subprocess.run(
+                    [
+                        sys.executable,
+                        str(ROOT / 'tools/ros2android'),
+                        '--project',
+                        folder,
+                        command,
+                    ],
+                    capture_output=True,
+                    text=True,
+                )
+
             result = run()
             self.assertNotEqual(0, result.returncode)
             self.assertIn('workspace command', result.stderr)
@@ -82,10 +103,12 @@ class ProjectManifestTest(unittest.TestCase):
             self.assertEqual(0, result.returncode, result.stderr)
             self.assertEqual('cpp', json.loads(result.stdout)['compatibility']['runtime'])
             path.write_text(json.dumps(dict(self.manifest, schemaVersion=99)))
+
             for command in ('build', 'deploy', 'start', 'status'):
                 result = run(command)
                 self.assertNotEqual(0, result.returncode)
                 self.assertIn('schemaVersion 99', result.stderr)
                 self.assertNotIn('Traceback', result.stderr)
+
             path.write_text('{broken')
             self.assertIn('Invalid JSON', run().stderr)
