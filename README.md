@@ -21,7 +21,7 @@
   <a href="#community">Community</a>
 </p>
 
-A phone already has a fast computer, cameras, motion sensors, Wi-Fi and a battery.
+A phone already has a fast processor, cameras, motion sensors, Wi-Fi and a battery.
 ROS2 Android runs **native ROS 2 Jazzy on the phone itself**, with no Ubuntu, root or
 container, so the phone on your robot can sense, think and talk to its microcontroller
 on its own.

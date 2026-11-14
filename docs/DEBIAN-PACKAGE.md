@@ -15,6 +15,10 @@ ros2-android doctor
 ros2-android device setup --serial PHONE_ADB_ID
 ```
 
+When the `.deb` is in your home folder, apt ends with a note that the download *is
+performed unsandboxed as root*: its `_apt` user cannot read private home folders, so
+apt reads the local file as root. That is harmless.
+
 Enable USB debugging and authorize the PC first. Use an authorized USB or wireless
 ADB target. Omit `--serial` only for a single USB phone. Setup validates bundled
 identity metadata/checksum and phone API/ABI, then uses `adb install -r` to update

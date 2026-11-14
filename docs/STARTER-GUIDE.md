@@ -48,9 +48,10 @@ ends with what you should see. Stop at any part: parts 1–3 need no build tools
    ros2-android device setup
    ```
 
-   **You should see** `1.0.0`, then a successful install. If the phone has an older
-   development build of ROS2 Android, uninstall it first: the release is signed with a
-   different key.
+   **You should see** `1.0.0`, then a successful install. apt may end with a note that
+   the download *is performed unsandboxed as root*: that's harmless for a local file.
+   If the phone has an older development build of ROS2 Android, uninstall it first: the
+   release is signed with a different key.
 4. Open **ROS2 Android** on the phone. Allow notifications if asked; the notification
    carries each session's **Stop** button.
 
