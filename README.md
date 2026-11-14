@@ -57,8 +57,7 @@ robot sees. There is no PC in the loop.*
 | | |
 | --- | --- |
 | **Android phone** (ARM64, Android 8.0+) | [ros2-android-1.0.0.apk](https://github.com/kishore-saravanan/ros2-android/releases/download/v1.0.0/ros2-android-1.0.0.apk) |
-| **Ubuntu 24.04 PC:** the `ros2-android` tool (includes the app) | [ros2-android_1.0.0-1_all.deb](https://github.com/kishore-saravanan/ros2-android/releases/download/v1.0.0/ros2-android_1.0.0-1_all.deb) |
-| **Native SDK** to build and deploy your own workspaces with that tool | [ros2-android-native-sdk-1.0.0-arm64-v8a.tar.xz](https://github.com/kishore-saravanan/ros2-android/releases/download/v1.0.0/ros2-android-native-sdk-1.0.0-arm64-v8a.tar.xz) |
+| **Ubuntu 24.04 PC:** the `ros2-android` tool. It installs the app, and builds and deploys your workspaces after one `ros2-android setup workspace-tools` | [ros2-android_1.0.0-1_all.deb](https://github.com/kishore-saravanan/ros2-android/releases/download/v1.0.0/ros2-android_1.0.0-1_all.deb) |
 
 [Checksums](https://github.com/kishore-saravanan/ros2-android/releases/download/v1.0.0/SHA256SUMS) ·
 [APK signing certificate](SECURITY.md#verify-a-downloaded-apk) · [All release files](https://github.com/kishore-saravanan/ros2-android/releases/tag/v1.0.0)

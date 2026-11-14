@@ -12,6 +12,11 @@ within 1.x ([compatibility](docs/COMPATIBILITY.md#stability-promise-for-1x)). Te
 devices and limits are in [Status](docs/STATUS.md). The entries below describe the work
 in this release, newest first.
 
+- `ros2-android setup workspace-tools` prepares workspace builds in one command after the
+  `.deb`: Google's Android command-line tools (pinned 22.0, checksum-verified) and SDK/NDK
+  packages with the user's own licence acceptance, the release's native SDK (download
+  verified against the checksum shipped in the client), the build tools and a health check.
+  The `.deb` now recommends the Ubuntu build packages it needs.
 - ESP32 writes through the phone are always compressed. Uncompressed writes stalled on the
   115200-baud phone bridge; compressed, a 384 KB application wrote in 29 s and verified.
 - The release app can program a USB-attached ESP32 through the phone. The control

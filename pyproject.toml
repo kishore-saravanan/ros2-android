@@ -21,7 +21,7 @@ ros2-android = "ros2android.cli:main"
 where = ["python"]
 
 [tool.setuptools.package-data]
-ros2android = ["sdk.zip", "compatibility.json"]
+ros2android = ["sdk.zip", "compatibility.json", "release.json"]
 
 [project.optional-dependencies]
 inspection = ["catkin-pkg>=1.0,<2"]

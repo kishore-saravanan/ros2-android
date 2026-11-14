@@ -96,6 +96,7 @@ Priority: optional
 Architecture: all
 Maintainer: {maintainer}
 Depends: python3 (>= 3.10), adb, bash
+Recommends: build-essential, cmake, ninja-build, git, python3-dev, python3-venv, python3-numpy, pybind11-dev, openjdk-21-jdk-headless
 Installed-Size: {size}
 Homepage: https://github.com/kishore-saravanan/ros2-android
 Description: Native ROS 2 on Android phones: PC tool and app

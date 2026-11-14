@@ -8,7 +8,7 @@ ends with what you should see. Stop at any part: parts 1–3 need no build tools
 | [1. Install](#1-install-the-app-and-the-pc-tool) | The app on the phone, the `ros2-android` tool on the PC | 10 min |
 | [2. First message](#2-first-message-phone-battery-on-the-pc) | Phone battery level arriving on the PC | 5 min |
 | [3. Dashboard](#3-dashboard-a-button-the-pc-can-hear) | A phone button the PC receives | 5 min |
-| [4. Build PC](#4-prepare-the-pc-to-build-for-the-phone) | Tools to build ROS workspaces for the phone | 30–60 min |
+| [4. Build PC](#4-prepare-the-pc-to-build-for-the-phone) | One command installs the tools to build for the phone | 10–30 min |
 | [5. Your nodes](#5-build-deploy-and-run-a-workspace-on-the-phone) | A C++ workspace running on the phone, seen from the PC | 15 min |
 | [6. On the robot](#6-work-wirelessly-while-the-phone-is-on-the-robot) | Deploy over Wi-Fi with the phone mounted | 10 min |
 | [7. ESP32](#7-esp32-flash-it-through-the-phone-and-talk-to-it) | Flash an ESP32 through the phone and exchange messages with it | 30 min |
@@ -27,9 +27,8 @@ ends with what you should see. Stop at any part: parts 1–3 need no build tools
 
 1. Download these into one folder, for example `~/Downloads`:
    [ros2-android-1.0.0.apk](https://github.com/kishore-saravanan/ros2-android/releases/download/v1.0.0/ros2-android-1.0.0.apk),
-   [ros2-android_1.0.0-1_all.deb](https://github.com/kishore-saravanan/ros2-android/releases/download/v1.0.0/ros2-android_1.0.0-1_all.deb),
-   [ros2-android-native-sdk-1.0.0-arm64-v8a.tar.xz](https://github.com/kishore-saravanan/ros2-android/releases/download/v1.0.0/ros2-android-native-sdk-1.0.0-arm64-v8a.tar.xz)
-   (only needed from part 4) and [SHA256SUMS](https://github.com/kishore-saravanan/ros2-android/releases/download/v1.0.0/SHA256SUMS).
+   [ros2-android_1.0.0-1_all.deb](https://github.com/kishore-saravanan/ros2-android/releases/download/v1.0.0/ros2-android_1.0.0-1_all.deb)
+   and [SHA256SUMS](https://github.com/kishore-saravanan/ros2-android/releases/download/v1.0.0/SHA256SUMS). Part 4 downloads everything else.
 2. Check them:
 
    ```bash
@@ -83,38 +82,21 @@ More widgets (switch, slider, joystick, live values, camera images): [Dashboard]
 
 ## 4. Prepare the PC to build for the phone
 
-Only needed to run your own nodes on the phone (parts 5–7).
+Only needed to run your own nodes on the phone (parts 5–7). One command sets up everything
+else the `ros2-android` tool needs:
 
-1. Build packages, Java and ROS developer tools:
+```bash
+ros2-android setup workspace-tools
+```
 
-   ```bash
-   sudo apt install build-essential cmake ninja-build git python3-dev python3-venv \
-     python3-numpy pybind11-dev openjdk-21-jdk ros-dev-tools
-   ```
+It downloads Google's Android SDK tools and asks you to accept Google's licences (type `y`),
+installs the pinned Android SDK and NDK into `~/Android/Sdk` (about 1.5 GB), downloads and
+checks this release's native SDK, prepares the build tools and finishes with a health check.
+The Ubuntu build packages it needs came with the `.deb`; if any are missing it prints the one
+`sudo apt install …` line to run, then run it again. Running it again is always safe:
+finished steps are skipped.
 
-2. The Android SDK (no Android Studio needed). Download the **Command line tools only**
-   zip for Linux from [developer.android.com/studio](https://developer.android.com/studio#command-line-tools-only), then:
-
-   ```bash
-   mkdir -p ~/Android/Sdk/cmdline-tools
-   unzip ~/Downloads/commandlinetools-linux-*.zip -d ~/Android/Sdk/cmdline-tools
-   mv ~/Android/Sdk/cmdline-tools/cmdline-tools ~/Android/Sdk/cmdline-tools/latest
-   export ANDROID_HOME=~/Android/Sdk          # also add this line to ~/.bashrc
-   "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses
-   "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platform-tools' 'platforms;android-35' \
-     'build-tools;35.0.0' 'ndk;27.2.12479018' 'cmake;3.22.1'
-   ```
-
-3. The build tools and the prebuilt native SDK (about 450 MB unpacked, installs in seconds):
-
-   ```bash
-   ros2-android setup build-tools
-   ros2-android setup sdk --archive ~/Downloads/ros2-android-native-sdk-1.0.0-arm64-v8a.tar.xz
-   ros2-android doctor --profile android
-   ```
-
-   **You should see** every doctor check pass. Fix any failed check before continuing;
-   each one says what to install.
+**You should see** `Ready. Build and deploy a workspace:`. Anything else names the step to fix.
 
 ## 5. Build, deploy and run a workspace on the phone
 

@@ -133,7 +133,7 @@ def main():
         return subprocess.call(command)
     if args.command == 'setup':
         setup_parser = argparse.ArgumentParser(prog='ros2-android setup')
-        setup_parser.add_argument('action', choices=['build-tools', 'sdk', 'sources', 'app-build', 'app-install', 'native', 'python', 'agent'])
+        setup_parser.add_argument('action', choices=['workspace-tools', 'build-tools', 'sdk', 'sources', 'app-build', 'app-install', 'native', 'python', 'agent'])
         if not remaining or remaining[0] in ('-h', '--help'):
             setup_parser.parse_args(remaining)
             return 0
@@ -141,6 +141,9 @@ def main():
         extra = remaining[1:]  # Help and flags belong to the selected setup action.
         if selected.action == 'sources':
             from .native_sources import run
+            return run(extra, tooling_root=root)
+        if selected.action == 'workspace-tools':  # Everything for workspace builds, in one step.
+            from .workspace_tools import run
             return run(extra, tooling_root=root)
         if selected.action == 'sdk':  # Prebuilt alternative to sources + native + python + agent.
             from .native_sdk import run

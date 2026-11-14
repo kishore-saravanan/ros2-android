@@ -24,7 +24,8 @@ A signing-key mismatch is an error; there is no automatic uninstall workaround.
 
 PC package installation/removal has no phone side effects: no maintainer scripts,
 ADB calls, app deletion or user-cache cleanup. Device operations are explicit.
-The package depends on Python 3, bash and ADB; installing the controller APK does
+The package depends on Python 3, bash and ADB, and recommends the Ubuntu build packages
+that `ros2-android setup workspace-tools` needs (apt installs recommendations by default); installing the controller APK does
 not require Android SDK/NDK or aapt. Building workspaces still requires the full
 Android/Jazzy toolchain; doctor is a prerequisite presence check only.
 
