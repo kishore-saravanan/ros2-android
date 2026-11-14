@@ -139,6 +139,17 @@ class NativeSdkArchiveTest(unittest.TestCase):
         info.type, info.linkname = tarfile.SYMTYPE, target
         return info
 
+    def test_setup_action_help_reaches_the_selected_action_without_installing(self):
+        for action, expected in [('sdk', '--archive'), ('sources', 'Fetch pinned upstream sources')]:
+            with self.subTest(action=action), patch.object(sys, 'argv', ['ros2-android', 'setup', action, '--help']), \
+                    patch.object(cli, 'sdk_root', return_value=self.tooling), \
+                    patch.object(native_sdk, 'install') as install, \
+                    contextlib.redirect_stdout(io.StringIO()) as output, self.assertRaises(SystemExit) as exited:
+                cli.main()
+            self.assertEqual(0, exited.exception.code)
+            self.assertIn(expected, output.getvalue())
+            install.assert_not_called()
+
     def test_cli_routes_setup_sdk_to_the_installer(self):
         argv = ['ros2-android', 'setup', 'sdk', '--archive', str(self.archive)]
         with patch.object(sys, 'argv', argv), patch.object(cli, 'sdk_root', return_value=self.tooling), \

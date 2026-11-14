@@ -134,7 +134,11 @@ def main():
     if args.command == 'setup':
         setup_parser = argparse.ArgumentParser(prog='ros2-android setup')
         setup_parser.add_argument('action', choices=['build-tools', 'sdk', 'sources', 'app-build', 'app-install', 'native', 'python', 'agent'])
-        selected, extra = setup_parser.parse_known_args(remaining)
+        if not remaining or remaining[0] in ('-h', '--help'):
+            setup_parser.parse_args(remaining)
+            return 0
+        selected = setup_parser.parse_args(remaining[:1])
+        extra = remaining[1:]  # Help and flags belong to the selected setup action.
         if selected.action == 'sources':
             from .native_sources import run
             return run(extra, tooling_root=root)

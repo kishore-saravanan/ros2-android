@@ -128,6 +128,8 @@ def verify(wheel):
         run('esp32', 'status', 'extra', code=2)
         run('setup', 'sources', '--typo', code=2)
         require('usage:' in run('setup', 'build-tools', '--help'), 'Missing build-tools help')
+        require('--archive' in run('setup', 'sdk', '--help'), 'SDK help did not reach its installer')
+        require('Fetch pinned upstream sources' in run('setup', 'sources', '--help'), 'Sources help did not reach its backend')
         run('setup', 'build-tools', '--typo', code=2)
         require(not (root / 'home/.local/share/ros2-android-tools').exists(), 'Invalid build-tools arguments created a venv')
         require(not (root / 'home/.cache/ros2-android-workspaces').exists(), 'Unbuilt shell created workspace state')

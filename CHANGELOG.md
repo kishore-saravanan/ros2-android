@@ -6,6 +6,12 @@ see the [release checklist](docs/RELEASING.md).
 
 ## Unreleased
 
+- Save endurance progress and outcomes atomically inside the app so disconnected
+  test sessions and log rotation cannot silently lose all progress.
+- Document Samsung background-freezing limits and inspect nested Python native
+  dependencies when checking APK page alignment.
+- Route SDK/source setup help to the selected command.
+
 - Build YAML and micro-ROS Agent dependencies with explicit 16 KB memory-page
   alignment and reject incompatible native libraries in release APKs/SDK archives.
 - Add optional camera capture-stamp-to-PC-callback latency measurement with explicit
