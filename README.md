@@ -2,159 +2,161 @@
   <img src="docs/assets/ros2-android.svg" width="112" alt="ROS2 Android robot logo">
 </p>
 
-# ROS2 Android
+<h1 align="center">ROS2 Android</h1>
 
-**Your phone. Your ROS nodes. Your robot.**
+<p align="center"><b>Turn an Android phone into your robot's onboard ROS 2 computer.</b></p>
 
-[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/kishore-saravanan)
+<p align="center">
+  <a href="https://github.com/kishore-saravanan/ros2-android/releases"><img src="https://img.shields.io/badge/release-1.0.0--beta.1-0b6e99" alt="Release 1.0.0-beta.1"></a>
+  <img src="https://img.shields.io/badge/ROS%202-Jazzy-22314e" alt="ROS 2 Jazzy">
+  <img src="https://img.shields.io/badge/Android-8.0%2B%20ARM64-3ddc84?logo=android&logoColor=white" alt="Android 8.0+ ARM64">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="Apache-2.0"></a>
+  <a href="https://github.com/sponsors/kishore-saravanan"><img src="https://img.shields.io/badge/Sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white" alt="Sponsor on GitHub"></a>
+</p>
 
-Use an Android phone as a robot's onboard ROS 2 computer: run supported nodes
-locally, publish phone sensors, connect microcontrollers and configure a control
-Dashboard. Develop on Linux and deploy to the phone over USB or Wi-Fi.
+A phone already has a fast ARM computer, cameras, an IMU, GPS, Wi-Fi and a battery.
+ROS2 Android runs **native ROS 2 Jazzy on the phone itself**: no Ubuntu, no root,
+no container. Publish the phone's sensors, run your own ROS nodes on it, talk to
+microcontrollers over USB or Wi-Fi, and drive it all from a touch Dashboard.
+Build on your Linux PC, deploy over Wi-Fi while the phone stays mounted on the robot,
+and keep running with no PC at all.
 
-The phone runs native ROS 2 without Ubuntu, root or a container. Once deployed,
-supported nodes run locally without a PC relay.
-
-## Onboard vision and robot control
-
-A robot follows a red ball using camera capture, Python ROS 2 perception and
-motion control running on its onboard Android phone.
+## See it drive
 
 https://github.com/user-attachments/assets/cf2f065b-a2af-451b-9734-392699fe368c
 
-A **remote Android phone** starts/stops tracking and displays annotated images.
-The **onboard Android phone** computes motion commands and hosts the USB micro-ROS
-Agent. The **ESP32** executes motor commands.
+The **onboard phone** captures the camera, runs Python ROS 2 perception and motion
+control, and hosts the micro-ROS Agent for the **ESP32** that drives the motors. A
+second, **remote phone** starts and stops tracking and shows the annotated image.
+Everything in the loop runs on the robot. [Build this example →](docs/BALL-FOLLOWER.md)
 
-[Try the ball-tracking example](docs/BALL-FOLLOWER.md)
+## What you can do
 
-**Development preview · ROS 2 Jazzy · Android ARM64 · Apache-2.0.**
-The demo is one application of the platform. See [supported capabilities and
-validation](docs/STATUS.md) before choosing a phone or workspace. Stable releases
-and public APT distribution are still ahead.
-
-## The app
+| | |
+| --- | --- |
+| **Publish phone sensors** | IMU, GPS, battery, cameras (with resolution, FPS and JPEG controls) and more, each on an editable topic and rate. |
+| **Run your own nodes on the phone** | Cross-build supported C++ and Python ROS 2 workspaces on Linux, deploy them, then start and stop them from the app's Projects tab. |
+| **Develop on a mounted robot** | Deploy over wireless ADB while the phone stays on the robot. Nodes run on the phone, not on your PC. |
+| **Connect microcontrollers** | A micro-ROS Agent on the phone serves an ESP32 over USB OTG or Wi-Fi (UDP). You can even flash a USB-attached ESP32 *through* the phone. |
+| **Control and monitor** | A Dashboard with buttons, switches, sliders, a joystick, live values and camera images. |
+| **Run without a PC** | Once deployed, the phone, its nodes and its microcontroller keep working with Wi-Fi off. |
 
 <table>
   <tr>
-    <td align="center"><img src="docs/assets/screenshots/home.png" width="210" alt="ROS2 Android Home with runtime and connection status"><br><b>Home</b></td>
-    <td align="center"><img src="docs/assets/screenshots/sensors.png" width="210" alt="Phone sensors available for ROS publishing"><br><b>Sensors</b></td>
-    <td align="center"><img src="docs/assets/screenshots/dashboard.png" width="210" alt="Configurable ROS control Dashboard"><br><b>Dashboard</b></td>
-    <td align="center"><img src="docs/assets/screenshots/projects.png" width="210" alt="Installed workspace controls in Projects"><br><b>Projects</b></td>
+    <td align="center"><img src="docs/assets/screenshots/home.png" width="200" alt="Home: runtime state, connection and running projects"><br><b>Home</b></td>
+    <td align="center"><img src="docs/assets/screenshots/sensors.png" width="200" alt="Sensors: phone hardware ready to publish"><br><b>Sensors</b></td>
+    <td align="center"><img src="docs/assets/screenshots/dashboard.png" width="200" alt="Dashboard: controls and live values"><br><b>Dashboard</b></td>
+    <td align="center"><img src="docs/assets/screenshots/projects.png" width="200" alt="Projects: deployed workspaces with Start and Stop"><br><b>Projects</b></td>
   </tr>
 </table>
 
-Publish sensors, create a Dashboard and manage deployed projects from one app.
-The interface follows the device’s light or dark theme.
+## Install
 
-## Start here
+Download from the [latest release](https://github.com/kishore-saravanan/ros2-android/releases):
 
-| Your goal | Guide |
+| File | Who needs it |
 | --- | --- |
-| Install the preview and publish a first topic | [Getting started](docs/GETTING-STARTED.md) |
-| Prepare another development PC | [Setup order](docs/CLEAN-MACHINE-SETUP.md) · [Compatibility matrix](docs/COMPATIBILITY.md) |
-| Run your own ROS workspace on the phone | [Workspace build and deployment](docs/COLCON-WORKSPACES.md) |
-| Configure buttons, joystick and subscribed values/images | [Dashboard](docs/CONTROLS.md) |
-| Connect an MCU and operate without the PC | [Robot operation](docs/ROBOT-OPERATION.md) · [Standalone startup](docs/STANDALONE-OPERATION.md) |
-| Build or contribute to the platform | [Contributing](CONTRIBUTING.md) |
+| `ros2-android-1.0.0-beta.1.apk` | Everyone: the Android app (ARM64, Android 8.0+). |
+| `ros2-android_1.0.0~beta1-1_all.deb` | Ubuntu 24.04 PCs: the `ros2-android` command-line tool, with the app inside it. |
+| `ros2-android-native-sdk-1.0.0b1-arm64-v8a.tar.xz` | Only if you build your own workspaces for the phone. |
+| `SHA256SUMS` | To check your downloads. |
 
-The host client is `ros2-android`. Local wheel and Debian alpha packaging exist;
-see [host package](docs/HOST-PACKAGE.md) and [Debian installation](docs/DEBIAN-PACKAGE.md).
-Phone installation/deployment is an explicit device operation, not a side effect
-of installing the Linux package.
+Check that the APK really comes from this project. Its signing certificate is listed in
+[SECURITY.md](SECURITY.md#verify-a-downloaded-apk).
 
-## What the platform provides
+**Just the app:** install the APK on your phone and open it. Sensors and the Dashboard
+work with any ROS 2 Jazzy PC on the same network.
 
-- **Phone sensors:** capability discovery, editable topics, sensor publishers and
-  camera resolution/FPS/JPEG controls based on device support.
-- **Dashboard:** buttons, switches, joystick, scalar subscriptions and JPEG/PNG
-  `sensor_msgs/msg/CompressedImage` viewing.
-- **Projects:** inspect, cross-build and deploy supported workspaces; start/stop
-  them from the app. Each workspace currently uses a hidden runner APK.
-- **Microcontrollers:** phone-hosted micro-ROS Agent using supported USB serial
-  adapters or UDP. ESP32/CP2102 is the reference tested USB combination.
-- **ROS networking:** direct DDS communication, LAN discovery where multicast
-  works and explicit peers where needed. Peers need matching domains and QoS.
+**PC tool and app together:**
 
-Active sessions continue across screen navigation. Projects, sensors/Dashboard
-and the micro-ROS Agent have separate start/stop controls.
+```bash
+sudo apt install ./ros2-android_1.0.0~beta1-1_all.deb
+ros2-android device setup        # installs the bundled app on a USB-connected phone
+```
 
-## Architecture and limits
+Enable USB debugging on the phone and authorize the PC first. Installing the PC
+package never touches a phone by itself.
 
-Kotlin owns Android UI, permissions and hardware. JNI connects to native Jazzy
-`rcl` and Cyclone DDS. Workspace runners host native ROS processes or the supported
-embedded Python runtime; the micro-ROS Agent connects MCU nodes to the ROS graph.
+## Your first message in five minutes
+
+1. Put the phone and a ROS 2 Jazzy PC on the same Wi-Fi network.
+2. In the app, open **Sensors → Battery percentage** and tap **Publish**.
+3. On the PC:
+
+   ```bash
+   source /opt/ros/jazzy/setup.bash
+   ros2 topic echo /phone/battery_percent
+   ```
+
+You should see the phone's battery level arrive once a second.
+[Full walkthrough and troubleshooting →](docs/GETTING-STARTED.md)
+
+## Guides
+
+| I want to… | Read |
+| --- | --- |
+| Install and publish a first topic | [Getting started](docs/GETTING-STARTED.md) |
+| Build and deploy my own workspace to the phone | [Workspaces](docs/COLCON-WORKSPACES.md) · [Set up a build PC](docs/CLEAN-MACHINE-SETUP.md) |
+| Configure buttons, joystick, values and images | [Dashboard](docs/CONTROLS.md) |
+| Connect an ESP32 over USB or Wi-Fi | [ESP32 over USB](docs/ESP32-USB.md) · [ESP32 over Wi-Fi](docs/ESP32-WIFI.md) · [Flash through the phone](docs/ESP32-PROGRAMMING.md) |
+| Run the robot without a PC | [Robot operation](docs/ROBOT-OPERATION.md) · [Standalone operation](docs/STANDALONE-OPERATION.md) |
+| Check whether my phone is supported | [Compatibility](docs/COMPATIBILITY.md) · [Qualify a phone](docs/PHONE-QUALIFICATION.md) |
+
+## How it works
+
+Kotlin owns the Android UI, permissions and hardware. JNI connects it to native ROS 2
+Jazzy (`rcl`, Cyclone DDS). Each deployed workspace runs in its own runner app; the
+micro-ROS Agent bridges microcontroller nodes into the ROS graph.
 
 ```mermaid
 flowchart LR
-    DEV[Linux development PC] -->|Cross-build and deploy| RUN
-    subgraph PHONE[Android onboard computer]
+    DEV[Linux PC] -->|cross-build and deploy| RUN
+    subgraph PHONE[Android phone on the robot]
         APP[ROS2 Android app · sensors and Dashboard]
-        RUN[Workspace runner · ROS nodes]
+        RUN[Workspace runner · your ROS nodes]
         AGENT[micro-ROS Agent]
     end
     APP <-->|DDS| RUN
     RUN <-->|DDS| AGENT
-    AGENT <-->|USB serial or UDP| MCU[Microcontroller]
-    PEER[Other ROS 2 devices] <-->|DDS over the network| APP
-    PEER <-->|DDS over the network| RUN
+    AGENT <-->|USB serial or UDP| MCU[ESP32]
+    PEER[Other ROS 2 machines] <-->|DDS over Wi-Fi| APP
 ```
 
-See [current architecture](ARCHITECTURE.md), [target high-level design](docs/design/HIGH-LEVEL-DESIGN.md),
-[low-level design](docs/design/LOW-LEVEL-DESIGN.md) and [roadmap](docs/ROADMAP.md).
+More: [architecture](ARCHITECTURE.md) · [design](docs/design/HIGH-LEVEL-DESIGN.md) · [roadmap](docs/ROADMAP.md)
 
-This preview does not promise arbitrary Linux package compatibility, every phone,
-boot-time autonomy or hard real-time deadlines. Mixed Python/C++ workspace
-coverage, long-duration operation and broader device qualification remain release
-gates. [Independent runner authorization](docs/RUNNER-AUTHORIZATION.md) now has an
-opt-in certificate-pinned preview; security review and broader signing/device
-qualification remain pending. Dashboard raw `sensor_msgs/msg/Image`
-viewing is pending.
+## Beta status: what's tested
 
-## Roadmap
+1.0.0-beta.1 is the first public release. It has been tested on a Realme phone
+(Android 12), a Samsung Galaxy S24+ (Android 17) and an Android 15 emulator, with an
+ESP32 over USB (CP2102) and Wi-Fi. Results are in [Status](docs/STATUS.md).
+Things to know:
 
-The next milestone is a dependable **community alpha**, with clear setup steps,
-qualified recovery behavior and support boundaries that contributors can reproduce.
+- **Allow background activity** for the app and each project on your phone; vendor
+  power managers can otherwise pause them. Samsung can still pause projects in the
+  background; see [standalone operation](docs/STANDALONE-OPERATION.md).
+- **Supported workspaces only:** not every Linux ROS package builds for Android.
+- **Trusted networks only:** ROS traffic is not encrypted or authenticated.
+- **No hard real-time guarantees.** The Dashboard is not an emergency stop.
 
-| Stage | What we are building | Status |
-| --- | --- | --- |
-| Native foundation | Sensors, Dashboard, workspace runners and phone-hosted micro-ROS | Available in 1.0.0-beta.1 |
-| Reliable operation | Offline startup, network/USB recovery, runtime state and runner trust | Current focus; qualification in progress |
-| External developer journey | Dependency diagnostics, compatibility matrix and clean-machine build/deploy | In progress |
-| Maintainable platform | Focused controllers, shared contracts and packaged host backends | Incremental work ahead |
-| Standalone examples | Companion examples repository consuming the public SDK | Planned; extraction gated on SDK usability |
-| Community alpha | Broader device tests, sustained-operation measurements and signed artifacts | Release gate |
+Found a problem on your phone? [Open an issue](https://github.com/kishore-saravanan/ros2-android/issues)
+with the phone model and Android version. That is one of the most useful contributions right now.
 
-[Full roadmap and acceptance gates →](docs/ROADMAP.md)
-
-Raw-image Dashboard viewing, broader messages/services/actions, mixed workspaces
-and public APT distribution follow the core platform gates. Play Store work is
-deferred. There is no promised release date.
-
-## Build with us
+## Contribute
 
 Contributions are welcome in runtime reliability, Android UX, workspace support,
-tests and documentation. Start with [Contributing](CONTRIBUTING.md); a useful
-first contribution is reproducing a supported journey on another phone and
-reporting the result with private details removed.
-
-Contributor entry points: [build and test](docs/DEVELOPMENT.md),
-[CI and test scope](docs/TESTING.md), [architecture decisions](docs/decisions/0001-platform-and-examples.md),
-[release checklist](docs/RELEASING.md), [changelog](CHANGELOG.md) and
-[security reporting](SECURITY.md).
+tests and documentation. Start with [Contributing](CONTRIBUTING.md) and
+[build and test](docs/DEVELOPMENT.md). See also the [changelog](CHANGELOG.md),
+[release process](docs/RELEASING.md) and [security policy](SECURITY.md).
 
 ## Support development
 
-ROS2 Android is built by Kishore Saravanan. Enjoying it? Buy me a coffee and help
-support its development through [GitHub Sponsors](https://github.com/sponsors/kishore-saravanan).
+ROS2 Android is built by Kishore Saravanan. If it's useful to you, you can support its
+development through [GitHub Sponsors](https://github.com/sponsors/kishore-saravanan).
 The same link is under Settings → About in the app.
 
 ## License and citation
 
-Original project material is [Apache-2.0](LICENSE), copyright 2026 Kishore
-Saravanan. See [NOTICE](NOTICE); dependencies retain their own licenses. Components
-built into the APKs are listed in [third-party notices](THIRD-PARTY-NOTICES.md);
-their full license texts ship inside each APK and appear in the app at
-Settings → About → Open-source licenses.
-Please cite [CITATION.cff](CITATION.cff) when using the project in research or
-other work. Citation is requested, not an additional license condition.
+Apache-2.0, copyright 2026 Kishore Saravanan; see [LICENSE](LICENSE) and [NOTICE](NOTICE).
+Dependencies keep their own licenses, listed in [third-party notices](THIRD-PARTY-NOTICES.md)
+and viewable in the app under Settings → About → Open-source licenses. If you use the
+project in research, please cite [CITATION.cff](CITATION.cff).

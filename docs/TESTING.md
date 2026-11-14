@@ -650,3 +650,8 @@ conversion or true optical latency. An approximately anchored sensor timestamp
 makes the result approximate. Keep resolution, FPS, JPEG quality, clock source,
 transport and device conditions with any published result. This tool does not
 establish a hard real-time guarantee or authorize camera access by itself.
+
+Reference result (2026-11-14): Samsung Galaxy S24+, Android 17, back camera 640×480,
+requested 30 FPS, JPEG quality 65, home Wi-Fi to a Jazzy PC, wireless-ADB clock
+calibration: 669 valid frames in 25 s (26.8 FPS, 6 Mbit/s, largest gap 260 ms),
+latency median 111 ms, 95th percentile 189 ms, range 83–286 ms, uncertainty ±9 ms.
