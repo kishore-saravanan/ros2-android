@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a local Debian alpha containing the host CLI and validated main-app APK."""
+"""Build the Debian package containing the host CLI and a validated main-app APK."""
 import argparse
 from email.parser import Parser
 import hashlib
@@ -43,7 +43,7 @@ def main():
         parser.error('Expected API 26 / ARM64 reference APK')
     debug = 'application-debuggable' in badging
     if debug and not args.allow_debug_apk:
-        parser.error('Debug APK requires --allow-debug-apk for local alpha validation')
+        parser.error('Debug APK requires --allow-debug-apk (local testing only, never a release)')
     subprocess.run([str(build_tools / 'apksigner'), 'verify', str(args.apk)], check=True)
     with tempfile.TemporaryDirectory(prefix='ros2android-deb-') as temp:
         root = Path(temp) / 'package'
@@ -77,14 +77,15 @@ from ros2android.cli import main
 raise SystemExit(main())
 '''); launcher.chmod(0o755)
         doc = root / 'usr/share/doc/ros2-android'; doc.mkdir(parents=True)
-        for name in ('LICENSE', 'NOTICE', 'CITATION.cff'):
+        for name in ('LICENSE', 'NOTICE', 'CITATION.cff', 'THIRD-PARTY-NOTICES.md'):
             shutil.copyfile(ROOT / name, doc / name)
         shutil.copyfile(ROOT / 'docs/DEBIAN-PACKAGE.md', doc / 'README')
         (doc / 'copyright').write_text('''ROS2 Android
 Copyright 2026 Kishore Saravanan
 Original project material: Apache-2.0; see LICENSE and NOTICE.
-Third-party components retain their respective terms.
-This local alpha has not completed the third-party distribution audit.
+Third-party components retain their respective terms; see THIRD-PARTY-NOTICES.md.
+The bundled Android app carries the full license texts of its native components
+(in the app: Settings > About > Open-source licenses).
 ''')
         control = root / 'DEBIAN'; control.mkdir()
         size = sum(path.stat().st_size for path in root.rglob('*') if path.is_file()) // 1024 + 1
@@ -97,10 +98,11 @@ Maintainer: {maintainer}
 Depends: python3 (>= 3.10), adb, bash
 Installed-Size: {size}
 Homepage: https://github.com/kishore-saravanan/ros2-android
-Description: Native ROS 2 Android developer client (local alpha)
- Host tools and a bundled ARM64 Android APK, installed onto a phone only
- through an explicit authorized device setup command. Cross-build SDK and
- ROS prerequisites require separate preparation. Not a public release.
+Description: Native ROS 2 on Android phones: PC tool and app
+ The ros2-android command-line tool and the bundled ARM64 ROS2 Android app.
+ The app is installed onto a phone only by the explicit, authorized
+ "ros2-android device setup" command. Building ROS workspaces for the phone
+ additionally needs the native SDK and Android toolchain.
 ''')
         args.out.mkdir(parents=True, exist_ok=True)
         output = args.out.resolve() / f'ros2-android_{args.version}_all.deb'

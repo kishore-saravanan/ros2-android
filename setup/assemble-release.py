@@ -130,6 +130,10 @@ def write_checksums(folder):
     return files
 
 
+# Sources that determine the main APK; a pre-signed APK is reusable only while these are unchanged.
+APP_SOURCES = ('android', 'native', 'python/ros2android/compatibility.json')
+
+
 def sdk_manifest(archive, matrix, release=True):
     """Accept a prebuilt native SDK only if it was built from this release's pinned inputs."""
     sdk = native_sdk.read_manifest(archive)
@@ -173,6 +177,19 @@ def assemble(args):
     if args.unsigned_dry_run:
         shutil.copyfile(args.apk, apk)
         signature = None
+    elif args.already_signed:
+        # Repackaging after docs/packaging edits: keep the owner-signed APK instead of signing again,
+        # but only if it carries the expected signer and the app sources are unchanged since it was built.
+        signature = signer(args.apk)
+        if signature['certificateSha256'] != args.expect_certificate.lower():
+            raise RuntimeError('Pre-signed APK has an unexpected certificate: ' + signature['certificateSha256'])
+        if not set(signature['schemes']) & {'v2', 'v3', 'v3.1'}:
+            raise RuntimeError('Pre-signed APK lacks a v2/v3 signature scheme')
+        changed = subprocess.run(['git', '-C', str(ROOT), 'diff', '--name-only', args.apk_revision, 'HEAD', '--', *APP_SOURCES],
+                                 check=True, capture_output=True, text=True).stdout.split()
+        if changed:
+            raise RuntimeError(f'App sources changed since {args.apk_revision}; build and sign a new APK: ' + ', '.join(changed[:5]))
+        shutil.copyfile(args.apk, apk)
     else:
         password = os.environ.get('ROS2_ANDROID_KEYSTORE_PASSWORD')
         if not password:
@@ -190,6 +207,9 @@ def assemble(args):
         if args.expect_certificate and signature['certificateSha256'] != args.expect_certificate.lower():
             raise RuntimeError('Signed with an unexpected certificate: ' + signature['certificateSha256'])
     artifacts = {'apk': {'file': apk_name, **identity, 'signature': signature}}
+    if args.already_signed:
+        artifacts['apk']['builtFromRevision'] = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', args.apk_revision],
+                                                              check=True, capture_output=True, text=True).stdout.strip()
     if args.wheel:
         bundled = wheel_matrix(args.wheel)
         if bundled.get('hostClientVersion') != matrix['hostClientVersion'] or 'artifact' not in bundled:
@@ -223,7 +243,7 @@ def assemble(args):
 
 def main(arguments=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--apk', type=Path, required=True, help='Unsigned non-debuggable release APK')
+    parser.add_argument('--apk', type=Path, required=True, help='Non-debuggable release APK (unsigned, or already signed with --already-signed)')
     parser.add_argument('--out', type=Path, required=True, help='New, empty release folder')
     parser.add_argument('--wheel', type=Path, help='Bundled host wheel from setup/build-python-package.py')
     parser.add_argument('--deb', type=Path, help='Debian package built from the signed APK')
@@ -231,10 +251,15 @@ def main(arguments=None):
     signing = parser.add_mutually_exclusive_group(required=True)
     signing.add_argument('--keystore', type=Path, help='Release keystore held by the maintainer, outside the repository')
     signing.add_argument('--unsigned-dry-run', action='store_true', help='Exercise the flow without signing; never publish')
+    signing.add_argument('--already-signed', action='store_true',
+                         help='--apk is already release-signed; needs --expect-certificate and --apk-revision')
+    parser.add_argument('--apk-revision', help='Commit the pre-signed APK was built from')
     parser.add_argument('--key-alias', help='Key alias inside --keystore')
     parser.add_argument('--expect-certificate', help='Fail unless the signer certificate has this SHA-256')
     parser.add_argument('--allow-dirty', action='store_true', help='Allow uncommitted tracked changes (dry runs only)')
     args = parser.parse_args(arguments)
+    if args.already_signed and not (args.expect_certificate and args.apk_revision):
+        parser.error('--already-signed requires --expect-certificate and --apk-revision')
     if args.keystore and not args.key_alias:
         parser.error('--keystore requires --key-alias')
     if args.keystore and args.allow_dirty:

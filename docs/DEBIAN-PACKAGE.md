@@ -1,4 +1,4 @@
-# Debian package — local alpha
+# Debian package
 
 Distribution target: Ubuntu 24.04/Jazzy developer PCs. The package contains the
 installed `ros2-android` client, build templates and the ARM64 main Android APK.
@@ -7,7 +7,7 @@ Android API 26 or newer. This minimum does not mean every such phone is tested.
 
 ## User workflow
 
-Once supplied with a local Debian artifact:
+Download the `.deb` from the [latest release](https://github.com/kishore-saravanan/ros2-android/releases), then:
 
 ```bash
 sudo apt install ./ros2-android_1.0.0~beta1-1_all.deb
@@ -28,11 +28,12 @@ The package depends on Python 3, bash and ADB; installing the controller APK doe
 not require Android SDK/NDK or aapt. Building workspaces still requires the full
 Android/Jazzy toolchain; doctor is a prerequisite presence check only.
 
-The alpha currently bundles a debug APK. It is for local development only, not a
-production-signing or public-release claim. For a release, build the package from
-the signed APK in the assembled release folder (see [releasing](RELEASING.md)). The
-top-level project uses Apache-2.0;
-third-party notices and APK license closure still require review before release.
+Release packages bundle the release-signed APK from the same release; its
+certificate is published in [SECURITY.md](../SECURITY.md#verify-a-downloaded-apk).
+A locally built package can bundle a debug APK only with `--allow-debug-apk`, for
+testing. The project is Apache-2.0; third-party components are listed in
+THIRD-PARTY-NOTICES.md, installed under `/usr/share/doc/ros2-android/`.
+Remove the PC tool with `sudo apt remove ros2-android`; this does not touch phones.
 
 ## Maintainer build
 

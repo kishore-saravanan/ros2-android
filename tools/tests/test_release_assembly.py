@@ -141,6 +141,20 @@ class ReleaseAssemblyTest(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'commit first'):
                 release.source_state(allow_dirty=False)
 
+    def test_pre_signed_apk_needs_expected_certificate_and_unchanged_app_sources(self):
+        with contextlib.redirect_stderr(io.StringIO()) as error, self.assertRaises(SystemExit):
+            release.main(['--apk', 'x.apk', '--out', str(self.root / 'out'), '--already-signed'])
+        self.assertIn('requires --expect-certificate and --apk-revision', error.getvalue())
+        args = type('Args', (), {'already_signed': True, 'unsigned_dry_run': False, 'expect_certificate': 'AB' * 32,
+                                 'apk_revision': 'HEAD', 'apk': self.root / 'a.apk', 'out': self.root / 'out',
+                                 'allow_dirty': True, 'wheel': None, 'deb': None, 'sdk': None})()
+        matrix = json.loads((ROOT / 'python/ros2android/compatibility.json').read_text())
+        identity = {'package': release.PACKAGE, 'debuggable': False, **matrix['app']}
+        with patch.object(release, 'badging', return_value=identity), patch.object(release, 'require_contents'), \
+                patch.object(release, 'signer', return_value={'certificateSha256': 'cd' * 32, 'schemes': ['v2']}):
+            with self.assertRaisesRegex(RuntimeError, 'unexpected certificate'):
+                release.assemble(args)
+
     def sdk_archive(self, **overrides):
         """A minimal SDK archive whose manifest is the first member, as the packager writes it."""
         matrix = json.loads((ROOT / 'python/ros2android/compatibility.json').read_text())

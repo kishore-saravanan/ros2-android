@@ -1,31 +1,41 @@
 # First message: phone battery to ROS 2
 
-This walkthrough is for a Linux ROS 2 developer with a source checkout and an
-Android ARM64 phone. It uses battery percentage before motion or camera data.
-No camera, microphone or storage permission is needed for this example.
-
-**Build prerequisites are required:** complete [DEVELOPMENT.md](DEVELOPMENT.md)
-first (ROS 2 Jazzy, Android SDK/NDK, Java and the native ROS SDK build). No public
-prebuilt installer/SDK or fresh-machine setup validation is implied by this guide.
-The recorded walkthrough uses the prepared reference PC and phone. Community
-release licensing, signing and distribution remain separate work.
+This walkthrough is for a Linux ROS 2 Jazzy user with an Android ARM64 phone
+(Android 8.0 or newer). It uses the phone's battery percentage before motion or camera
+data, so no camera, microphone or storage permission is needed. You do not need the
+Android SDK, NDK, Java or the native SDK for this; those are only for building your own
+workspaces ([Workspaces](COLCON-WORKSPACES.md)).
 
 ## 1. Install the app
 
-Open a terminal in the repository folder (the folder containing tools/).
-Unlock your phone, enable USB debugging, connect it to the PC and authorize this
-computer on the phone. Then run:
+Download from the [latest release](https://github.com/kishore-saravanan/ros2-android/releases)
+and check the files against `SHA256SUMS` (`sha256sum -c SHA256SUMS --ignore-missing`).
+
+**Option A: the app only.** Copy `ros2-android-1.0.0-beta.1.apk` to the phone and
+open it, or install it from a PC that has `adb`:
 
 ```bash
-./setup/build.sh
-./setup/run-device.sh
+adb install ros2-android-1.0.0-beta.1.apk
 ```
 
-Expected: build reports BUILD SUCCESSFUL; installation reports Success; ROS2
-Android opens. If it does not open on the first install, tap its icon on the
-phone. Stop on a build/install error and use the development guide to resolve it.
-Installing an update interrupts this app's current sensor session; it does not
-start publishers automatically.
+**Option B: the PC tool with the app (Ubuntu 24.04).** Enable USB debugging on the
+phone, connect it and authorize this PC, then:
+
+```bash
+sudo apt install ./ros2-android_1.0.0~beta1-1_all.deb
+ros2-android device setup
+```
+
+`device setup` checks the bundled app and the phone, then installs or updates only
+ROS2 Android. Pass `--serial ID` when more than one phone is connected. Installing the
+PC package never touches a phone by itself.
+
+Open ROS2 Android on the phone. If an earlier development build is installed, Android
+refuses the update because it was signed by a different key: uninstall the old app
+first (this deletes its saved settings). To confirm a download is genuine, compare its
+certificate with [SECURITY.md](../SECURITY.md#verify-a-downloaded-apk).
+
+To build the app from source instead, see [Development](DEVELOPMENT.md).
 
 ## 2. Choose a network path
 
