@@ -181,10 +181,20 @@ Please leave out personal data: no serial numbers, IP addresses, photos or raw p
 
 ## Contribute
 
-Contributions are welcome in runtime reliability, Android UX, workspace support,
-tests and documentation. Start with [Contributing](CONTRIBUTING.md) and
-[build and test](docs/DEVELOPMENT.md). See also the [changelog](CHANGELOG.md),
-[release process](docs/RELEASING.md) and [security policy](SECURITY.md).
+Everyone can help, with or without writing code:
+
+- **Raise a bug or a phone report:** use the [issue templates](https://github.com/kishore-saravanan/ros2-android/issues/new/choose)
+  above. Clear steps to reproduce are a contribution in themselves.
+- **Fix a bug:** pick an open issue, especially ones labelled
+  [good first issue](https://github.com/kishore-saravanan/ros2-android/issues?q=is%3Aopen+label%3A%22good+first+issue%22)
+  or [help wanted](https://github.com/kishore-saravanan/ros2-android/issues?q=is%3Aopen+label%3A%22help+wanted%22),
+  and comment that you're on it. Fork the repository, branch from `develop`, add a test that
+  fails before your fix, and open a pull request against `develop` with one problem per PR.
+- **Improve the platform:** runtime reliability, Android UX, workspace support, tests and
+  documentation are all welcome.
+
+Start with [Contributing](CONTRIBUTING.md) and [build and test](docs/DEVELOPMENT.md). See also
+the [changelog](CHANGELOG.md), [release process](docs/RELEASING.md) and [security policy](SECURITY.md).
 
 ## Support development
 
