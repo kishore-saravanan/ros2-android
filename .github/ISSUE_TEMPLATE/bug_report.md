@@ -8,8 +8,9 @@ about: A reproducible platform issue
 **Steps to reproduce**
 
 **Versions**
-App/host version or source revision, ROS distribution, Android version and phone
-model (no serial number), and USB adapter model if relevant.
+App version (Settings → About in the app), `ros2-android --version` or source revision,
+ROS distribution, Android version and phone model (no serial number), and USB
+adapter or ESP32 board if relevant.
 
 **Redacted diagnostics**
 Use synthetic data where possible. Do not attach personal photos, IP addresses,

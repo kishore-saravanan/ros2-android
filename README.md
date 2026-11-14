@@ -167,8 +167,16 @@ Things to know:
 - **Trusted networks only:** ROS traffic is not encrypted or authenticated.
 - **No hard real-time guarantees.** The Dashboard is not an emergency stop.
 
-Found a problem on your phone? [Open an issue](https://github.com/kishore-saravanan/ros2-android/issues)
-with the phone model and Android version. That is one of the most useful contributions right now.
+## Report a bug or request a feature
+
+- **Something broke?** [Open a bug report](https://github.com/kishore-saravanan/ros2-android/issues/new?template=bug_report.md)
+  with the app version, phone model, Android version and steps to reproduce.
+- **Tried it on your phone?** [Send a phone report](https://github.com/kishore-saravanan/ros2-android/issues/new?template=phone_report.md),
+  whether it worked or not. Reports from new phones are among the most useful contributions.
+- **Missing something?** [Request a feature](https://github.com/kishore-saravanan/ros2-android/issues/new?template=feature_request.md).
+- **Security issue?** Report it privately as described in [SECURITY.md](SECURITY.md), never in a public issue.
+
+Please leave out personal data: no serial numbers, IP addresses, photos or raw phone logs.
 
 ## Contribute
 
