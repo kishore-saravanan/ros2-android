@@ -34,6 +34,9 @@ Formatters do not split a function into readable steps, so also:
 
 - Put one statement on a line, and separate logical steps with a blank line,
   for example after a block ends and before an `if`, loop or `try`.
+- In Kotlin, use braces once an `if`/`else`, `for` or `while` does not fit on one
+  line ([Android Kotlin style](https://developer.android.com/kotlin/style-guide#braces));
+  `if (done) return` may stay on one line.
 - Prefer a named variable or helper over a long expression or nested call.
 - Write comments for intent and constraints, not for what the code says.
 

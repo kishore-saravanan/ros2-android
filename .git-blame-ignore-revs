@@ -1,3 +1,5 @@
 # Formatting-only commits; git blame skips them (see docs/DEVELOPMENT.md).
 # Format Python, C/C++, shell and CMake code to standard style
 03567d2103a63ea2b5701b2d8c8e09cdb7dfb69c
+# Format Kotlin and Gradle scripts to standard style
+8af64270fe3ced5338ba4c66570859015359e472
