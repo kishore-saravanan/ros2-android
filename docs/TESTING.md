@@ -69,13 +69,11 @@ eight command help screens, repeatable external inspection, unchanged sources,
 archive/legal/hash/private-input rules and absence of guarded device/build/source
 fetch calls. See [host package](HOST-PACKAGE.md) for exact boundaries.
 
-The workflow now defines Python 3.10 and 3.12 installed-client jobs in addition to
-the source-host and Android JVM/lint jobs. Package tool versions are pinned;
-permissions remain read-only and no phone/signing secret is used. Local Python
-3.12 passed. Both Python 3.10 and 3.12 hosted installed-client jobs passed at
-[a9940cd](https://github.com/kishore-saravanan/ros2-android/actions/runs/43232633359);
-newer revisions still need their own hosted checks. A successful package smoke
-test is not a clean-machine native build, DDS or phone-deployment result.
+The workflow runs Python 3.10 and 3.12 installed-client jobs in addition to the
+source-host (including `setup/format.sh --check`) and Android JVM/lint jobs, on every
+push and pull request. Package tool versions are pinned; permissions remain read-only
+and no phone/signing secret is used. A successful package smoke test is not a
+clean-machine native build, DDS or phone-deployment result.
 
 ## Full Android/native checks
 
