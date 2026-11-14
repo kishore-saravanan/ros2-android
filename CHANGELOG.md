@@ -3,12 +3,18 @@
 Host-client, app, runner protocol and native SDK versions are tracked separately;
 see the [release checklist](docs/RELEASING.md).
 
-## 1.0.0-beta.1 (2026-11-14)
+## 1.0.0 (2026-11-14)
 
-First public release: the main app 1.0.0-beta.1 (version code 9), the host client
-1.0.0b1 (Debian 1.0.0~beta1-1) and the native SDK archive 1.0.0b1, all for ROS 2 Jazzy
-on ARM64 Android 8.0+. Tested devices and limits are in [Status](docs/STATUS.md). The
-entries below describe the work in this release, newest first.
+First public release: the main app 1.0.0 (version code 10), the host client 1.0.0
+(Debian 1.0.0-1) and the native SDK archive 1.0.0, all for ROS 2 Jazzy on ARM64
+Android 8.0+. Commands, project format, runner protocol and SDK format are stable
+within 1.x ([compatibility](docs/COMPATIBILITY.md#stability-promise-for-1x)). Tested
+devices and limits are in [Status](docs/STATUS.md). The entries below describe the work
+in this release, newest first.
+
+- The release app can program a USB-attached ESP32 through the phone. The control
+  stays limited to the system and an authorized ADB shell; development-only test
+  commands remain in debug builds.
 
 - Save endurance progress and outcomes atomically inside the app so disconnected
   test sessions and log rotation cannot silently lose all progress.

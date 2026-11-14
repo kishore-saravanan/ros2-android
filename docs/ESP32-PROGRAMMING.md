@@ -7,8 +7,8 @@ host/data roles. It does not support native USB/JTAG or other serial adapters.
 
 ## Prepare
 
-1. Build/install the current **debug** APK using setup/build.sh and
-   setup/run-device.sh while the phone is attached to the PC.
+1. Install ROS2 Android 1.0.0 or newer (the release APK, `ros2-android device setup`,
+   or a development build).
 2. Establish authorized wireless ADB, verify `adb devices -l`, and keep ROS2 Android
    unlocked/open for the development trial. Select that device explicitly.
 3. Disconnect the phone from the PC and connect ESP32 directly to the phone.
@@ -18,8 +18,9 @@ host/data roles. It does not support native USB/JTAG or other serial adapters.
 
 No LAN flashing listener is exposed. Authorized ADB forwards a phone loopback-only
 port, and a random per-session token authenticates the UART data connection.
-The debug control receiver requires Android's DUMP permission, held by ADB shell;
-ordinary apps cannot invoke it. The receiver is absent from release APKs.
+The programming control receiver requires Android's DUMP permission, held only by
+the system and an authorized ADB shell; other apps cannot invoke it. Release APKs
+include it from 1.0.0; development-only test commands stay out of release builds.
 
 ## Inspect, back up, upload
 

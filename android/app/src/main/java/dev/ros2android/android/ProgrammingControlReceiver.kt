@@ -3,7 +3,11 @@ package dev.ros2android.android
 import android.content.*
 import org.json.JSONObject
 
-/** Debug APK only; manifest requires DUMP, held by authorized ADB shell. */
+/**
+ * Lets the PC's ESP32 tool program a USB-attached ESP32 through the phone. The manifest requires
+ * DUMP, which only the system and an authorized ADB shell hold, so no other app can send these
+ * commands. Development builds add their own test commands through [DevelopmentCommands].
+ */
 class ProgrammingControlReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val service = Intent(context, Esp32ProgrammingService::class.java)
@@ -18,20 +22,8 @@ class ProgrammingControlReceiver : BroadcastReceiver() {
                 if (Esp32ProgrammingService.active) { resultCode = 1; return }
                 context.startForegroundService(Intent(context, MicroRosAgentService::class.java).putExtra(MicroRosAgentService.USB, true))
             }
-            "autonomy-start" -> {
-                if (AutonomyQualificationService.active || Esp32ProgrammingService.active) { resultCode = 1; resultData = "Test or programming already active"; return }
-                context.startForegroundService(Intent(context, AutonomyQualificationService::class.java)
-                    .putExtra("seconds", intent.getIntExtra("seconds", 180))
-                    .putExtra("minimumOfflineSamples", intent.getIntExtra("minimumOfflineSamples", 30)))
-            }
-            "autonomy-stop" -> if (AutonomyQualificationService.active) context.startService(Intent(context, AutonomyQualificationService::class.java).setAction(AutonomyQualificationService.STOP))
-            "autonomy-status" -> {
-                resultCode = 0
-                resultData = java.io.File(context.cacheDir, AutonomyQualificationService.FILE).takeIf { it.isFile }?.readText() ?: "No continuity test recorded"
-                return
-            }
             "status" -> Unit
-            else -> { resultCode = 1; return }
+            else -> { if (!DevelopmentCommands.handle(context, intent, this)) resultCode = 1; return }
         }
         resultCode = 0
         resultData = JSONObject().put("active", Esp32ProgrammingService.active).put("state", Esp32ProgrammingService.state).put("port", Esp32ProgrammingService.port).put("agentRunning", MicroRosAgentService.running).put("agentState", MicroRosAgentService.state).put("agentLogs", MicroRosAgentService.logs()).put("usbDiagnostics", MicroRosAgentService.usbDiagnostics()).toString()

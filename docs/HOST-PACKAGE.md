@@ -13,7 +13,7 @@ not a published PyPI package or a complete prebuilt runtime SDK.
 With pipx available, install the supplied artifact:
 
 ```bash
-pipx install /absolute/path/ros2_android-1.0.0b1-py3-none-any.whl
+pipx install /absolute/path/ros2_android-1.0.0-py3-none-any.whl
 ros2-android --version
 ros2-android compatibility
 ros2-android doctor --profile host
@@ -67,7 +67,7 @@ CI currently pins pip 26.2.2, setuptools 84.2.1 and wheel 0.48.0:
 
 ```bash
 python setup/build-python-package.py
-python setup/verify-python-package.py dist/ros2_android-1.0.0b1-py3-none-any.whl \
+python setup/verify-python-package.py dist/ros2_android-1.0.0-py3-none-any.whl \
   --report dist/installed-client-report.json
 ```
 

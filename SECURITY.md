@@ -1,7 +1,7 @@
 # Security
 
-ROS2 Android is in beta (1.0.0-beta.1). There is no stable release line with a
-security-support lifetime yet. Fixes target `develop`; the maintainers cannot
+ROS2 Android 1.0.0 is the first stable release. Security fixes target the latest
+1.x release; there is no long-term support line yet. Fixes target `develop`; the maintainers cannot
 currently promise a response or remediation deadline.
 
 Report suspected vulnerabilities through this repository's GitHub **Security →
@@ -50,9 +50,10 @@ official app with it.
 - DDS Security (SROS 2) is disabled in the native build, so ROS traffic is neither
   authenticated nor encrypted. While the Wi-Fi micro-ROS Agent runs, any device on
   that network can reach it on UDP 8888 and create ROS entities; prefer USB for robots.
-- Debug-only receivers and probes require the ADB `DUMP` permission and are absent
-  from release builds. On Android 13+, allow notifications so each session's Stop
-  action stays visible.
+- The ESP32 programming receiver and debug-only receivers require Android's `DUMP`
+  permission, which only the system and an authorized ADB shell hold. Release builds
+  contain only the programming receiver; debug receivers, probes and preview screens
+  are absent. On Android 13+, allow notifications so each session's Stop action stays visible.
 - A Dashboard request/local write is not confirmed robot state. Actuator-local
   expiry and physical stop mechanisms remain application/hardware responsibilities.
 

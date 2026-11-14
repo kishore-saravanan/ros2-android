@@ -7,7 +7,7 @@
 <p align="center"><b>Turn an Android phone into your robot's onboard ROS 2 computer.</b></p>
 
 <p align="center">
-  <a href="https://github.com/kishore-saravanan/ros2-android/releases"><img src="https://img.shields.io/badge/release-1.0.0--beta.1-0b6e99" alt="Release 1.0.0-beta.1"></a>
+  <a href="https://github.com/kishore-saravanan/ros2-android/releases"><img src="https://img.shields.io/badge/release-1.0.0-0b6e99" alt="Release 1.0.0"></a>
   <img src="https://img.shields.io/badge/ROS%202-Jazzy-22314e" alt="ROS 2 Jazzy">
   <img src="https://img.shields.io/badge/Android-8.0%2B%20ARM64-3ddc84?logo=android&logoColor=white" alt="Android 8.0+ ARM64">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="Apache-2.0"></a>
@@ -37,7 +37,7 @@ Everything in the loop runs on the robot. [Build this example →](docs/BALL-FOL
 | **Publish phone sensors** | IMU, accelerometer, gyroscope, magnetometer, barometer, battery and cameras (with resolution, FPS and JPEG controls), each on an editable topic and rate. |
 | **Run your own nodes on the phone** | Cross-build supported C++ and Python ROS 2 workspaces on Linux, deploy them, then start and stop them from the app's Projects tab. |
 | **Develop on a mounted robot** | Deploy over wireless ADB while the phone stays on the robot. Nodes run on the phone, not on your PC. |
-| **Connect microcontrollers** | A micro-ROS Agent on the phone serves an ESP32 over USB OTG or Wi-Fi (UDP). Developers can even flash a USB-attached ESP32 *through* the phone. |
+| **Connect microcontrollers** | A micro-ROS Agent on the phone serves an ESP32 over USB OTG or Wi-Fi (UDP). You can even flash a USB-attached ESP32 *through* the phone. |
 | **Control and monitor** | A Dashboard with buttons, switches, sliders, a joystick, live values and camera images. |
 | **Run without a PC** | Once deployed, the phone, its nodes and its microcontroller keep working with Wi-Fi off. |
 
@@ -66,7 +66,7 @@ the phone runs.
 2. **Build on your PC and deploy over Wi-Fi** (with the [native SDK](docs/CLEAN-MACHINE-SETUP.md#3-prepare-the-project-sdk) installed):
 
    ```bash
-   ros2-android workspace --workspace ~/my_ws build --controller-apk ros2-android-1.0.0-beta.1.apk
+   ros2-android workspace --workspace ~/my_ws build --controller-apk ros2-android-1.0.0.apk
    ros2-android workspace --workspace ~/my_ws --serial PHONE_IP:PORT deploy
    ```
 
@@ -74,10 +74,9 @@ the phone runs.
    its topics from your PC. Edit, rebuild and redeploy the same way.
 
 The nodes run on the phone, so the robot keeps going when the PC disconnects. The
-ESP32 on the robot stays attached to the phone too. A development build of the app
-can flash it **through the phone** over the same wireless link
-([guide](docs/ESP32-PROGRAMMING.md)); the release app leaves that control out for
-security. Flashing an ESP32 over its own Wi-Fi (OTA) is not supported.
+ESP32 on the robot stays attached to the phone too: flash new firmware into it
+**through the phone** over the same wireless link ([guide](docs/ESP32-PROGRAMMING.md)).
+Flashing an ESP32 over its own Wi-Fi (OTA) is not supported.
 [Workspace guide →](docs/COLCON-WORKSPACES.md)
 
 ## Install
@@ -86,9 +85,9 @@ Download from the [latest release](https://github.com/kishore-saravanan/ros2-and
 
 | File | Who needs it |
 | --- | --- |
-| `ros2-android-1.0.0-beta.1.apk` | Everyone: the Android app (ARM64, Android 8.0+). |
-| `ros2-android_1.0.0~beta1-1_all.deb` | Ubuntu 24.04 PCs: the `ros2-android` command-line tool, with the app inside it. |
-| `ros2-android-native-sdk-1.0.0b1-arm64-v8a.tar.xz` | Only if you build your own workspaces for the phone. |
+| `ros2-android-1.0.0.apk` | Everyone: the Android app (ARM64, Android 8.0+). |
+| `ros2-android_1.0.0-1_all.deb` | Ubuntu 24.04 PCs: the `ros2-android` command-line tool, with the app inside it. |
+| `ros2-android-native-sdk-1.0.0-arm64-v8a.tar.xz` | Only if you build your own workspaces for the phone. |
 | `SHA256SUMS` | To check your downloads. |
 
 Check that the APK really comes from this project. Its signing certificate is listed in
@@ -100,7 +99,7 @@ work with any ROS 2 Jazzy PC on the same network.
 **PC tool and app together:**
 
 ```bash
-sudo apt install ./ros2-android_1.0.0~beta1-1_all.deb
+sudo apt install ./ros2-android_1.0.0-1_all.deb
 ros2-android device setup        # installs the bundled app on a USB-connected phone
 ```
 
@@ -154,9 +153,9 @@ flowchart LR
 
 More: [architecture](ARCHITECTURE.md) · [design](docs/design/HIGH-LEVEL-DESIGN.md) · [roadmap](docs/ROADMAP.md)
 
-## Beta status: what's tested
+## What's tested
 
-1.0.0-beta.1 is the first public release. It has been tested on a Realme phone
+1.0.0 is the first public release. It has been tested on a Realme phone
 (Android 12), a Samsung Galaxy S24+ (Android 17) and an Android 15 emulator, with an
 ESP32 over USB (CP2102) and Wi-Fi. Results are in [Status](docs/STATUS.md).
 Things to know:

@@ -1,2 +1,2 @@
 """Installable ROS2 Android developer client."""
-__version__ = "1.0.0b1"
+__version__ = "1.0.0"

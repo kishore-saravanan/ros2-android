@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "status": "beta",
-  "hostClientVersion": "1.0.0b1",
+  "status": "release",
+  "hostClientVersion": "1.0.0",
   "app": {
-    "versionName": "1.0.0-beta.1",
-    "versionCode": 9
+    "versionName": "1.0.0",
+    "versionCode": 10
   },
   "host": {
     "system": "Linux",

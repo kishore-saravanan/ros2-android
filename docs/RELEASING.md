@@ -48,10 +48,10 @@ python3 setup/build-python-package.py      # bundled host wheel, from a venv wit
 # download its ros2-android-native-sdk artifact (built on a clean runner, install-tested there).
 export ROS2_ANDROID_KEYSTORE_PASSWORD=...  # never on the command line
 python3 setup/assemble-release.py --apk android/app/build/outputs/apk/release/app-release-unsigned.apk \
-  --wheel dist/ros2_android-1.0.0b1-py3-none-any.whl \
-  --sdk ~/Downloads/ros2-android-native-sdk/ros2-android-native-sdk-1.0.0b1-arm64-v8a.tar.xz \
-  --keystore /offline/ros2-android-release.jks --key-alias ros2-android --out dist/release-1.0.0-beta.1
-python3 setup/verify-release.py dist/release-1.0.0-beta.1 --expect-certificate abcaf532edc8a3337a8c17d58d83c87ac76306c39e8a41a4fbddd9e9fe12c69e
+  --wheel dist/ros2_android-1.0.0-py3-none-any.whl \
+  --sdk ~/Downloads/ros2-android-native-sdk/ros2-android-native-sdk-1.0.0-arm64-v8a.tar.xz \
+  --keystore /offline/ros2-android-release.jks --key-alias ros2-android --out dist/release-1.0.0
+python3 setup/verify-release.py dist/release-1.0.0 --expect-certificate abcaf532edc8a3337a8c17d58d83c87ac76306c39e8a41a4fbddd9e9fe12c69e
 ```
 
 The assembler refuses a dirty tracked tree, a debuggable APK, a version that

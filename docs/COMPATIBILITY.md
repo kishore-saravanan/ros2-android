@@ -1,6 +1,6 @@
 # Compatibility matrix
 
-This is the 1.0.0-beta.1 combination, not a stable release or a
+This is the 1.0.0 combination, not a
 promise that every Linux ROS package/Android phone works. The machine-readable
 [source matrix](../python/ros2android/compatibility.json) is included in the host
 wheel. Tests check it against the app, build pins, contracts and source locks.
@@ -22,10 +22,10 @@ is identification, not a signature or proof of binary provenance.
 
 | Layer | Current expected input |
 | --- | --- |
-| Host client | `ros2-android` 1.0.0b1; client Python 3.10+ |
+| Host client | `ros2-android` 1.0.0; client Python 3.10+ |
 | Reference build machine | Linux x86_64, Ubuntu 24.04, system ROS-build Python 3.12 |
 | Host/target ROS | ROS 2 Jazzy; native `rmw_cyclonedds_cpp` |
-| Main app | 1.0.0-beta.1, versionCode 9 |
+| Main app | 1.0.0, versionCode 10 |
 | Android target | ARM64 (`arm64-v8a`), build minimum API 26, compile/target API 35 |
 | Android SDK tools | Build tools 35.0.0, NDK 27.2.12479018, SDK CMake 3.22.1 |
 | Build system | JDK 21 runs Gradle 8.9; AGP 8.7.3, Kotlin 2.2.21; bytecode target 17 |
@@ -43,6 +43,20 @@ session and runner compatibility checks, not phone qualification. Reference traf
 including limits of the independent-signing preview and new protocol envelopes,
 is in [Status](STATUS.md). Mixed Python/C++ colcon workspaces remain unsupported;
 standalone Python examples use their separate backend.
+
+## Stability promise for 1.x
+
+Within 1.x releases these stay compatible; a change that breaks them needs 2.0.0:
+
+- the `ros2-android` commands and options documented in this repository;
+- the project manifest (schema 1) and the app-to-runner management protocol (version 1),
+  so runners built with any 1.x client keep working with any 1.x app;
+- the native SDK archive format (format 1) and `setup sdk` installation;
+- Dashboard layouts and sensor settings saved by the app.
+
+New features, phones and message types can arrive in minor releases. Native SDK archives
+stay tied to their own client version. Experimental or debug-only commands are not part
+of this promise.
 
 ## Physical and emulator qualification
 

@@ -24,7 +24,7 @@ C++/CMake/Ninja/Git, Python development and colcon prerequisites described in
 Install the supplied wheel using pipx:
 
 ```bash
-pipx install /absolute/path/ros2_android-1.0.0b1-py3-none-any.whl
+pipx install /absolute/path/ros2_android-1.0.0-py3-none-any.whl
 ros2-android --version
 ros2-android compatibility
 ```

@@ -1,7 +1,7 @@
 # Compatibility, validation and remaining work
 
-Beta: **1.0.0-beta.1**, status updated 2026-11-13. Apache-2.0.
-This is a beta, not a broadly qualified robot appliance.
+Release: **1.0.0**, status updated 2026-11-14. Apache-2.0.
+Results below are for the tested devices listed, not every phone or robot.
 No public APT repository or stable package release is available yet.
 
 ## Verified reference paths

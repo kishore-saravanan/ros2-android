@@ -11,18 +11,18 @@ workspaces ([Workspaces](COLCON-WORKSPACES.md)).
 Download from the [latest release](https://github.com/kishore-saravanan/ros2-android/releases)
 and check the files against `SHA256SUMS` (`sha256sum -c SHA256SUMS --ignore-missing`).
 
-**Option A: the app only.** Copy `ros2-android-1.0.0-beta.1.apk` to the phone and
+**Option A: the app only.** Copy `ros2-android-1.0.0.apk` to the phone and
 open it, or install it from a PC that has `adb`:
 
 ```bash
-adb install ros2-android-1.0.0-beta.1.apk
+adb install ros2-android-1.0.0.apk
 ```
 
 **Option B: the PC tool with the app (Ubuntu 24.04).** Enable USB debugging on the
 phone, connect it and authorize this PC, then:
 
 ```bash
-sudo apt install ./ros2-android_1.0.0~beta1-1_all.deb
+sudo apt install ./ros2-android_1.0.0-1_all.deb
 ros2-android device setup
 ```
 
