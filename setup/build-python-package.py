@@ -111,7 +111,7 @@ def main():
             check=True,
         )
 
-    print('Built local alpha wheel; public publication and licensing review remain pending.')
+    print(f'Built the ros2-android wheel in {output}')
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract a Debian alpha without root and test its real launcher with a fake phone."""
+"""Extract a Debian package without root and test its real launcher with a fake phone."""
 
 import argparse
 import json

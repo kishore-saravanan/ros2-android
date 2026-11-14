@@ -183,8 +183,8 @@ def compare(previous, replacement):
 
     if previous['signerSha256'] != replacement['signerSha256']:
         reasons.append(
-            'Current signing certificate differs; this preview does not qualify signing '
-            'lineage or key rotation.'
+            'Current signing certificate differs; Android only accepts the update with the same '
+            'key or a rotation lineage, which this check does not verify.'
         )
 
     if replacement['longVersionCode'] < previous['longVersionCode']:
