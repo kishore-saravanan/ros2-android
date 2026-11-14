@@ -24,6 +24,19 @@ include it from 1.0.0; development-only test commands stay out of release builds
 
 ## Inspect, back up, upload
 
+With the installed PC tool (Debian package or wheel), use `ros2-android esp32` wherever
+the commands below show `./tools/esp32-via-phone`. It runs `esptool` (4.x or 5.x) from a
+Python environment that also has `pyserial`; create one once and pass it with `--python`:
+
+```bash
+python3 -m venv ~/.local/share/ros2-android-esptool
+~/.local/share/ros2-android-esptool/bin/pip install 'esptool>=4,<6' pyserial
+ros2-android esp32 --python ~/.local/share/ros2-android-esptool/bin/python --serial PHONE_ADB_ID flash-id
+```
+
+From a source checkout, `./setup/esp32-usb.sh build` prepares that environment, and
+`./tools/esp32-via-phone` uses it by default.
+
 From the repository root, use the authorized wireless ADB target from
 `$HOME/Android/Sdk/platform-tools/adb devices -l`:
 
