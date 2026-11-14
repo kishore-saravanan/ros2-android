@@ -244,7 +244,7 @@ class FollowerNode(Node):
             self.declare_parameter('turn_settle_seconds', 0.15).value,
             self.declare_parameter('turn_max_pulse_seconds', 0.09).value,
         )
-        topic = self.declare_parameter('command_topic', '/ball_demo/cmd_vel').value
+        topic = self.declare_parameter('command_topic', '/cmd_vel').value
 
         if not all(
             math.isfinite(v)
@@ -329,6 +329,12 @@ class FollowerNode(Node):
             self.commands.publish(Twist())
 
     def tick(self):
+        if not self.tracking:
+            # Quiet while off: toggle() already sent one stop, so other drivers (for example a
+            # Dashboard joystick) can use the command topic. The MCU's own timeout still applies.
+            self.turn_pulse.reset()
+            return
+
         now = time.monotonic()
         age = (self.get_clock().now().nanoseconds - self.target.get('stamp_ns', 0)) / 1e9
         linear, angular = command(
@@ -343,7 +349,7 @@ class FollowerNode(Node):
             angular_pwm_limit=self.get_parameter('angular_pwm_limit').value,
         )
 
-        if self.tracking and self.full_pwm:
+        if self.full_pwm:
             linear, angular = self.turn_pulse.step(
                 linear,
                 angular,
@@ -354,11 +360,9 @@ class FollowerNode(Node):
                 if angular
                 else 0.0,
             )
-        elif not self.tracking:
-            self.turn_pulse.reset()
 
         output = Twist()
-        output.linear.x, output.angular.z = (linear, angular) if self.tracking else (0.0, 0.0)
+        output.linear.x, output.angular.z = linear, angular
         self.commands.publish(output)
 
     def destroy_node(self):

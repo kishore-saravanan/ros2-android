@@ -12,6 +12,9 @@ within 1.x ([compatibility](docs/COMPATIBILITY.md#stability-promise-for-1x)). Te
 devices and limits are in [Status](docs/STATUS.md). The entries below describe the work
 in this release, newest first.
 
+- The ball follower example drives `/cmd_vel` by default. Tracking still starts off;
+  while off, the follower sends one stop and then stays quiet so other drivers can use
+  the topic. Dry runs use `-p command_topic:=/ball_demo/cmd_vel`.
 - Workspace builds pin the release app bundled in the `.deb` as the runner's controller
   by default; `--controller-apk` and `--same-signature` choose another. `adb` comes from
   the Android SDK when it is not on PATH. Native SDK installs check the archive manifest

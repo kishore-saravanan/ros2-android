@@ -16,7 +16,7 @@ Phone Sensors camera → JPEG CompressedImage
     → /ball/ball_vision: Pillow decode + NumPy colour mask + circle fitting
     → /ball/target: timestamped JSON in std_msgs/String
     → /ball/ball_follower: steering + apparent-size approach + freshness check
-    → /ball_demo/cmd_vel: geometry_msgs/Twist (TEST TOPIC by default)
+    → /cmd_vel: geometry_msgs/Twist, only while tracking is on
 ```
 
 `/ball/detected` is Bool; `/ball/metrics` is a JSON String containing input and
@@ -61,6 +61,10 @@ Projects, or adjust observer topics to the saved namespace.
 
 ## First test: observe, do not drive
 
+Commands go to `/cmd_vel` once tracking is on. For this first test, either keep
+motor power off, or start the project with `-- -p command_topic:=/ball_demo/cmd_vel`
+so the commands go to a test topic that nothing drives from.
+
 1. Keep motor power off and stop other velocity publishers/Dashboard controls.
 2. On the robot phone, open Sensors → Back camera. Publish on
    `/phone/camera_back_0/image/compressed`. Start at 640×480 and automatic FPS.
@@ -92,7 +96,7 @@ Inspect outputs on the PC:
 ```bash
 ros2 topic echo /ball/target --qos-reliability best_effort
 ros2 topic echo /ball/metrics --qos-reliability best_effort
-ros2 topic echo /ball_demo/cmd_vel --qos-reliability best_effort
+ros2 topic echo /cmd_vel --qos-reliability best_effort
 ```
 
 Stop each echo with Ctrl+C. Match the PC's ROS domain; if nothing arrives, see
@@ -100,7 +104,9 @@ Stop each echo with Ctrl+C. Match the PC's ROS domain; if nothing arrives, see
 
 Targets include source `stamp_ns`, pixel centre/radius, `error_x` in [-1,1],
 ball diameter as a fraction of image width, processing time and frame age.
-Tracking is **OFF after every project start**. The follower publishes at 20 Hz.
+Tracking is **OFF after every project start**. While off, the follower sends one
+stop and then publishes nothing, so a Dashboard joystick or another driver can use
+the topic. While on, it publishes at 20 Hz.
 It turns first when the ball is well off-centre,
 approaches while centred, and stops when apparent diameter reaches 0.30 of image
 width. Missing/invalid/older-than-300-ms targets produce zero velocity. It does
@@ -143,20 +149,18 @@ A single `--once` message is often lost over Wi-Fi: the command exits before the
 phone has finished matching its new publisher. `-w 2` waits for both nodes, and
 `/ball/tracking` confirms the state. Send `false` the same way to stop.
 
-At the default test topic, switching ON lets you inspect computed commands but
-cannot drive the reference ESP32. Complete the stationary checks first, then
-choose the real command topic below.
+Switching ON drives the robot through `/cmd_vel`. Complete the stationary checks
+first (motor power off, or the test topic), then follow the section below.
 
 ## Drive only after the stationary checks
 
-Stop the project and all teleop/Dashboard command publishers first. With wheels
-raised and the physical power switch within reach, explicitly opt into the real
-motor topic:
+Stop all teleop/Dashboard command publishers first. With wheels raised and the
+physical power switch within reach, start the project without the test-topic
+override, so commands go to `/cmd_vel`:
 
 ```bash
 ./tools/ros2android --project examples/ball_follower stop
-./tools/ros2android --project examples/ball_follower start --namespace /ball --domain 0 \
-  -- -p command_topic:=/cmd_vel
+./tools/ros2android --project examples/ball_follower start --namespace /ball --domain 0
 ```
 
 Tracking remains OFF after restart. Use the Dashboard Track ball switch only
@@ -216,7 +220,7 @@ parameter services while running. Available values include `image_topic`, `proce
 `stop_diameter_fraction` (0.30),
 `max_linear` (0.12), `linear_gain` (1.2), `max_angular` (2.5),
 `full_pwm` (false), `angular_pwm_limit` (0.8), `turn_pulse_seconds` (0.04), `turn_max_pulse_seconds` (0.09),
-`turn_settle_seconds` (0.15) and `command_topic`.
+`turn_settle_seconds` (0.15) and `command_topic` (`/cmd_vel`).
 
 `full_pwm:=true` selects direct duty-fraction requests for the reference MCU
 firmware built with `ROS2_ANDROID_ESP32_FULL_PWM=1`. These values are mixing/duty
@@ -278,21 +282,23 @@ PYTHONPATH=examples/ball_follower/src/ball_follower \
 ```
 
 For the actual phone ROS test, stop/restart the project with a reserved image
-topic and leave motor power off:
+topic and the test command topic, and leave motor power off:
 
 ```bash
 ./tools/ros2android --project examples/ball_follower stop
 ./tools/ros2android --project examples/ball_follower start --namespace /ball --domain 0 \
-  -- -p image_topic:=/ball_test/image/compressed
+  -- -p image_topic:=/ball_test/image/compressed -p command_topic:=/ball_demo/cmd_vel
 ./tools/pc-ros.sh -- /usr/bin/python3 tools/pc-ball-follower-probe.py --annotated-only
 ```
 
 The PC sends generated JPEGs, observes phone-produced detections/annotations,
-and checks disabled-by-default, forward, both turns, near, wood-background rejection, lost, malformed,
-stale-image and switch-OFF behavior, plus the annotated image. To test optional
+and checks that nothing moves while tracking is off (at start and after switch-OFF),
+forward, both turns, near, wood-background rejection, lost, malformed and
+stale-image behavior, plus the annotated image. To test optional
 mask/raw outputs, enable them explicitly and run the probe without `--annotated-only`.
 It subscribes to `/ball_demo/cmd_vel`; it never publishes motor commands. Revert
-`image_topic` by restarting without that parameter before using the phone camera.
+`image_topic` and `command_topic` by restarting without them before using the
+phone camera.
 A passing generated-image test does not prove live-camera rate, robot motion,
 metric depth or hard real-time deadlines. See [current validation](STATUS.md).
 

@@ -145,6 +145,14 @@ def main():
                 rclpy.spin_once(node, timeout_sec=0.01)
 
             samples = [v for v in velocities if v[0] > begin + 1.5]
+
+            if phase in ('disabled', 'off'):
+                # Tracking off: the follower sends one stop, then stays quiet.
+                moving = [v for v in samples if abs(v[1]) + abs(v[2]) >= 0.0001]
+                results[phase] = {'samples': len(samples), 'moving': len(moving)}
+                assert not moving, (phase, 'Movement commands while tracking is off', moving[:3])
+                continue
+
             assert len(samples) >= 5, (phase, 'Missing velocity samples')
 
             if phase == 'forward':

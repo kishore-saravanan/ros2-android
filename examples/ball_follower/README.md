@@ -12,8 +12,9 @@ SDK. This example uses the project builder, not the C++-only workspace builder.
 Read [the complete guide](../../docs/BALL-FOLLOWER.md) for building, deploying,
 Dashboard image/switch setup, tests, parameters and compatibility limits.
 
-Tracking starts OFF. Default commands go to `/ball_demo/cmd_vel`, not the motor
-controller. Explicitly select `/cmd_vel` only after stationary checks.
+Tracking starts OFF. Once switched on, commands go to `/cmd_vel` and drive the
+robot; while off, the follower stays quiet. For a dry run, start it with
+`-p command_topic:=/ball_demo/cmd_vel`.
 
 ## Linux package
 
