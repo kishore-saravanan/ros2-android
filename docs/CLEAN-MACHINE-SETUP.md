@@ -9,10 +9,11 @@ native build step that only worked when an older install already existed. The sa
 journey also passes on a clean hosted Ubuntu 24.04 runner. Deploying to a phone from
 such a freshly prepared machine remains to be shown.
 
-There is no public APT/PyPI installer yet. Obtain a maintainer-built local alpha
-wheel, or use the contributor [build guide](DEVELOPMENT.md) to produce one. The
-wheel contains client/templates/sources, not Java, Android SDK/NDK, native ROS
-binaries or a main APK. Installing it does not install anything on a phone.
+For a guided, step-by-step setup see [From scratch](FROM-SCRATCH.md); this page is the
+detailed reference. Install the client from the release (`.deb`, or the wheel with pipx).
+The client contains tools, templates and sources, not Java, Android SDK/NDK or native
+ROS binaries; the native SDK is a separate release download (step 3). Installing the
+client does not install anything on a phone.
 
 ## 1. Prepare the Linux prerequisites
 

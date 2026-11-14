@@ -118,12 +118,14 @@ package never touches a phone by itself.
    ```
 
 You should see the phone's battery level arrive once a second.
-[Full walkthrough and troubleshooting →](docs/GETTING-STARTED.md)
+[Full walkthrough and troubleshooting →](docs/GETTING-STARTED.md) ·
+[Everything from scratch, including your own nodes and an ESP32 →](docs/FROM-SCRATCH.md)
 
 ## Guides
 
 | I want to… | Read |
 | --- | --- |
+| **Go from nothing to everything working, step by step** | **[From scratch](docs/FROM-SCRATCH.md)** |
 | Install and publish a first topic | [Getting started](docs/GETTING-STARTED.md) |
 | Build and deploy my own workspace to the phone | [Workspaces](docs/COLCON-WORKSPACES.md) · [Set up a build PC](docs/CLEAN-MACHINE-SETUP.md) |
 | Configure buttons, joystick, values and images | [Dashboard](docs/CONTROLS.md) |

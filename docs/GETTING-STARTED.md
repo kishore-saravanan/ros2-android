@@ -146,16 +146,9 @@ Exclude device identifiers, personal information and camera images from reports.
 - Projects for ordinary workspace runners; the example is
   examples/android_test_ws. Use the workspace guide's matching domain/overlay.
 
-## External onboarding trial still needed
-
-Ask a new contributor to follow this guide without oral setup help. Record their
-OS, toolchain versions, phone/Android, transport, elapsed setup time, exact failed
-step, recovery and whether real PC samples arrived. Confirm initial installation,
-Publish, stop/restart and another session after reconnect. Record licensing/artifact
-access obstacles too. A maintainer's prepared-machine walkthrough is not evidence
-that this trial or a clean-machine dependency install has passed.
-
 ## Next: use the phone as the robot computer
+
+Follow [From scratch](FROM-SCRATCH.md) from part 3 for the Dashboard, your own nodes and an ESP32.
 
 Continue with [Robot operation](ROBOT-OPERATION.md) for the workspace/MCU setup,
 start/stop scopes, loss-of-connection checks and recovery. APT distribution work
