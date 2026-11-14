@@ -36,15 +36,15 @@ command = sys.argv[3:]
 if command == ['get-state']: print('device')
 elif command == ['shell', 'getprop', 'ro.build.version.sdk']: print('31')
 elif command == ['shell', 'getprop', 'ro.product.cpu.abilist']: print('arm64-v8a')
-elif command[:2] == ['install', '-r']: print('Success')
+elif command[:4] == ['install', '--user', 'current', '-r']: print('Success')
 else: raise SystemExit(2)
 '''); adb.chmod(0o755)
         env.update(ANDROID_HOME=str(sdk), ADB_TEST_LOG=str(log))
         assert 'Success' in run('device', 'setup', '--serial', 'test-phone')
         calls = [json.loads(line) for line in log.read_text().splitlines()]
         assert len(calls) == 4
-        assert calls[-1][:4] == ['-s', 'test-phone', 'install', '-r']
-        apk = Path(calls[-1][4])
+        assert calls[-1][:6] == ['-s', 'test-phone', 'install', '--user', 'current', '-r']
+        apk = Path(calls[-1][6])
         assert apk.is_relative_to(root / 'payload')
         assert apk.stat().st_size > 0
         print('PASS: Debian payload/control, installed launcher, backend help and explicit checksummed APK update via fake ADB; no root or real phone operations')
