@@ -2,7 +2,7 @@
 
 Scope: tracked source and full Git history, the main app and runner manifests, network
 listeners, signing/control boundaries and bundled dependencies, reviewed on 2026-11-12
-for the development preview. This is a maintainer review, not an independent audit or
+for the development preview and re-scanned on 2026-11-14 for 1.0.0-beta.1. This is a maintainer review, not an independent audit or
 penetration test. Report issues as described in [SECURITY.md](../SECURITY.md).
 
 ## Repository and history
@@ -14,6 +14,13 @@ penetration test. Report issues as described in [SECURITY.md](../SECURITY.md).
 | Personal emails, MAC addresses, home paths or device serial numbers in tracked files | None; examples use `example.invalid` |
 | Device model strings | A reference phone model appears in early README/verification history; it names a product, not a unit |
 | Local journals, device logs, screenshots, build outputs | Ignored by `.gitignore`; older journal versions remain in history (owner decision whether to rewrite) |
+
+Re-scan for 1.0.0-beta.1 (2026-11-14, all 108 commits, every added line): no private
+keys, keystore passwords, token patterns, private IPv4 or MAC addresses, and neither
+reference phone's ADB serial number. Email-like matches were Python decorators. One
+early commit's `.vscode/settings.json` contained a local checkout path with the
+maintainer's Linux account name; the current file is clean. Older versions of the
+maintainer's development journals remain in history by owner decision.
 
 Removing a file from the current tree does not remove it from history. Review history
 again before changing repository visibility or creating release tags.
